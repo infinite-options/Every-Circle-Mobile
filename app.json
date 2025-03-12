@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "EveryCircleApp",
+    "slug": "every-circle-app",
+    "entryPoint": "./App.js",
+    "android": {
+      "package": "com.anonymous.everycircleapp"
+    }
+  }
+}
