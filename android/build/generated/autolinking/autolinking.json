@@ -1,20 +1,20 @@
 {
-  "root": "C:\\InfiniteOptions\\EveryCircleApp",
-  "reactNativePath": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native",
+  "root": "C:\\InfiniteOptions\\Every-Circle-Mobile",
+  "reactNativePath": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native",
   "reactNativeVersion": "0.78",
   "dependencies": {
     "react-native-gesture-handler": {
-      "root": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-gesture-handler",
+      "root": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-gesture-handler",
       "name": "react-native-gesture-handler",
       "platforms": {
         "ios": {
-          "podspecPath": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-gesture-handler\\RNGestureHandler.podspec",
+          "podspecPath": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-gesture-handler\\RNGestureHandler.podspec",
           "version": "2.24.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-gesture-handler\\android",
+          "sourceDir": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-gesture-handler\\android",
           "packageImportPath": "import com.swmansion.gesturehandler.RNGestureHandlerPackage;",
           "packageInstance": "new RNGestureHandlerPackage()",
           "buildTypes": [],
@@ -23,7 +23,7 @@
             "RNGestureHandlerButtonComponentDescriptor",
             "RNGestureHandlerRootViewComponentDescriptor"
           ],
-          "cmakeListsPath": "C:/InfiniteOptions/EveryCircleApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "C:/InfiniteOptions/Every-Circle-Mobile/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -32,23 +32,23 @@
       }
     },
     "react-native-reanimated": {
-      "root": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-reanimated",
+      "root": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-reanimated",
       "name": "react-native-reanimated",
       "platforms": {
         "ios": {
-          "podspecPath": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-reanimated\\RNReanimated.podspec",
+          "podspecPath": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-reanimated\\RNReanimated.podspec",
           "version": "3.17.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-reanimated\\android",
+          "sourceDir": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-reanimated\\android",
           "packageImportPath": "import com.swmansion.reanimated.ReanimatedPackage;",
           "packageInstance": "new ReanimatedPackage()",
           "buildTypes": [],
           "libraryName": "rnreanimated",
           "componentDescriptors": [],
-          "cmakeListsPath": "C:/InfiniteOptions/EveryCircleApp/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "C:/InfiniteOptions/Every-Circle-Mobile/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -57,17 +57,17 @@
       }
     },
     "react-native-safe-area-context": {
-      "root": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-safe-area-context",
+      "root": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-safe-area-context",
       "name": "react-native-safe-area-context",
       "platforms": {
         "ios": {
-          "podspecPath": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-safe-area-context\\react-native-safe-area-context.podspec",
+          "podspecPath": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-safe-area-context\\react-native-safe-area-context.podspec",
           "version": "5.3.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-safe-area-context\\android",
+          "sourceDir": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-safe-area-context\\android",
           "packageImportPath": "import com.th3rdwave.safeareacontext.SafeAreaContextPackage;",
           "packageInstance": "new SafeAreaContextPackage()",
           "buildTypes": [],
@@ -76,7 +76,7 @@
             "RNCSafeAreaProviderComponentDescriptor",
             "RNCSafeAreaViewComponentDescriptor"
           ],
-          "cmakeListsPath": "C:/InfiniteOptions/EveryCircleApp/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "C:/InfiniteOptions/Every-Circle-Mobile/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -85,17 +85,17 @@
       }
     },
     "react-native-screens": {
-      "root": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-screens",
+      "root": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-screens",
       "name": "react-native-screens",
       "platforms": {
         "ios": {
-          "podspecPath": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-screens\\RNScreens.podspec",
+          "podspecPath": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-screens\\RNScreens.podspec",
           "version": "4.9.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-screens\\android",
+          "sourceDir": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-screens\\android",
           "packageImportPath": "import com.swmansion.rnscreens.RNScreensPackage;",
           "packageInstance": "new RNScreensPackage()",
           "buildTypes": [],
@@ -113,7 +113,7 @@
             "RNSScreenContentWrapperComponentDescriptor",
             "RNSModalScreenComponentDescriptor"
           ],
-          "cmakeListsPath": "C:/InfiniteOptions/EveryCircleApp/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "C:/InfiniteOptions/Every-Circle-Mobile/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -122,23 +122,23 @@
       }
     },
     "react-native-vector-icons": {
-      "root": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-vector-icons",
+      "root": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-vector-icons",
       "name": "react-native-vector-icons",
       "platforms": {
         "ios": {
-          "podspecPath": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-vector-icons\\RNVectorIcons.podspec",
+          "podspecPath": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-vector-icons\\RNVectorIcons.podspec",
           "version": "10.2.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "C:\\InfiniteOptions\\EveryCircleApp\\node_modules\\react-native-vector-icons\\android",
+          "sourceDir": "C:\\InfiniteOptions\\Every-Circle-Mobile\\node_modules\\react-native-vector-icons\\android",
           "packageImportPath": "import com.oblador.vectoricons.VectorIconsPackage;",
           "packageInstance": "new VectorIconsPackage()",
           "buildTypes": [],
           "libraryName": "RNVectorIconsSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "C:/InfiniteOptions/EveryCircleApp/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "C:/InfiniteOptions/Every-Circle-Mobile/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -309,7 +309,7 @@
         {
           "name": "--path <path>",
           "description": "Path to the React Native project root.",
-          "default": "C:\\InfiniteOptions\\EveryCircleApp"
+          "default": "C:\\InfiniteOptions\\Every-Circle-Mobile"
         },
         {
           "name": "--platform <string>",
@@ -601,7 +601,7 @@
   "assets": [],
   "project": {
     "ios": {
-      "sourceDir": "C:\\InfiniteOptions\\EveryCircleApp\\ios",
+      "sourceDir": "C:\\InfiniteOptions\\Every-Circle-Mobile\\ios",
       "xcodeProject": {
         "name": "EveryCircleApp.xcodeproj",
         "path": ".",
@@ -610,10 +610,10 @@
       "assets": []
     },
     "android": {
-      "sourceDir": "C:\\InfiniteOptions\\EveryCircleApp\\android",
+      "sourceDir": "C:\\InfiniteOptions\\Every-Circle-Mobile\\android",
       "appName": "app",
-      "packageName": "com.everycircleapp",
-      "applicationId": "com.everycircleapp",
+      "packageName": "com.anonymous.everycircleapp",
+      "applicationId": "com.anonymous.everycircleapp",
       "mainActivity": ".MainActivity",
       "assets": []
     }

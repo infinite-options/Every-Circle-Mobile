@@ -4,9 +4,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
-import ProfileScreen from './src/screens/ProfileScreen.js';
+import ProfileScreen from './src/screens/ProfileScreen';
+import ProfileSetupScreen from './src/screens/ProfileSetupScreen';
+import AccountTypeScreen from './src/screens/AccountTypeScreen';
+
+
+
 
 const Stack = createStackNavigator();
+const emailCheckAPI = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GetEmailId/EVERY-CIRCLE/'
+const creatAccountAPI = 'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE'
 
 const HomeScreen = ({ navigation }) => {
   return (
@@ -34,8 +41,13 @@ const SignUpScreen = ({ navigation }) => {
 
   const checkEmailExists = async () => {
     try {
+      url = emailCheckAPI + email;
+      console.log("Check Email API: ", url);      
+      // const response = await axios.get(
+      //   `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GetEmailId/EVERY-CIRCLE/${email}`
+      // );
       const response = await axios.get(
-        `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GetEmailId/EVERY-CIRCLE/${email}`
+        url
       );
       
 
@@ -68,20 +80,38 @@ const SignUpScreen = ({ navigation }) => {
   
     // If email does not exist, proceed to register the user
     try {
+
+      url = creatAccountAPI;
+      console.log("Check Email API: ", url);      
+      // const response = await axios.get(
+      //   `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/GetEmailId/EVERY-CIRCLE/${email}`
+      // );
       const response = await axios.post(
-        'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE',
+        url,
         {
           email: email,
           password: password,
           role: "user"
         }
       );
+
+      // const response = await axios.post(
+      //   'https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE',
+      //   {
+      //     email: email,
+      //     password: password,
+      //     role: "user"
+      //   }
+      // );
   
       console.log('Signup API Response:', response.data);
       
       if (response.status === 200) {
         Alert.alert("Success", "Account created successfully!");
-        navigation.navigate('ProfileSetup');
+        navigation.navigate('ProfileSetup', {
+          email: email,
+          user_uid: response.data.user_uid
+        });
       } else {
         Alert.alert("Error", "Failed to create account. Please try again.");
       }
@@ -163,7 +193,10 @@ const LoginScreen = ({ navigation }) => {
 
       if (loginResponse.data?.code === 200) {
         Alert.alert('Success', 'Logged in successfully!');
-        navigation.navigate('Profile', {email: email}); // Navigate to the next screen
+        navigation.navigate('Profile', {
+          email: email, 
+          password: hashedPassword,  //  Pass hashed password
+        }); // Navigate to the next screen
       } else {
         Alert.alert('Error', loginResponse.data?.message || 'Invalid credentials. Please try again.');
       }
@@ -202,46 +235,6 @@ const LoginScreen = ({ navigation }) => {
 };
 
 
-const ProfileSetupScreen = ({ navigation }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-
-  const handleContinue = () => {
-    if (!firstName || !lastName || !phone) {
-      Alert.alert('Error', 'All fields are required!');
-      return;
-    }
-    navigation.navigate('AccountType');
-  };
-
-  return (
-    <View style={styles.profileContainer}>
-      <Text style={styles.profileHeader}>Welcome to Every Circle!</Text>
-      <Text style={styles.profileSubHeader}>Let's Build Your Profile Page!</Text>
-      <TextInput style={styles.input} placeholder="First Name" value={firstName} onChangeText={setFirstName} />
-      <TextInput style={styles.input} placeholder="Last Name" value={lastName} onChangeText={setLastName} />
-      <TextInput style={styles.input} placeholder="(000) 000-0000" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueText}>Continue</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const AccountTypeScreen = () => {
-  return (
-    <View style={styles.accountContainer}>
-      <Text style={styles.accountHeader}>Choose Your Account</Text>
-      <TouchableOpacity style={[styles.accountButton, styles.personal]}>
-        <Text style={styles.accountText}>Personal</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.accountButton, styles.business]}>
-        <Text style={styles.accountText}>Business</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
 
 
 export default function App() {
