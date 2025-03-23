@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
 const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
+const APPLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
 
 console.log("App.js - Imported config:", config);
 
@@ -65,18 +66,75 @@ export default function App() {
   }, []);
 
   const handleSignIn = async (userInfo) => {
+    console.log("Apple sign-in called with userInfo:", JSON.stringify(userInfo, null, 2));
+    let result = null;
+    // Set a timeout to reset the sign-in state in case the process hangs
+    const signInTimeoutId = setTimeout(() => {
+      console.log("Apple sign-up timeout - resetting state");
+      setSignInInProgress(false);
+      setShowSpinner(false);
+    }, 30000); // 30 seconds timeout
+
     try {
-      console.log("handleSignIn - userInfo:", userInfo);
-      const { user } = userInfo;
-      const userEmail = user.email;
+      setShowSpinner(true);
+      setSignInInProgress(true);
+
+      // Extract user data from Apple Sign In response
+      const { user, idToken } = userInfo;
+
+      console.log("Apple User ID:", user.id);
+      console.log("Apple User Email:", user.email);
+      console.log("Apple User Name:", user.name);
+      console.log("Apple ID Token Length:", idToken ? idToken.length : 0);
+
+      // Extract email from idToken if user.email is null
+      let userEmail = user.email;
+
+      // If email is null, try to extract it from the idToken, which is a JSON Web Token (JWT)
+      if (!userEmail && idToken) {
+        try {
+          const tokenParts = idToken.split(".");
+          if (tokenParts.length >= 2) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            if (payload.email) {
+              userEmail = payload.email;
+              console.log("Extracted email from idToken:", userEmail);
+            }
+          }
+        } catch (e) {
+          console.log("Error extracting email from idToken:", e);
+        }
+      }
+
       console.log("User email for sign in:", userEmail);
 
-      // Call the sign-in endpoint
-      const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userEmail}`);
+      // Logic for Apple
+      if (userEmail === null) {
+        console.log("User email is null, calling AppleSignIn Endpoint");
+        const response = await fetch(APPLE_SIGNIN_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: user.id }),
+        });
+        const result = await response.json();
+        console.log("Apple Login endpoint response:", result);
+        return;
+      } else {
+        // Call the sign-in endpoint
+        const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userEmail}`);
 
-      const result = await response.json();
-      console.log("Sign-in endpoint response:", result);
+        result = await response.json();
+        console.log("Sign-in endpoint response:", result);
+        // console.log("result:", result);
+        // console.log("result.result:", result.result);
+        // console.log("result.result[0]:", result.result[0]);
+      }
 
+      // console.log("result:", result);
+      // console.log("result.result:", result.result);
+      // console.log("result.result[0]:", result.result[0]);
+
+      console.log("result.result[0].user_uid:", result.result[0].user_uid);
       if (result.message === "Correct Email" && result.result && result.result[0]) {
         const userUid = result.result[0];
         console.log("Extracted user_uid:", userUid);
@@ -246,7 +304,7 @@ export default function App() {
       // Extract email from idToken if user.email is null
       let userEmail = user.email;
 
-      // If email is null, try to extract it from the idToken
+      // If email is null, try to extract it from the idToken, which is a JSON Web Token (JWT)
       if (!userEmail && idToken) {
         try {
           const tokenParts = idToken.split(".");
