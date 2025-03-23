@@ -210,6 +210,11 @@ export default function App() {
       console.log("Sign-out successful");
       setUserInfo(null);
       setError(null);
+      // Reset all screen states to show initial welcome screen
+      setShowUserInfo(false);
+      setShowUserProfile(false);
+      setShowSignUp(false);
+      setShowLogin(false);
     } catch (error) {
       console.error("Sign-out error:", error);
       setError(error.message);
@@ -371,6 +376,14 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      {/* Logic: There are 4 states to track.  
+      ShowUserInfo
+      ShowUserProfile
+      ShowSignUp
+      ShowLogin
+      The App displays different pages depending on which is true.  
+      The Home Page is displayed when userInfo is False (ie no user info) and showSignUp and showLogin are false.
+       */}
       {!userInfo ? (
         showSignUp ? (
           <SignUpScreen
