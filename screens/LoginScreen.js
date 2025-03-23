@@ -12,7 +12,7 @@ const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/de
 const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
 const SOCIAL_LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
 
-export default function LoginScreen({ onGoogleSignIn, onAppleSignIn, onError, onSignUpPress, onSignInSuccess }) {
+export default function LoginScreen({ onGoogleSignIn, onAppleSignIn, onError, onSignUpPress, onSignInSuccess, onContinue }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isValid, setIsValid] = useState(false);
@@ -50,13 +50,13 @@ export default function LoginScreen({ onGoogleSignIn, onAppleSignIn, onError, on
       console.log("---Here 0---");
       setShowSpinner(true);
 
-      console.log("---Here 0.1---", email);
-      console.log(
-        "---Here 0.2---",
-        JSON.stringify({
-          email,
-        })
-      );
+      // console.log("---Here 0.1---", email);
+      // console.log(
+      //   "---Here 0.2---",
+      //   JSON.stringify({
+      //     email,
+      //   })
+      // );
 
       // 1. Get the salt for this email
       const saltResponse = await fetch(SALT_ENDPOINT, {
@@ -69,27 +69,27 @@ export default function LoginScreen({ onGoogleSignIn, onAppleSignIn, onError, on
         }),
       });
 
-      console.log("---Here 1---", saltResponse);
+      // console.log("---Here 1---", saltResponse);
       const saltObject = await saltResponse.json();
-      console.log("---Here 1.1---", saltObject);
+      // console.log("---Here 1.1---", saltObject);
 
       if (saltObject.code !== 200) {
         Alert.alert("Error", "User does not exist. Please Sign Up.");
         return;
       }
-      console.log("---Here 2---");
+      // console.log("---Here 2---");
 
       // 2. Combine salt with password and hash it
       const salt = saltObject.result[0].password_salt;
       const saltedPassword = password + salt;
       const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, saltedPassword);
-      console.log(
-        "---Here 3---",
-        JSON.stringify({
-          email,
-          password: hashedPassword,
-        })
-      );
+      // console.log(
+      //   "---Here 3---",
+      //   JSON.stringify({
+      //     email,
+      //     password: hashedPassword,
+      //   })
+      // );
 
       // 3. Call the Login endpoint with the hashed password
       const loginResponse = await fetch(LOGIN_ENDPOINT, {
@@ -102,16 +102,16 @@ export default function LoginScreen({ onGoogleSignIn, onAppleSignIn, onError, on
       });
 
       // 4. If success, store the user data in AsyncStorage
-      console.log("---Here 4---", loginResponse);
+      // console.log("---Here 4---", loginResponse);
       const loginObject = await loginResponse.json();
-      console.log("---Here 4.1---", loginObject);
+      // console.log("---Here 4.1---", loginObject);
       const { user_uid, user_email_id } = loginObject.result;
-      console.log("---Here 4.2---", user_uid, user_email_id);
+      // console.log("---Here 4.2---", user_uid, user_email_id);
       await AsyncStorage.setItem("user_uid", loginObject.result.user_uid);
       await AsyncStorage.setItem("user_email_id", loginObject.result.user_email_id);
 
       // 5. Create userInfo object and navigate
-      console.log("---Here 5---");
+      // console.log("---Here 5---");
       const userInfo = {
         user: {
           email: email,
@@ -123,6 +123,7 @@ export default function LoginScreen({ onGoogleSignIn, onAppleSignIn, onError, on
       // Call onSignInSuccess to trigger navigation
       if (onSignInSuccess) {
         onSignInSuccess(userInfo);
+        // onContinue();
       }
     } catch (error) {
       console.error("LP Error occurred:", error);
@@ -176,6 +177,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingTop: 100,
     padding: 20,
   },
   header: {
