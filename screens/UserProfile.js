@@ -108,8 +108,9 @@ export default function UserProfile({ onContinue, onEdit }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#fff",
+    paddingTop: 100,
+    padding: 20,
   },
   header: {
     flexDirection: "row",

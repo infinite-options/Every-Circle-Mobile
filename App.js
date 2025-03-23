@@ -88,7 +88,8 @@ export default function App() {
 
         // Update state
         setUserInfo(userInfo);
-        setShowUserProfile(true);
+        setShowUserInfo(false); // Don't show UserInfo screen
+        setShowUserProfile(true); // Show UserProfile directly
         setError(null);
       } else {
         throw new Error("Failed to get user_uid from sign-in response");
@@ -165,11 +166,11 @@ export default function App() {
         setShowUserInfo(true);
         setError(null);
       } else {
-        Alert.alert("Error", "Failed to create account. Please try again.", [{ text: "OK" }]);
+        Alert.alert("Error", "Failed to create account. Please try again. Error 3", [{ text: "OK" }]);
       }
     } catch (error) {
       console.error("Sign up error:", error);
-      Alert.alert("Error", "Failed to complete sign up. Please try again.", [{ text: "OK" }]);
+      Alert.alert("Error", "Failed to complete sign up. Please try again. Error 4", [{ text: "OK" }]);
       setError(error.message);
     }
   };
@@ -302,7 +303,8 @@ export default function App() {
 
         // Update state
         setUserInfo(userInfo);
-        setShowUserProfile(true);
+        setShowUserInfo(false); // Don't show UserInfo screen
+        setShowUserProfile(true); // Show UserProfile directly
         setError(null);
       } else {
         throw new Error("Failed to get user_uid from sign-in response");
@@ -389,10 +391,10 @@ export default function App() {
 
       // Handle response
       if (result.message === "User already exists") {
-        const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
+        // const appleLoginEndpoint = "https://41c664jpz1.execute-api.us-west-1.amazonaws.com/dev/appleLogin";
         console.log("Calling appleLogin endpoint with ID:", user.id);
 
-        const loginResponse = await fetch(appleLoginEndpoint, {
+        const loginResponse = await fetch(APPLE_SIGNIN_ENDPOINT, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -409,7 +411,8 @@ export default function App() {
           await AsyncStorage.setItem("user_uid", userData.user_uid);
           await AsyncStorage.setItem("user_email_id", userData.user_email_id || userEmail);
           setUserInfo(userInfo);
-          setShowUserInfo(true);
+          setShowUserInfo(false);
+          setShowUserProfile(true);
           setError(null);
         } else {
           Alert.alert("Error", "Failed to login with Apple. Please try again.");
@@ -430,7 +433,7 @@ export default function App() {
         setShowUserInfo(true);
         setError(null);
       } else {
-        Alert.alert("Error", "Failed to create account. Please try again.");
+        Alert.alert("Error", "Failed to create account. Please try again. Error 2");
       }
     } catch (error) {
       console.error("Apple sign-up error:", error);
@@ -499,7 +502,8 @@ export default function App() {
             onSignInSuccess={(userInfo) => {
               setUserInfo(userInfo);
               setShowLogin(false);
-              setShowUserInfo(true);
+              setShowUserInfo(false); // Don't show UserInfo screen
+              setShowUserProfile(true); // Show UserProfile directly
             }}
           />
         ) : (
@@ -526,7 +530,7 @@ export default function App() {
                 </View>
               </View>
             </View>
-            <View style={styles.authContainer}>
+            {/* <View style={styles.authContainer}>
               <Text style={styles.title}>Sign In</Text>
               {error && <Text style={styles.error}>Error: {error}</Text>}
               <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signIn} />
@@ -535,7 +539,7 @@ export default function App() {
               {error && <Text style={styles.error}>Error: {error}</Text>}
               <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signUp} />
               <AppleSignIn onSignIn={handleAppleSignUp} onError={handleError} />
-            </View>
+            </View> */}
             {showSpinner && (
               <View style={styles.spinnerContainer}>
                 <ActivityIndicator size='large' color='#0000ff' />
@@ -568,7 +572,7 @@ const styles = StyleSheet.create({
   },
   circlesContainer: {
     position: "absolute",
-    top: 50,
+    top: 150,
     left: 0,
     right: 0,
     height: 300,

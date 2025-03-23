@@ -114,7 +114,15 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
       const createAccountData = await createAccountResponse.json();
       console.log("Create account response:", createAccountData);
 
-      if (createAccountData.code === 281 && createAccountData.user_uid) {
+      if (createAccountData.message === "User already exists") {
+        // In the future just log in the user
+        Alert.alert("User Already Exists", "This email is already registered. Please log in instead.", [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+        ]);
+      } else if (createAccountData.code === 281 && createAccountData.user_uid) {
         // Store user data
         await AsyncStorage.setItem("user_uid", createAccountData.user_uid);
         await AsyncStorage.setItem("user_email_id", email);
@@ -128,24 +136,27 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
           },
         };
 
+        if (onSignUpSuccess) {
+          onSignUpSuccess(userInfo);
+        }
         // Show success message
-        Alert.alert("Success", "Account created successfully!", [
-          {
-            text: "OK",
-            onPress: () => {
-              // Call onSignUpSuccess with userInfo to trigger navigation
-              if (onSignUpSuccess) {
-                onSignUpSuccess(userInfo);
-              }
-            },
-          },
-        ]);
+        // Alert.alert("Success", "Account created successfully!", [
+        //   {
+        //     text: "OK",
+        //     onPress: () => {
+        //       // Call onSignUpSuccess with userInfo to trigger navigation
+        //       if (onSignUpSuccess) {
+        //         onSignUpSuccess(userInfo);
+        //       }
+        //     },
+        //   },
+        // ]);
       } else {
-        throw new Error("Failed to create account");
+        throw new Error("Failed to create account. User already exists.");
       }
     } catch (error) {
       console.error("Error in account creation:", error);
-      Alert.alert("Error", "Failed to create account. Please try again.", [{ text: "OK" }]);
+      Alert.alert("Error", "Failed to create account. Please try again. Error 1", [{ text: "OK" }]);
     }
   };
 
@@ -195,6 +206,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingTop: 100,
     padding: 20,
   },
   header: {
