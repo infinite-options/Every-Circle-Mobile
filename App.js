@@ -66,75 +66,18 @@ export default function App() {
   }, []);
 
   const handleSignIn = async (userInfo) => {
-    console.log("Apple sign-in called with userInfo:", JSON.stringify(userInfo, null, 2));
-    let result = null;
-    // Set a timeout to reset the sign-in state in case the process hangs
-    const signInTimeoutId = setTimeout(() => {
-      console.log("Apple sign-up timeout - resetting state");
-      setSignInInProgress(false);
-      setShowSpinner(false);
-    }, 30000); // 30 seconds timeout
-
     try {
-      setShowSpinner(true);
-      setSignInInProgress(true);
-
-      // Extract user data from Apple Sign In response
-      const { user, idToken } = userInfo;
-
-      console.log("Apple User ID:", user.id);
-      console.log("Apple User Email:", user.email);
-      console.log("Apple User Name:", user.name);
-      console.log("Apple ID Token Length:", idToken ? idToken.length : 0);
-
-      // Extract email from idToken if user.email is null
-      let userEmail = user.email;
-
-      // If email is null, try to extract it from the idToken, which is a JSON Web Token (JWT)
-      if (!userEmail && idToken) {
-        try {
-          const tokenParts = idToken.split(".");
-          if (tokenParts.length >= 2) {
-            const payload = JSON.parse(atob(tokenParts[1]));
-            if (payload.email) {
-              userEmail = payload.email;
-              console.log("Extracted email from idToken:", userEmail);
-            }
-          }
-        } catch (e) {
-          console.log("Error extracting email from idToken:", e);
-        }
-      }
-
+      console.log("handleSignIn - userInfo:", userInfo);
+      const { user } = userInfo;
+      const userEmail = user.email;
       console.log("User email for sign in:", userEmail);
 
-      // Logic for Apple
-      if (userEmail === null) {
-        console.log("User email is null, calling AppleSignIn Endpoint");
-        const response = await fetch(APPLE_SIGNIN_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: user.id }),
-        });
-        const result = await response.json();
-        console.log("Apple Login endpoint response:", result);
-        return;
-      } else {
-        // Call the sign-in endpoint
-        const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userEmail}`);
+      // Call the sign-in endpoint
+      const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userEmail}`);
 
-        result = await response.json();
-        console.log("Sign-in endpoint response:", result);
-        // console.log("result:", result);
-        // console.log("result.result:", result.result);
-        // console.log("result.result[0]:", result.result[0]);
-      }
+      const result = await response.json();
+      console.log("Sign-in endpoint response:", result);
 
-      // console.log("result:", result);
-      // console.log("result.result:", result.result);
-      // console.log("result.result[0]:", result.result[0]);
-
-      console.log("result.result[0].user_uid:", result.result[0].user_uid);
       if (result.message === "Correct Email" && result.result && result.result[0]) {
         const userUid = result.result[0];
         console.log("Extracted user_uid:", userUid);
@@ -275,6 +218,98 @@ export default function App() {
       setShowLogin(false);
     } catch (error) {
       console.error("Sign-out error:", error);
+      setError(error.message);
+    }
+  };
+
+  const handleAppleSignIn = async (userInfo) => {
+    console.log("Apple sign-in called with userInfo:", JSON.stringify(userInfo, null, 2));
+    let result = null;
+    // Set a timeout to reset the sign-in state in case the process hangs
+    const signInTimeoutId = setTimeout(() => {
+      console.log("Apple sign-up timeout - resetting state");
+      setSignInInProgress(false);
+      setShowSpinner(false);
+    }, 30000); // 30 seconds timeout
+
+    try {
+      setShowSpinner(true);
+      setSignInInProgress(true);
+
+      // Extract user data from Apple Sign In response
+      const { user, idToken } = userInfo;
+
+      console.log("Apple User ID:", user.id);
+      console.log("Apple User Email:", user.email);
+      console.log("Apple User Name:", user.name);
+      console.log("Apple ID Token Length:", idToken ? idToken.length : 0);
+
+      // Extract email from idToken if user.email is null
+      let userEmail = user.email;
+
+      // If email is null, try to extract it from the idToken, which is a JSON Web Token (JWT)
+      if (!userEmail && idToken) {
+        try {
+          const tokenParts = idToken.split(".");
+          if (tokenParts.length >= 2) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            if (payload.email) {
+              userEmail = payload.email;
+              console.log("Extracted email from idToken:", userEmail);
+            }
+          }
+        } catch (e) {
+          console.log("Error extracting email from idToken:", e);
+        }
+      }
+
+      console.log("User email for sign in:", userEmail);
+
+      // Logic for Apple
+      if (userEmail === null) {
+        console.log("User email is null, calling AppleSignIn Endpoint");
+        const response = await fetch(APPLE_SIGNIN_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: user.id }),
+        });
+        const result = await response.json();
+        console.log("Apple Login endpoint response:", result);
+        return;
+      } else {
+        // Call the sign-in endpoint
+        const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userEmail}`);
+
+        result = await response.json();
+        console.log("Sign-in endpoint response:", result);
+        // console.log("result:", result);
+        // console.log("result.result:", result.result);
+        // console.log("result.result[0]:", result.result[0]);
+      }
+
+      // console.log("result:", result);
+      // console.log("result.result:", result.result);
+      // console.log("result.result[0]:", result.result[0]);
+
+      console.log("result.result[0].user_uid:", result.result[0].user_uid);
+      if (result.message === "Correct Email" && result.result && result.result[0]) {
+        const userUid = result.result[0];
+        console.log("Extracted user_uid:", userUid);
+
+        // Save the user_uid to AsyncStorage
+        await AsyncStorage.setItem("user_uid", userUid);
+        await AsyncStorage.setItem("user_email_id", userEmail);
+
+        // Update state
+        setUserInfo(userInfo);
+        setShowUserProfile(true);
+        setError(null);
+      } else {
+        throw new Error("Failed to get user_uid from sign-in response");
+      }
+    } catch (error) {
+      console.error("Error in handleAppleSignIn:", error);
+      Alert.alert("Error", "Failed to complete sign in. Please try again.");
       setError(error.message);
     }
   };
@@ -458,7 +493,7 @@ export default function App() {
         ) : showLogin ? (
           <LoginScreen
             onGoogleSignIn={signIn}
-            onAppleSignIn={handleSignIn}
+            onAppleSignIn={handleAppleSignIn}
             onError={handleError}
             onSignUpPress={handleSignUpClick}
             onSignInSuccess={(userInfo) => {
@@ -495,7 +530,7 @@ export default function App() {
               <Text style={styles.title}>Sign In</Text>
               {error && <Text style={styles.error}>Error: {error}</Text>}
               <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signIn} />
-              <AppleSignIn onSignIn={handleSignIn} onError={handleError} />
+              <AppleSignIn onSignIn={handleAppleSignIn} onError={handleError} />
               <Text style={styles.title}>Sign Up</Text>
               {error && <Text style={styles.error}>Error: {error}</Text>}
               <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signUp} />
