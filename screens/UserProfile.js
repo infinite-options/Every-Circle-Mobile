@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import MenuBar from "../components/MenuBar";
 
 export default function UserProfile({ onContinue, onEdit }) {
   console.log("UserProfile - Rendering");
@@ -45,6 +46,11 @@ export default function UserProfile({ onContinue, onEdit }) {
     }
   };
 
+  const handleMenuPress = (menuItem) => {
+    console.log(`${menuItem} pressed`);
+    // Add specific navigation logic here
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -60,6 +66,13 @@ export default function UserProfile({ onContinue, onEdit }) {
         <TouchableOpacity style={styles.button} onPress={onEdit}>
           <Text style={styles.buttonText}>Complete Your Profile</Text>
         </TouchableOpacity>
+        <MenuBar
+          onProfilePress={() => handleMenuPress("Profile")}
+          onSettingsPress={() => handleMenuPress("Settings")}
+          onAccountPress={() => handleMenuPress("Account")}
+          onNetworkPress={() => handleMenuPress("Network")}
+          onSearchPress={() => handleMenuPress("Search")}
+        />
       </View>
     );
   }
@@ -101,6 +114,14 @@ export default function UserProfile({ onContinue, onEdit }) {
       <TouchableOpacity style={styles.button} onPress={onContinue}>
         <Text style={styles.buttonText}>Continue</Text>
       </TouchableOpacity>
+
+      <MenuBar
+        onProfilePress={() => handleMenuPress("Profile")}
+        onSettingsPress={() => handleMenuPress("Settings")}
+        onAccountPress={() => handleMenuPress("Account")}
+        onNetworkPress={() => handleMenuPress("Network")}
+        onSearchPress={() => handleMenuPress("Search")}
+      />
     </View>
   );
 }
@@ -155,7 +176,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: "auto",
+    marginBottom: 80, // Added to ensure button is above menu bar
   },
   buttonText: {
     color: "#fff",
