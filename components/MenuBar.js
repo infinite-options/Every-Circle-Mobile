@@ -1,26 +1,29 @@
 import React from "react";
 import { View, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { useNavigation } from "../contexts/NavigationContext";
 
-export default function MenuBar({ onProfilePress, onSettingsPress, onAccountPress, onNetworkPress, onSearchPress }) {
+export default function MenuBar() {
+  const { navigateTo } = useNavigation();
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onProfilePress} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigateTo("Profile")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/profile.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onSettingsPress} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigateTo("Settings")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/settings.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onAccountPress} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigateTo("Account")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/account.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onNetworkPress} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigateTo("Network")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/network.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onSearchPress} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigateTo("Search")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/search.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
     </View>

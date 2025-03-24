@@ -46,11 +46,6 @@ export default function UserProfile({ onContinue, onEdit }) {
     }
   };
 
-  const handleMenuPress = (menuItem) => {
-    console.log(`${menuItem} pressed`);
-    // Add specific navigation logic here
-  };
-
   if (loading) {
     return (
       <View style={styles.container}>
@@ -66,13 +61,7 @@ export default function UserProfile({ onContinue, onEdit }) {
         <TouchableOpacity style={styles.button} onPress={onEdit}>
           <Text style={styles.buttonText}>Complete Your Profile</Text>
         </TouchableOpacity>
-        <MenuBar
-          onProfilePress={() => handleMenuPress("Profile")}
-          onSettingsPress={() => handleMenuPress("Settings")}
-          onAccountPress={() => handleMenuPress("Account")}
-          onNetworkPress={() => handleMenuPress("Network")}
-          onSearchPress={() => handleMenuPress("Search")}
-        />
+        <MenuBar />
       </View>
     );
   }
@@ -82,46 +71,42 @@ export default function UserProfile({ onContinue, onEdit }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Profile Information</Text>
-        <TouchableOpacity onPress={onEdit} style={styles.editButton}>
-          <Image source={require("../assets/EditIcon.png")} style={styles.editIcon} />
+      <View style={styles.contentContainer}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Profile Information</Text>
+          <TouchableOpacity onPress={onEdit} style={styles.editButton}>
+            <Image source={require("../assets/EditIcon.png")} style={styles.editIcon} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.infoContainer}>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>First Name</Text>
+            <Text style={styles.value}>{personalInfo.profile_personal_first_name || "N/A"}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Last Name</Text>
+            <Text style={styles.value}>{personalInfo.profile_personal_last_name || "N/A"}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.value}>{personalInfo.profile_personal_phone_number || "N/A"}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Email</Text>
+            <Text style={styles.value}>{profileData?.user_email || "N/A"}</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={onContinue}>
+          <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.infoContainer}>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>First Name</Text>
-          <Text style={styles.value}>{personalInfo.profile_personal_first_name || "N/A"}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Last Name</Text>
-          <Text style={styles.value}>{personalInfo.profile_personal_last_name || "N/A"}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Phone Number</Text>
-          <Text style={styles.value}>{personalInfo.profile_personal_phone_number || "N/A"}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{profileData?.user_email || "N/A"}</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.button} onPress={onContinue}>
-        <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
-
-      <MenuBar
-        onProfilePress={() => handleMenuPress("Profile")}
-        onSettingsPress={() => handleMenuPress("Settings")}
-        onAccountPress={() => handleMenuPress("Account")}
-        onNetworkPress={() => handleMenuPress("Network")}
-        onSearchPress={() => handleMenuPress("Search")}
-      />
+      <MenuBar />
     </View>
   );
 }
@@ -130,9 +115,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 100,
-    padding: 20,
     width: "100%",
+  },
+  contentContainer: {
+    flex: 1,
+    paddingTop: 60, // Manual safe area handling
+    padding: 20,
   },
   header: {
     flexDirection: "row",
