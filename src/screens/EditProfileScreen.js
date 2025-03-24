@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Switch} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image} from 'react-native';
 import axios from 'axios';
 import MiniCard from '../components/MiniCard';
 import ExperienceSection from "../components/ExperienceSection";
+import EducationSection from '../components/EducationSection';
+import WishesSection from "../components/WishesSection";
+
+
 
 
 const ProfileScreenAPI = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
@@ -40,10 +44,10 @@ const EditProfileScreen = ({ route, navigation }) => {
       expertiseIsPublic: user?.expertiseIsPublic || false,
       wishesIsPublic: user?.wishesIsPublic || false,
       experience: user?.experience || [{ company: '', title: '', startDate: '', endDate: '', isPublic: true  }],
-      education: user?.education || [{ school: '', degree: '', startDate: '', endDate: '' }],
+      education: user?.education || [{ school: '', degree: '', startDate: '', endDate: '', isPublic: true }],
       businesses: user?.businesses || [{ name: '', industry: '', location: '' }],
       expertise: user?.expertise || [{ headline: '', description: '', cost: '', bounty: '' }],
-      wishes: user?.wishes || [{ helpNeeds: '', details: '' }],
+      wishes: user?.wishes || [{ helpNeeds: '', details: '', isPublic: true }],
       facebook: user?.facebook || '',
       twitter: user?.twitter || '',
       linkedin: user?.linkedin || '',
@@ -388,7 +392,7 @@ const EditProfileScreen = ({ route, navigation }) => {
 
 
 
-
+ {/* Experience Section */}
 
 <ExperienceSection
   experience={formData.experience}
@@ -398,73 +402,36 @@ const EditProfileScreen = ({ route, navigation }) => {
 />
 
 
+ {/* Education Section */}
+ <EducationSection
+  education={formData.education}
+  setEducation={(updatedEducation) => setFormData({ ...formData, education: updatedEducation })}
+  toggleVisibility={() => toggleVisibility("educationIsPublic")}
+  isPublic={formData.educationIsPublic}
+/>
+
+
+ {/* Businesses Section */}
 
 
 
 
+ {/* Expertise Section */}
 
 
-      {/* Experience Section */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Experience:</Text>
-          <TouchableOpacity 
-            style={[
-              styles.toggleButton
-              ]}  
-            onPress={() => toggleVisibility('experienceIsPublic')}
-          >
-            <Text style={[styles.toggleText, { color: formData.experienceIsPublic ? '#4CAF50' : '#f44336' }]}>
-              {formData.experienceIsPublic ? 'Public' : 'Private'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Company"
-          value={formData.experience[0]?.company || ''}
-          onChangeText={(text) => {
-            const newExperience = [...formData.experience];
-            if (newExperience.length === 0) {
-              newExperience.push({ company: text, title: '', startDate: '', endDate: '' });
-            } else {
-              newExperience[0] = { ...newExperience[0], company: text };
-            }
-            setFormData({ ...formData, experience: newExperience });
-          }}
-        />
-      </View>
 
-      {/* Education Section */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Education:</Text>
-          <TouchableOpacity 
-            style={[
-              styles.toggleButton
-              ]}  
-            onPress={() => toggleVisibility('educationIsPublic')}
-          >
-            <Text style={[styles.toggleText, { color: formData.educationIsPublic ? '#4CAF50' : '#f44336' }]}>
-              {formData.educationIsPublic ? 'Public' : 'Private'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <TextInput
-          style={styles.input}
-          placeholder="School"
-          value={formData.education[0]?.school || ''}
-          onChangeText={(text) => {
-            const newEducation = [...formData.education];
-            if (newEducation.length === 0) {
-              newEducation.push({ school: text, degree: '', startDate: '', endDate: '' });
-            } else {
-              newEducation[0] = { ...newEducation[0], school: text };
-            }
-            setFormData({ ...formData, education: newEducation });
-          }}
-        />
-      </View>
+
+ {/* Wishes Section */}
+ <WishesSection
+  wishes={formData.wishes}
+  setWishes={(updatedWishes) => setFormData({ ...formData, wishes: updatedWishes })}
+  toggleVisibility={() => toggleVisibility("wishesIsPublic")}
+  isPublic={formData.wishesIsPublic}
+/>
+
+
+     
+      
 
        {/**  Businesses Section **/}
        <View style={styles.sectionContainer}>
@@ -522,40 +489,42 @@ const EditProfileScreen = ({ route, navigation }) => {
         />
       </View>
 
-      {/* Wishes Section */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Wishes:</Text>
-          <TouchableOpacity 
-            style={[
-              styles.toggleButton
-              ]}  
-            onPress={() => toggleVisibility('wishesIsPublic')}
-          >
-            <Text style={[styles.toggleText, { color: formData.wishesIsPublic ? '#4CAF50' : '#f44336' }]}>
-              {formData.wishesIsPublic ? 'Public' : 'Private'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Help Needs"
-          value={formData.wishes[0]?.helpNeeds || ''}
-          onChangeText={(text) => {
-            const newWishes = [...formData.wishes];
-            if (newWishes.length === 0) {
-              newWishes.push({ helpNeeds: text, details: '' });
-            } else {
-              newWishes[0] = { ...newWishes[0], helpNeeds: text };
-            }
-            setFormData({ ...formData, wishes: newWishes });
-          }}
-        />
-      </View>
+      
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveText}>Save Changes</Text>
+        <Text style={styles.saveText}>Save</Text>
       </TouchableOpacity>
+
+
+
+      {/* Bottom Navigation Buttons */}
+<View style={styles.navContainer}>
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+    <Image source={require('../assets/profile.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Profile</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
+    <Image source={require('../assets/setting.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Settings</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
+    <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Home</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+    <Image source={require('../assets/share.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Share</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
+    <Image source={require('../assets/search.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Search</Text>
+  </TouchableOpacity>
+</View>
+
     </ScrollView>
   );
 };
@@ -595,20 +564,52 @@ const styles = StyleSheet.create({
     fontWeight: 'bold' 
   },
   saveButton: { 
-    backgroundColor: '#007BFF', 
-    padding: 15, 
-    borderRadius: 10, 
-    marginTop: 20, 
-    alignItems: 'center' 
+    backgroundColor: '#FFA500', 
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginVertical: 20,
+    // elevation: 4,
   },
   saveText: { 
     color: '#fff', 
-    fontSize: 16, 
-    fontWeight: 'bold' 
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center'
   },
   previewSection: { marginBottom: 20 },
   previewCard: { marginBottom: 10 },
   previewSubtitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
+
+
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+  },
+  
+  navButton: {
+    alignItems: 'center',
+  },
+  
+  navIcon: {
+    width: 25,
+    height: 25,
+  },
+  
+  navLabel: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
+  }
+  
 });
 
 export default EditProfileScreen;

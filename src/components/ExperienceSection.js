@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 
 const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPublic }) => {
   const addExperience = () => {
@@ -26,7 +26,7 @@ const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPubl
 
         {/* Add Experience Button */}
         <TouchableOpacity onPress={addExperience}>
-          <Text style={styles.addText}>+ Add</Text>
+          <Text style={styles.addText}>+</Text>
         </TouchableOpacity>
 
         {/* Public Toggle */}
@@ -37,14 +37,6 @@ const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPubl
         </TouchableOpacity>
 
         </View>
-
-
-
-
-
-
-
-
 
 
 
@@ -121,7 +113,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   label: { fontSize: 18, fontWeight: "bold" },
-  addText: { fontSize: 16, fontWeight: "bold", color: "#333" },
+  addText: { fontSize: 20, fontWeight: "bold", color: "#333" },
   toggleText: { fontSize: 14, fontWeight: "bold" },
   experienceCard: {
     backgroundColor: "#F5F5F5",

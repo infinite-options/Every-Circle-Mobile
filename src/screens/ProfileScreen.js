@@ -202,7 +202,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
 
 
-
+{/* Display Experience */}
 
 
       {user.experience?.some(exp => exp.isPublic) && (
@@ -226,10 +226,73 @@ const ProfileScreen = ({ route, navigation }) => {
 )}
 
 
+{/* Display Education */}
+
+{user.education?.some(edu => edu.isPublic) && (
+  <View style={styles.fieldContainer}>
+    <Text style={styles.label}>Education:</Text>
+    {user.education.filter(edu => edu.isPublic).map((edu, index) => (
+      <View key={index} style={styles.inputContainer}>
+        <Text style={styles.inputText}>{edu.startDate || 'Start'} - {edu.endDate || 'End'}</Text>
+        <Text style={styles.inputText}>{edu.degree || 'Degree not specified'}</Text>
+        <Text style={styles.inputText}>{edu.school || 'School not specified'}</Text>
+      </View>
+    ))}
+  </View>
+)}
+
+
+{/* Display Wishes */}
+
+{user.wishes?.some(wish => wish.isPublic) && (
+  <View style={styles.fieldContainer}>
+    <Text style={styles.label}>Wishes:</Text>
+    {user.wishes.filter(wish => wish.isPublic).map((wish, index) => (
+      <View key={index} style={styles.inputContainer}>
+        <Text style={styles.inputText}>
+          {wish.helpNeeds || "No Title"}
+        </Text>
+        <Text style={styles.inputText}>
+          {wish.details || "No Description"}
+        </Text>
+        <Text style={styles.inputText}>
+          💰 {wish.amount ? `$${wish.amount}` : "Free"}
+        </Text>
+      </View>
+    ))}
+  </View>
+)}
 
 
 
 
+ {/* Bottom Navigation Buttons */}
+ <View style={styles.navContainer}>
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+    <Image source={require('../assets/profile.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Profile</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
+    <Image source={require('../assets/setting.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Settings</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
+    <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Home</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+    <Image source={require('../assets/share.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Share</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
+    <Image source={require('../assets/search.png')} style={styles.navIcon} />
+    <Text style={styles.navLabel}>Search</Text>
+  </TouchableOpacity>
+</View>
 
 
     </ScrollView>
@@ -265,6 +328,32 @@ const styles = StyleSheet.create({
     height: 30
   },
   errorText: { fontSize: 18, color: 'red', textAlign: 'center', marginTop: 20 },
+
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+  },
+  
+  navButton: {
+    alignItems: 'center',
+  },
+  
+  navIcon: {
+    width: 25,
+    height: 25,
+  },
+  
+  navLabel: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
+  }
+  
 });
 
 export default ProfileScreen;

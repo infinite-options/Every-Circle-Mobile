@@ -56,7 +56,6 @@ android/app/build/intermediates/
 
 # Build directories
 ios/
-android/
 
 # Secrets
 secrets.json
