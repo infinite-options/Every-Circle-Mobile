@@ -3,11 +3,6 @@ import { View, Text, StyleSheet } from "react-native";
 import MenuBar from "../components/MenuBar";
 
 export default function AccountScreen() {
-  const handleMenuPress = (menuItem) => {
-    console.log(`${menuItem} pressed`);
-    // Navigation will be implemented in the next step
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer}>
@@ -20,13 +15,7 @@ export default function AccountScreen() {
         </View>
       </View>
 
-      <MenuBar
-        onProfilePress={() => handleMenuPress("Profile")}
-        onSettingsPress={() => handleMenuPress("Settings")}
-        onAccountPress={() => handleMenuPress("Account")}
-        onNetworkPress={() => handleMenuPress("Network")}
-        onSearchPress={() => handleMenuPress("Search")}
-      />
+      <MenuBar />
     </View>
   );
 }

@@ -11,6 +11,8 @@ import LoginScreen from "./screens/LoginScreen";
 import Constants from "expo-constants";
 import AppleSignIn from "./AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationProvider } from "./contexts/NavigationContext";
+import AppNavigator from "./components/AppNavigator";
 
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
 const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
@@ -550,7 +552,9 @@ export default function App() {
       ) : showUserInfo ? (
         <UserInfoScreen onContinue={handleUserInfoComplete} />
       ) : showUserProfile ? (
-        <UserProfile onContinue={handleUserProfileComplete} onEdit={handleEditProfile} />
+        <NavigationProvider>
+          <AppNavigator onContinue={handleUserProfileComplete} onEdit={handleEditProfile} onLogout={signOut} />
+        </NavigationProvider>
       ) : (
         <View style={styles.mainContainer}>
           <View style={styles.header}>
