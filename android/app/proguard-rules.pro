@@ -15,4 +15,7 @@
 
 # @generated begin expo-build-properties - expo prebuild (DO NOT MODIFY)
 -keep class com.google.android.gms.maps.** { *; }
+-keep class com.google.android.gms.maps.** { *; }
+-keep class com.google.android.gms.maps.** { *; }
+-keep class com.google.android.gms.maps.** { *; }
 # @generated end expo-build-properties
