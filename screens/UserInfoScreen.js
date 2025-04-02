@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function UserInfoScreen({ onContinue }) {
+export default function UserInfoScreen({ navigation }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -82,6 +82,7 @@ export default function UserInfoScreen({ onContinue }) {
 
       // Get the user_uid from AsyncStorage
       const userUid = await AsyncStorage.getItem("user_uid");
+      const email = await AsyncStorage.getItem("user_email");
       if (!userUid) {
         throw new Error("User UID not found");
       }
@@ -136,7 +137,13 @@ export default function UserInfoScreen({ onContinue }) {
       }
 
       console.log("Profile update successful, proceeding to next screen");
-      onContinue();
+      
+      // navigate to account type screen
+      Alert.alert('Success', 'Profile saved successfully!');
+      navigation.navigate('AccountType', {
+          user_uid: userUid,
+          email: email
+      });
     } catch (error) {
       console.error("Error updating user profile:", error);
       Alert.alert("Error", `Failed to update profile: ${error.message}`);
