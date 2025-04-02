@@ -2,14 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 
 const MiniCard = ({ user }) => {
-  // console.log("🔍 Received user data in MiniCard:", JSON.stringify(user, null, 2));
-
-  // Extract user info
-  // const firstName = user?.firstName || '';
-  // const lastName = user?.lastName || '';
-  // const email = user?.email || '';
-  // const phone = user?.phoneNumber || '';
-  // const tagLine = user?.tagLine || '';
+  // console.log(" Received user data in MiniCard:", JSON.stringify(user, null, 2));
 
   const firstName = user?.personal_info?.profile_personal_first_name ||  user?.firstName ||'';
   const lastName = user?.personal_info?.profile_personal_last_name || user?.lastName || '';

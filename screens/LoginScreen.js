@@ -281,6 +281,8 @@ import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+// import SignUpScreen from "./screens/SignUpScreen";
+
 
 // Endpoints
 const SALT_ENDPOINT =
@@ -296,7 +298,6 @@ export default function LoginScreen({
   onGoogleSignIn,
   onAppleSignIn,
   onError,
-  onSignUpPress,
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -448,11 +449,13 @@ export default function LoginScreen({
       <View style={styles.footer}>
         <Text style={styles.footerText}>
           Don't have an account?{" "}
-          <Text style={styles.signUpText} onPress={onSignUpPress}>
+          <Text style={styles.signUpText} onPress={() => navigation.navigate("SignUp")}>
             Sign Up
           </Text>
         </Text>
       </View>
+
+
     </View>
   );
 }

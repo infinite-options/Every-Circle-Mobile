@@ -4,6 +4,7 @@ import axios from 'axios';
 import ExperienceSection from '../components/ExperienceSection';
 import EducationSection from '../components/EducationSection';
 import WishesSection from '../components/WishesSection';
+import MiniCard from '../components/MiniCard';
 
 const ProfileScreenAPI = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
 
@@ -143,9 +144,17 @@ const EditProfileScreen = ({ route, navigation }) => {
     }
   };
 
-  const renderField = (label, value, isPublic, fieldName, editable = true) => (
+  const renderField = (label, value, isPublic, fieldName, visibilityFieldName, editable = true) => (
     <View style={styles.fieldContainer}>
+    {/* Row: Label and Toggle */}
+    <View style={styles.labelRow}>
       <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity onPress={() => toggleVisibility(visibilityFieldName)}>
+        <Text style={[styles.toggleText, { color: isPublic ? 'green' : 'red' }]}>
+          {isPublic ? 'Public' : 'Private'}
+        </Text>
+      </TouchableOpacity>
+    </View>
       <TextInput
         style={[styles.input, !editable && styles.disabledInput]}
         value={value}
@@ -153,21 +162,48 @@ const EditProfileScreen = ({ route, navigation }) => {
         editable={editable}
         placeholder={`Enter ${label.toLowerCase()}`}
       />
-      <TouchableOpacity onPress={() => toggleVisibility(fieldName + 'IsPublic')}>
-        <Text style={{ color: isPublic ? 'green' : 'red' }}>{isPublic ? 'Public' : 'Private'}</Text>
-      </TouchableOpacity>
     </View>
   );
+
+  // Create a preview user object for the MiniCard that matches ProfileScreen structure
+  const previewUser = {
+    firstName: formData.firstName,
+    lastName: formData.lastName,
+    email: formData.email,
+    phoneNumber: formData.phoneNumber,
+    tagLine: formData.tagLine,
+    // Include visibility flags
+    emailIsPublic: formData.emailIsPublic,
+    phoneIsPublic: formData.phoneIsPublic,
+    tagLineIsPublic: formData.tagLineIsPublic,
+    shortBioIsPublic: formData.shortBioIsPublic,
+    experienceIsPublic: formData.experienceIsPublic,
+    educationIsPublic: formData.educationIsPublic,
+    expertiseIsPublic: formData.expertiseIsPublic,
+    wishesIsPublic: formData.wishesIsPublic
+  };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Edit Profile</Text>
-      {renderField('First Name', formData.firstName, true, 'firstName')}
-      {renderField('Last Name', formData.lastName, true, 'lastName')}
-      {renderField('Phone Number', formData.phoneNumber, formData.phoneIsPublic, 'phoneNumber')}
-      {renderField('Email', formData.email, formData.emailIsPublic, 'email')}
-      {renderField('Tag Line', formData.tagLine, formData.tagLineIsPublic, 'tagLine')}
-      {renderField('Short Bio', formData.shortBio, formData.shortBioIsPublic, 'shortBio')}
+
+
+      {renderField('First Name (Public)', formData.firstName, true, 'firstName', 'firstNameIsPublic')}
+      {renderField('Last Name (Public)', formData.lastName, true, 'lastName', 'lastNameIsPublic')}
+      {renderField('Phone Number', formData.phoneNumber, formData.phoneIsPublic, 'phoneNumber', 'phoneIsPublic')}
+      {renderField('Email', formData.email, formData.emailIsPublic, 'email', 'emailIsPublic')}
+      {renderField('Tag Line', formData.tagLine, formData.tagLineIsPublic, 'tagLine', 'tagLineIsPublic')}
+      
+      
+      {/* MiniCard Live Preview Section */}
+      <View style={styles.previewSection}>
+        <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
+        <View style={styles.previewCard}>
+          <MiniCard user={previewUser} />
+        </View>
+      </View>
+      
+      {renderField('Short Bio', formData.shortBio, formData.shortBioIsPublic, 'shortBio', 'shortBioIsPublic')}
 
       <ExperienceSection experience={formData.experience} setExperience={(e) => setFormData({ ...formData, experience: e })} toggleVisibility={() => toggleVisibility('experienceIsPublic')} isPublic={formData.experienceIsPublic} />
       <EducationSection education={formData.education} setEducation={(e) => setFormData({ ...formData, education: e })} toggleVisibility={() => toggleVisibility('educationIsPublic')} isPublic={formData.educationIsPublic} />
@@ -176,6 +212,36 @@ const EditProfileScreen = ({ route, navigation }) => {
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveText}>Save</Text>
       </TouchableOpacity>
+
+
+
+      
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+          <Image source={require('../assets/profile.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Profile</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
+          <Image source={require('../assets/setting.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Settings</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
+          <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+          <Image source={require('../assets/share.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Share</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
+          <Image source={require('../assets/search.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Search</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
@@ -197,7 +263,22 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginVertical: 20
   },
-  saveText: { color: '#fff', fontSize: 20, fontWeight: 'bold' }
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  saveText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  navContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 20, paddingVertical: 10, borderTopWidth: 1, borderColor: '#ddd' },
+  navButton: { alignItems: 'center' },
+  navIcon: { width: 25, height: 25 },
+  navLabel: { fontSize: 12, color: '#333', marginTop: 4 }
 });
 
 export default EditProfileScreen;
