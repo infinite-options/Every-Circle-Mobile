@@ -84,7 +84,7 @@ import AccountScreen from "./screens/AccountScreen";
 import NetworkScreen from "./screens/NetworkScreen";
 import SearchScreen from "./screens/SearchScreen";
 import AppleSignIn from "./AppleSignIn"; // Component for Apple Sign In button
-
+import AccountTypeScreen from "./screens/AccountTypeScreen";
 const Stack = createNativeStackNavigator();
 
 const GOOGLE_SIGNUP_ENDPOINT =
@@ -317,6 +317,7 @@ export default function App() {
         />
         <Stack.Screen name="UserInfo" component={UserInfoScreen} />
         {/* <Stack.Screen name="UserProfile" component={UserProfile} /> */}
+        <Stack.Screen name="AccountType" component={AccountTypeScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />

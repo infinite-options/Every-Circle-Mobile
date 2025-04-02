@@ -1,59 +1,8 @@
-// import React from "react";
-// import { View, Text, StyleSheet } from "react-native";
-// import MenuBar from "../components/MenuBar";
-
-// export default function ProfileScreen() {
-//   return (
-//     <View style={styles.container}>
-//       <View style={styles.contentContainer}>
-//         <View style={styles.header}>
-//           <Text style={styles.title}>Profile</Text>
-//         </View>
-
-//         <View style={styles.content}>
-//           <Text>Profile content goes here</Text>
-//         </View>
-//       </View>
-
-//       <MenuBar />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#fff",
-//     width: "100%",
-//   },
-//   contentContainer: {
-//     flex: 1,
-//     paddingTop: 60, // Manual safe area handling
-//     padding: 20,
-//   },
-//   header: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     marginBottom: 30,
-//   },
-//   title: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//   },
-//   content: {
-//     flex: 1,
-//   },
-// });
-
-
-
-
 
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, ScrollView, Image } from 'react-native';
 // import axios from 'axios';
-// import MiniCard from '../components/MiniCard';
+import MiniCard from '../components/MiniCard';
 
 const ProfileScreenAPI = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
 
@@ -160,6 +109,7 @@ const ProfileScreen = ({ route, navigation }) => {
   }
 
   return (
+    <View style={styles.pageContainer}>
     <ScrollView style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.header}>Your Profile</Text>
@@ -175,7 +125,7 @@ const ProfileScreen = ({ route, navigation }) => {
       {renderField('Tag Line (40 characters)', user?.tagLine, user?.tagLineIsPublic)}
       {renderField('Short Bio (15 words)', user?.shortBio, user?.shortBioIsPublic)}
 
-      {/* <MiniCard user={route.params.user} /> */}
+      <MiniCard user={user} />
 
       {user.experience?.some(exp => exp.isPublic) && (
         <View style={styles.fieldContainer}>
@@ -216,37 +166,44 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
       )}
 
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
-          <Image source={require('../assets/profile.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
-          <Image source={require('../assets/setting.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
-          <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
-          <Image source={require('../assets/share.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Share</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
-          <Image source={require('../assets/search.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Search</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
+
+<View style={styles.navContainer}>
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+  <Image source={require('../assets/profile.png')} style={styles.navIcon} />
+  <Text style={styles.navLabel}>Profile</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
+  <Image source={require('../assets/setting.png')} style={styles.navIcon} />
+  <Text style={styles.navLabel}>Settings</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
+  <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
+  <Text style={styles.navLabel}>Home</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+  <Image source={require('../assets/share.png')} style={styles.navIcon} />
+  <Text style={styles.navLabel}>Share</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
+  <Image source={require('../assets/search.png')} style={styles.navIcon} />
+  <Text style={styles.navLabel}>Search</Text>
+</TouchableOpacity>
+</View>
+</View>
   );
 };
 
 const styles = StyleSheet.create({
+  pageContainer: { flex: 1, backgroundColor: '#fff', padding: 0},
+  scrollContainer: {
+    paddingBottom: 20,
+  },
   container: { flex: 1, backgroundColor: '#fff', padding: 20 },
   headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   header: { fontSize: 24, fontWeight: 'bold' },

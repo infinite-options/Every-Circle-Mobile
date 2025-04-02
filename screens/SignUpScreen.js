@@ -10,7 +10,7 @@ import * as Crypto from "expo-crypto";
 const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
 
-export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, onLoginPress, onSignUpSuccess }) {
+export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, onSignUpSuccess, navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -136,9 +136,11 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
           },
         };
 
-        if (onSignUpSuccess) {
-          onSignUpSuccess(userInfo);
-        }
+        
+          console.log("Sign up success with userInfo:", userInfo);
+          // onSignUpSuccess(userInfo);
+          navigation.navigate("UserInfo");
+        
         // Show success message
         // Alert.alert("Success", "Account created successfully!", [
         //   {
@@ -193,7 +195,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
       <View style={styles.footer}>
         <Text style={styles.footerText}>
           Already have an account?{" "}
-          <Text style={styles.logInText} onPress={onLoginPress}>
+          <Text style={styles.logInText} onPress={() => navigation.navigate("Login")}>
             Log In
           </Text>
         </Text>
