@@ -81,6 +81,12 @@ module.exports = ({ config: expoConfig }) => ({
           },
         },
       ],
+      [
+        "expo-location",
+        {
+          locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ]
     ],
     extra: {
       eas: {
