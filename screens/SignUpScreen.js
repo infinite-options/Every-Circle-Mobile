@@ -11,6 +11,7 @@ const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaw
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
 
 export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, onSignUpSuccess, navigation }) {
+  console.log("SignUpScreen - Rendering");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -136,11 +137,10 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
           },
         };
 
-        
-          console.log("Sign up success with userInfo:", userInfo);
-          // onSignUpSuccess(userInfo);
-          navigation.navigate("UserInfo");
-        
+        console.log("Sign up success with userInfo:", userInfo);
+        // onSignUpSuccess(userInfo);
+        navigation.navigate("UserInfo");
+
         // Show success message
         // Alert.alert("Success", "Account created successfully!", [
         //   {
