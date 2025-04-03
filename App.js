@@ -50,24 +50,10 @@
 //   );
 // }
 
-
-
-
-
-
-
-
 import "./polyfills";
 import React, { useEffect, useState, useCallback } from "react";
 
-import {
-  StyleSheet,
-  Text,
-  View,
-  Alert,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, Text, View, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -87,12 +73,9 @@ import AppleSignIn from "./AppleSignIn"; // Component for Apple Sign In button
 import AccountTypeScreen from "./screens/AccountTypeScreen";
 const Stack = createNativeStackNavigator();
 
-const GOOGLE_SIGNUP_ENDPOINT =
-  "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
-const GOOGLE_SIGNIN_ENDPOINT =
-  "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
-const APPLE_SIGNIN_ENDPOINT =
-  "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
+const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
+const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
+const APPLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
 
 // Get Maps API Key from environment variables and export it for use in other components
 export const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -102,17 +85,14 @@ export default function App() {
   const [initialRoute, setInitialRoute] = useState("Home");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-<<<<<<< HEAD
-  const [showSpinner, setShowSpinner] = useState(false);
-  const [signInInProgress, setSignInInProgress] = useState(false);
-  const [showUserInfo, setShowUserInfo] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
-=======
+  // const [showSpinner, setShowSpinner] = useState(false);
+  // const [signInInProgress, setSignInInProgress] = useState(false);
+  // const [showUserInfo, setShowUserInfo] = useState(false);
+  // const [showUserProfile, setShowUserProfile] = useState(false);
+  // const [showSignUp, setShowSignUp] = useState(false);
+  // const [showLogin, setShowLogin] = useState(false);
+  // const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
 
->>>>>>> va_0324
   useEffect(() => {
     const checkUser = async () => {
       const uid = await AsyncStorage.getItem("user_uid");
@@ -138,9 +118,6 @@ export default function App() {
     checkUser();
   }, []);
 
-
-
-
   const signInHandler = useCallback(async (navigation) => {
     try {
       await GoogleSignin.hasPlayServices();
@@ -156,7 +133,7 @@ export default function App() {
 
         console.log("Full user:", JSON.stringify(fullUser, null, 2));
 
-        navigation.navigate("Profile", { 
+        navigation.navigate("Profile", {
           user: {
             ...fullUser,
             user_email: userInfo.user.email,
@@ -169,8 +146,6 @@ export default function App() {
       Alert.alert("Sign In Failed", err.message);
     }
   }, []);
-  
-
 
   const signUpHandler = useCallback(async (navigation) => {
     try {
@@ -199,7 +174,6 @@ export default function App() {
         await AsyncStorage.setItem("user_uid", result.user_uid);
         navigation.navigate("UserInfo"); // your intended screen
       }
-
     } catch (err) {
       setError(err.message);
       Alert.alert("Sign Up Failed", err.message);
@@ -255,16 +229,12 @@ export default function App() {
       setError(err.message);
       Alert.alert("Apple Sign Up Failed", err.message);
     }
-  }, []); 
-
-
-
-
+  }, []);
 
   if (loading) {
     return (
       <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size='large' color='#0000ff' />
       </View>
     );
   }
@@ -275,10 +245,7 @@ export default function App() {
         <Text style={styles.title}>Every Circle</Text>
       </View>
       <View style={styles.circlesContainer}>
-        <TouchableOpacity
-          style={styles.circleBox}
-          onPress={() => navigation.navigate("SignUp")}
-        >
+        <TouchableOpacity style={styles.circleBox} onPress={() => navigation.navigate("SignUp")}>
           <View style={[styles.circle, { backgroundColor: "#007AFF" }]}>
             <Text style={styles.circleText}>Sign Up</Text>
           </View>
@@ -288,10 +255,7 @@ export default function App() {
             <Text style={styles.circleText}>How It Works</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.circleBox}
-          onPress={() => navigation.navigate("Login")}
-        >
+        <TouchableOpacity style={styles.circleBox} onPress={() => navigation.navigate("Login")}>
           <View style={[styles.circle, { backgroundColor: "#AF52DE" }]}>
             <Text style={styles.circleText}>Login</Text>
           </View>
@@ -299,9 +263,6 @@ export default function App() {
       </View>
     </View>
   );
-
- 
-
 
   // Helper function to extract the last two digits before .apps.googleusercontent.com
   const getLastTwoDigits = (clientId) => {
@@ -323,148 +284,32 @@ export default function App() {
   console.log("URL Scheme exists:", !!config.googleURLScheme);
 
   return (
-<<<<<<< HEAD
-    <View style={styles.container}>
-      {/* Logic: There are 4 states to track.  
-      ShowUserInfo
-      ShowUserProfile
-      ShowSignUp
-      ShowLogin
-      The App displays different pages depending on which is true.  
-      The Home Page is displayed when userInfo is False (ie no user info) and showSignUp and showLogin are false.
-       */}
-      {!userInfo ? (
-        showSignUp ? (
-          <SignUpScreen
-            onGoogleSignUp={signUp}
-            onAppleSignUp={handleAppleSignUp}
-            onError={handleError}
-            onLoginPress={handleLoginClick}
-            onSignUpSuccess={(userInfo) => {
-              setUserInfo(userInfo);
-              setShowSignUp(false);
-              setShowUserInfo(true);
-            }}
-          />
-        ) : showLogin ? (
-          <LoginScreen
-            onGoogleSignIn={signIn}
-            onAppleSignIn={handleAppleSignIn}
-            onError={handleError}
-            onSignUpPress={handleSignUpClick}
-            onSignInSuccess={(userInfo) => {
-              setUserInfo(userInfo);
-              setShowLogin(false);
-              setShowUserInfo(false); // Don't show UserInfo screen
-              setShowUserProfile(true); // Show UserProfile directly
-            }}
-          />
-        ) : (
-          <>
-            <View style={styles.circlesContainer}>
-              <TouchableOpacity style={styles.circleBox} onPress={handleSignUpClick}>
-                <View style={[styles.circle, { backgroundColor: "#007AFF" }]}>
-                  <Text style={styles.circleText}>Sign Up</Text>
-                </View>
-              </TouchableOpacity>
-              <View style={styles.circleBox}>
-                <View style={[styles.circle, { backgroundColor: "#00C7BE" }]}>
-                  <Text style={styles.circleText}>How It Works</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.circleBox} onPress={handleLoginClick}>
-                <View style={[styles.circle, { backgroundColor: "#AF52DE" }]}>
-                  <Text style={styles.circleText}>Login</Text>
-                </View>
-              </TouchableOpacity>
-              <View style={styles.circleBox}>
-                <View style={[styles.circle, { backgroundColor: "#FF9500" }]}>
-                  <Text style={styles.circleText}>Every Circle</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.apiKeysContainer}>
-              <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
-              <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
-              <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
-              <Text style={styles.apiKeysText}>Web: {getLastTwoDigits(config.googleClientIds.web)}</Text>
-              <Text style={styles.apiKeysText}>URL Scheme: {config.googleURLScheme ? "..." + config.googleURLScheme.slice(-2) : "Not set"}</Text>
-              <Text style={styles.apiKeysText}>Maps API: {mapsApiKeyDisplay}</Text>
-              <Text style={styles.apiKeysText}>Apple Auth: {appleAuthStatus}</Text>
-              <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>
-            </View>
-            {/* Buttons below are for Google and Apple Sign In and Sign Up */}
-            {/* <View style={styles.authContainer}>
-              <Text style={styles.title}>Sign In</Text>
-              {error && <Text style={styles.error}>Error: {error}</Text>}
-              <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signIn} />
-              <AppleSignIn onSignIn={handleAppleSignIn} onError={handleError} />
-              <Text style={styles.title}>Sign Up</Text>
-              {error && <Text style={styles.error}>Error: {error}</Text>}
-              <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signUp} />
-              <AppleSignIn onSignIn={handleAppleSignUp} onError={handleError} />
-            </View> */}
-            {showSpinner && (
-              <View style={styles.spinnerContainer}>
-                <ActivityIndicator size='large' color='#0000ff' />
-              </View>
-            )}
-          </>
-        )
-      ) : showUserInfo ? (
-        <UserInfoScreen onContinue={handleUserInfoComplete} />
-      ) : showUserProfile ? (
-        <NavigationProvider>
-          <AppNavigator onContinue={handleUserProfileComplete} onEdit={handleEditProfile} onLogout={signOut} />
-        </NavigationProvider>
-      ) : (
-        <View style={styles.mainContainer}>
-          <View style={styles.header}>
-            <Text>Welcome {userInfo.user.name}</Text>
-          </View>
-          <MapScreen onLogout={signOut} />
-        </View>
-      )}
-    </View>
-=======
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name='Home' component={HomeScreen} />
         <Stack.Screen
-          name="Login"
+          name='Login'
           children={(props) => (
-            <LoginScreen
-              {...props}
-              onGoogleSignIn={() => signInHandler(props.navigation)}
-              onAppleSignIn={(userInfo) => handleAppleSignIn(userInfo, props.navigation)}
-              onError={setError}
-            />
+            <LoginScreen {...props} onGoogleSignIn={() => signInHandler(props.navigation)} onAppleSignIn={(userInfo) => handleAppleSignIn(userInfo, props.navigation)} onError={setError} />
           )}
         />
         <Stack.Screen
-          name="SignUp"
+          name='SignUp'
           children={(props) => (
-            <SignUpScreen
-              {...props}
-              onGoogleSignUp={() => signUpHandler(props.navigation)}
-              onAppleSignUp={(userInfo) => handleAppleSignUp(userInfo, props.navigation)}
-              onError={setError}
-            />
+            <SignUpScreen {...props} onGoogleSignUp={() => signUpHandler(props.navigation)} onAppleSignUp={(userInfo) => handleAppleSignUp(userInfo, props.navigation)} onError={setError} />
           )}
         />
-        <Stack.Screen name="UserInfo" component={UserInfoScreen} />
+        <Stack.Screen name='UserInfo' component={UserInfoScreen} />
         {/* <Stack.Screen name="UserProfile" component={UserProfile} /> */}
-        <Stack.Screen name="AccountType" component={AccountTypeScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Account" component={AccountScreen} />
-        <Stack.Screen name="Network" component={NetworkScreen} />
-        <Stack.Screen name="Search" component={SearchScreen} />
-        
+        <Stack.Screen name='AccountType' component={AccountTypeScreen} />
+        <Stack.Screen name='Profile' component={ProfileScreen} />
+        <Stack.Screen name='EditProfile' component={EditProfileScreen} />
+        <Stack.Screen name='Settings' component={SettingsScreen} />
+        <Stack.Screen name='Account' component={AccountScreen} />
+        <Stack.Screen name='Network' component={NetworkScreen} />
+        <Stack.Screen name='Search' component={SearchScreen} />
       </Stack.Navigator>
     </NavigationContainer>
->>>>>>> va_0324
   );
 }
 
@@ -530,145 +375,6 @@ const styles = StyleSheet.create({
   },
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // import "./polyfills";
 // import React, { useEffect, useState } from "react";
 // import { StyleSheet, Text, View, Platform, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
@@ -684,7 +390,6 @@ const styles = StyleSheet.create({
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { NavigationProvider } from "./contexts/NavigationContext";
 // import AppNavigator from "./components/AppNavigator";
-
 
 // import ProfileScreen from "./screens/ProfileScreen";
 // import EditProfileScreen from "./screens/EditProfileScreen";
@@ -1172,12 +877,12 @@ const styles = StyleSheet.create({
 
 //   return (
 //     <View style={styles.container}>
-//       {/* Logic: There are 4 states to track.  
+//       {/* Logic: There are 4 states to track.
 //       ShowUserInfo
 //       ShowUserProfile
 //       ShowSignUp
 //       ShowLogin
-//       The App displays different pages depending on which is true.  
+//       The App displays different pages depending on which is true.
 //       The Home Page is displayed when userInfo is False (ie no user info) and showSignUp and showLogin are false.
 //        */}
 //       {!userInfo ? (
