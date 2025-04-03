@@ -128,19 +128,19 @@ export default function App() {
 
   const handleAppleSignIn = useCallback(async (userInfo, navigation) => {
     try {
-      console.log("App.js - handleAppleSignIn - userInfo:", userInfo);
+      // console.log("App.js - handleAppleSignIn - userInfo:", userInfo);
       const { user, idToken } = userInfo;
-      console.log("App.js - handleAppleSignIn - user:", user);
-      console.log("App.js - handleAppleSignIn - idToken:", idToken);
+      // console.log("App.js - handleAppleSignIn - user:", user);
+      // console.log("App.js - handleAppleSignIn - idToken:", idToken);
       let userEmail = user.email;
-      console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
+      // console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
       if (!userEmail && idToken) {
-        console.log("App.js - handleAppleSignIn - idToken:", idToken);
+        // console.log("App.js - handleAppleSignIn - idToken:", idToken);
         const payload = JSON.parse(atob(idToken.split(".")[1]));
         userEmail = payload?.email || `apple_user_${user.id}@example.com`;
-        console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
+        // console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
       }
-      console.log("App.js - handleAppleSignIn - before APPLE_SIGNIN_ENDPOINT:", APPLE_SIGNIN_ENDPOINT);
+      // console.log("App.js - handleAppleSignIn - before APPLE_SIGNIN_ENDPOINT:", APPLE_SIGNIN_ENDPOINT);
       const response = await fetch(APPLE_SIGNIN_ENDPOINT, {
         method: "POST",
         headers: {
@@ -150,19 +150,19 @@ export default function App() {
           id: user.id,
         }),
       });
-      console.log("App.js - handleAppleSignIn - after APPLE_SIGNIN_ENDPOINT:", response);
+      // console.log("App.js - handleAppleSignIn - after APPLE_SIGNIN_ENDPOINT:", response);
       const result = await response.json();
-      console.log("App.js - handleAppleSignIn - result:", result);
+      // console.log("App.js - handleAppleSignIn - result:", result);
       // if (result.message === "Correct Email" && result.result?.[0]) {
       if (result.message === "Successfully executed SQL query." && result.result?.[0]) {
         const userUid = result.result[0].user_uid;
         await AsyncStorage.setItem("user_uid", userUid);
-        console.log("Success", userUid);
+        // console.log("Success", userUid);
 
         // Get full user profile data
         const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
         const fullUser = await profileResponse.json();
-        console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
+        // console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
 
         navigation.navigate("Profile", {
           user: {

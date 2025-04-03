@@ -45,12 +45,12 @@ const AppleSignIn = ({ onSignIn, onError }) => {
           //hard code user info for now
           const userInfo = {
             user: {
-              id: "001306.0fc3a85d3284419b9fbbdd71d2a6b2eb.1840",
+              // id: "001306.0fc3a85d328...bdd71d2a6b2eb.1840",
+              id: credential.user,
               email: "pmarathay@mac.com",
               name: "Apple User",
             },
-            idToken:
-              "eyJraWQiOiJyczBNM2tPVjlwIiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJodHRwczovL2FwcGxlaWQuYXBwbGUuY29tIiwiYXVkIjoiY29tLmluZmluaXRlb3B0aW9ucy5nb29nbGVhdXRoZGVtbyIsImV4cCI6MTc0Mzc3OTY5MiwiaWF0IjoxNzQzNjkzMjkyLCJzdWIiOiIwMDEzMDYuMGZjM2E4NWQzMjg0NDE5YjlmYmJkZDcxZDJhNmIyZWIuMTg0MCIsImNfaGFzaCI6ImdJdVpzeS1Xa1dVeS01ZGw2X295R2ciLCJlbWFpbCI6InBtYXJhdGhheUBtYWMuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF1dGhfdGltZSI6MTc0MzY5MzI5Miwibm9uY2Vfc3VwcG9ydGVkIjp0cnVlfQ.uUgagK_UxFUj71UNUgQhRJV-C5vqBxH5lcdPTAQixXD5B01F31YML8xYjNZcFw9-N_sBCFYmISDtraZ0Q2iqjEqYIV3AsBLRhlrK1YtDoHhxLXGFMsQ3UNLZKP-RGqhjgr3xmC3HAep3nog-0Z8I_Kpu_haZGgLzJRgTsciw159swD6axxN6MTOW_X5VCeI1ZX3zZNR2MJyoPJRRbHnJnxpRxDAQa8qdFl5P5UoxaKCGsVGCyaXb62NZYVtoayhK9jHeiGrIVIHYrYfP0fbqu1aVQtCGEKLAXrQt2kr4rpabeDLhqUdH7Whp1Xu5QST9AZmQJlyJj2fT70BS_iJQJA",
+            idToken: "ey...JA",
           };
           console.log("AppleSignIn - Hardcoded userInfo saved", userInfo);
           onSignIn(userInfo);
