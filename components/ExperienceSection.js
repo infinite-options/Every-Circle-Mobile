@@ -22,12 +22,14 @@ const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPubl
     <View style={styles.sectionContainer}>
       {/* Header Section */}
       <View style={styles.header}>
+      <View style={styles.labelRow}>
         <Text style={styles.label}>Experience</Text>
 
         {/* Add Experience Button */}
         <TouchableOpacity onPress={addExperience}>
           <Text style={styles.addText}>+</Text>
         </TouchableOpacity>
+        </View>
 
         {/* Public Toggle */}
         <TouchableOpacity onPress={toggleVisibility}>
@@ -118,7 +120,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   label: { fontSize: 18, fontWeight: "bold" },
-  addText: { fontSize: 20, fontWeight: "bold", color: "#333" },
+  addText: { 
+    fontSize: 24, fontWeight: "bold", color: "#333"
+   },
+
+   labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10, // spacing between label and +
+  },
+  
   toggleText: { fontSize: 14, fontWeight: "bold" },
   experienceCard: {
     backgroundColor: "#F5F5F5",

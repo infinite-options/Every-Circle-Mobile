@@ -2,6 +2,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
+import { Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+
 
 const userProfileAPI = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/'
 
@@ -48,17 +52,19 @@ const AccountTypeScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.accountContainer}>
-      <Text style={styles.accountHeader}>Choose Your Account Type</Text>
-
+<View style={styles.arcHeader}>
+  <Text style={styles.arcText}>Choose Your Account</Text>
+</View>
       <TouchableOpacity 
-        style={[styles.accountButton, styles.personal]} 
+        style={[styles.accountButtonPersonal, styles.personal]} 
         onPress={handleSelectAccount}>
         <Text style={styles.accountText}>Personal</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.accountButton, styles.business]}>
-        <Text style={styles.accountText}>Business</Text>
+      <TouchableOpacity style={[styles.accountButtonBusiness, styles.business]} onPress={() => navigation.navigate('BusinessSetup')}>
+      <Text style={styles.accountText}>Business</Text>
       </TouchableOpacity>
+
     </View>
   );
 };
@@ -66,30 +72,61 @@ const AccountTypeScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   accountContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    // alignItems: 'center',
     backgroundColor: '#fff',
   },
-  accountHeader: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#4B7BEC',
-    marginBottom: 20,
-  },
-  accountButton: {
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
+  arcHeader: {
+  width: width * 1.7,
+  height: width * 0.8,
+  backgroundColor: '#007AFF',
+  borderBottomLeftRadius: width,
+  borderBottomRightRadius: width,
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  alignSelf: 'center',
+  marginTop: -width * 0.6, // pull up to top
+  paddingBottom: 40,
+},
+arcText: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
+
+  accountButtonPersonal: {
+    marginLeft: width * 0.5,
+    width: width * 0.6,
+    height: width * 0.6,
+    borderRadius: width * 0.3,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 40,
   },
-  personal: { backgroundColor: '#FFA500' },
-  business: { backgroundColor: '#26DE81' },
+  personal: {
+    backgroundColor: '#FFA500',
+    borderTopRightRadius: 10, // Chop right
+  },
+
+
+  accountButtonBusiness: {
+    width: width * 0.6,
+    height: width * 0.6,
+    borderRadius: width * 0.3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'flex-end', 
+    marginRight: width * 0.5, 
+    marginVertical: 20,
+  },
+  
+  business: {
+    backgroundColor: '#00C721',
+    borderTopLeftRadius: 10, // Chop left
+  },
   accountText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#000',
+    fontSize: 22,
     fontWeight: 'bold',
   },
 });
-
 export default AccountTypeScreen;
