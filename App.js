@@ -180,9 +180,11 @@ export default function App() {
   if (loading) {
     console.log("App.js - Showing loading screen");
     return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size='large' color='#0000ff' />
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size='large' color='#0000ff' />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
