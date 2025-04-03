@@ -77,7 +77,7 @@ export default function App() {
         const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
         const fullUser = await profileResponse.json();
 
-        console.log("Full user:", JSON.stringify(fullUser, null, 2));
+        console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
 
         navigation.navigate("Profile", {
           user: {
@@ -128,20 +128,53 @@ export default function App() {
 
   const handleAppleSignIn = useCallback(async (userInfo, navigation) => {
     try {
+      console.log("App.js - handleAppleSignIn - userInfo:", userInfo);
       const { user, idToken } = userInfo;
+      console.log("App.js - handleAppleSignIn - user:", user);
+      console.log("App.js - handleAppleSignIn - idToken:", idToken);
       let userEmail = user.email;
+      console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
       if (!userEmail && idToken) {
+        console.log("App.js - handleAppleSignIn - idToken:", idToken);
         const payload = JSON.parse(atob(idToken.split(".")[1]));
         userEmail = payload?.email || `apple_user_${user.id}@example.com`;
+        console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
       }
-      const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userEmail}`);
+      console.log("App.js - handleAppleSignIn - before APPLE_SIGNIN_ENDPOINT:", APPLE_SIGNIN_ENDPOINT);
+      const response = await fetch(APPLE_SIGNIN_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: user.id,
+        }),
+      });
+      console.log("App.js - handleAppleSignIn - after APPLE_SIGNIN_ENDPOINT:", response);
       const result = await response.json();
-      if (result.message === "Correct Email" && result.result?.[0]) {
-        await AsyncStorage.setItem("user_uid", result.result[0]);
-        navigation.navigate("Profile");
+      console.log("App.js - handleAppleSignIn - result:", result);
+      // if (result.message === "Correct Email" && result.result?.[0]) {
+      if (result.message === "Successfully executed SQL query." && result.result?.[0]) {
+        const userUid = result.result[0].user_uid;
+        await AsyncStorage.setItem("user_uid", userUid);
+        console.log("Success", userUid);
+
+        // Get full user profile data
+        const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+        const fullUser = await profileResponse.json();
+        console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
+
+        navigation.navigate("Profile", {
+          user: {
+            ...fullUser,
+            user_email: userEmail,
+          },
+          profile_uid: fullUser.personal_info?.profile_personal_uid || "",
+        });
       }
     } catch (err) {
       setError(err.message);
+      console.log("Fail");
       Alert.alert("Apple Sign In Failed", err.message);
     }
   }, []);

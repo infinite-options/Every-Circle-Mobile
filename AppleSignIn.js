@@ -8,45 +8,80 @@ const AppleSignIn = ({ onSignIn, onError }) => {
   console.log("AppleSignIn - Rendering");
   const handleAppleSignIn = async () => {
     try {
+      console.log("AppleSignIn - handleAppleSignIn");
       if (Platform.OS === "ios") {
         const credential = await AppleAuthentication.signInAsync({
           requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
         });
+        console.log("AppleSignIn - received credential", credential);
+
+        // User is authenticated.  Do we need an if statement here?
 
         // If we received the user's name, store it for future use
-        if (credential.fullName) {
+        if (credential.fullName && credential.fullName.familyName !== null) {
+          console.log("AppleSignIn - received name details");
           const userFullName = {
             givenName: credential.fullName.givenName,
             familyName: credential.fullName.familyName,
           };
+          console.log("AppleSignIn - storing user id:", credential.user);
           await AsyncStorage.setItem(`apple_user_${credential.user}`, JSON.stringify(userFullName));
+
+          // User is authenticated
+          const userInfo = {
+            user: {
+              id: credential.user,
+              email: credential.email,
+              name: fullName?.givenName ? `${fullName.givenName} ${fullName.familyName}` : "Apple User",
+            },
+            idToken: credential.idToken,
+          };
+          console.log("AppleSignIn - userInfo saved", userInfo);
+          onSignIn(userInfo);
+        } else {
+          console.log("AppleSignIn - did not receive name details");
+          console.log("AppleSignIn - Call endpoint to get user info");
+
+          //hard code user info for now
+          const userInfo = {
+            user: {
+              id: "001306.0fc3a85d3284419b9fbbdd71d2a6b2eb.1840",
+              email: "pmarathay@mac.com",
+              name: "Apple User",
+            },
+            idToken:
+              "eyJraWQiOiJyczBNM2tPVjlwIiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJodHRwczovL2FwcGxlaWQuYXBwbGUuY29tIiwiYXVkIjoiY29tLmluZmluaXRlb3B0aW9ucy5nb29nbGVhdXRoZGVtbyIsImV4cCI6MTc0Mzc3OTY5MiwiaWF0IjoxNzQzNjkzMjkyLCJzdWIiOiIwMDEzMDYuMGZjM2E4NWQzMjg0NDE5YjlmYmJkZDcxZDJhNmIyZWIuMTg0MCIsImNfaGFzaCI6ImdJdVpzeS1Xa1dVeS01ZGw2X295R2ciLCJlbWFpbCI6InBtYXJhdGhheUBtYWMuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF1dGhfdGltZSI6MTc0MzY5MzI5Miwibm9uY2Vfc3VwcG9ydGVkIjp0cnVlfQ.uUgagK_UxFUj71UNUgQhRJV-C5vqBxH5lcdPTAQixXD5B01F31YML8xYjNZcFw9-N_sBCFYmISDtraZ0Q2iqjEqYIV3AsBLRhlrK1YtDoHhxLXGFMsQ3UNLZKP-RGqhjgr3xmC3HAep3nog-0Z8I_Kpu_haZGgLzJRgTsciw159swD6axxN6MTOW_X5VCeI1ZX3zZNR2MJyoPJRRbHnJnxpRxDAQa8qdFl5P5UoxaKCGsVGCyaXb62NZYVtoayhK9jHeiGrIVIHYrYfP0fbqu1aVQtCGEKLAXrQt2kr4rpabeDLhqUdH7Whp1Xu5QST9AZmQJlyJj2fT70BS_iJQJA",
+          };
+          console.log("AppleSignIn - Hardcoded userInfo saved", userInfo);
+          onSignIn(userInfo);
         }
 
-        // Try to get stored name if not provided in current sign-in
-        let fullName = credential.fullName;
-        if (!fullName?.givenName) {
-          try {
-            const storedName = await AsyncStorage.getItem(`apple_user_${credential.user}`);
-            if (storedName) {
-              fullName = JSON.parse(storedName);
-            }
-          } catch (error) {
-            console.log("Error retrieving stored name:", error);
-          }
-        }
+        // // Try to get stored name if not provided in current sign-in
+        // let fullName = credential.fullName;
+        // if (!fullName?.givenName) {
+        //   console.log("AppleSignIn - fullName?.givenName is null");
+        //   try {
+        //     const storedName = await AsyncStorage.getItem(`apple_user_${credential.user}`);
+        //     if (storedName) {
+        //       fullName = JSON.parse(storedName);
+        //     }
+        //   } catch (error) {
+        //     console.log("Error retrieving stored name:", error);
+        //   }
+        // }
 
-        // User is authenticated
-        const userInfo = {
-          user: {
-            id: credential.user,
-            email: credential.email,
-            name: fullName?.givenName ? `${fullName.givenName} ${fullName.familyName}` : "Apple User",
-          },
-          idToken: credential.identityToken,
-        };
-
-        onSignIn(userInfo);
+        // // User is authenticated
+        // const userInfo = {
+        //   user: {
+        //     id: credential.user,
+        //     email: credential.email,
+        //     name: fullName?.givenName ? `${fullName.givenName} ${fullName.familyName}` : "Apple User",
+        //   },
+        //   idToken: credential.identityToken,
+        // };
+        // console.log("AppleSignIn - userInfo", userInfo);
       } else {
+        console.log("AppleSignIn - Android");
         // For Android, open web-based Sign in with Apple
         const result = await WebBrowser.openAuthSessionAsync(
           `https://appleid.apple.com/auth/authorize?client_id=${process.env.EXPO_PUBLIC_APPLE_SERVICES_ID}&redirect_uri=${encodeURIComponent(
