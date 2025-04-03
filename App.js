@@ -1,60 +1,3 @@
-// // App.js
-// import React, { useEffect, useState } from "react";
-// import { NavigationContainer } from "@react-navigation/native";
-// import { createNativeStackNavigator } from "@react-navigation/native-stack";
-// import LoginScreen from "./screens/LoginScreen";
-// import SignUpScreen from "./screens/SignUpScreen";
-// import UserInfoScreen from "./screens/UserInfoScreen";
-// import UserProfile from "./screens/UserProfile";
-// import ProfileScreen from "./screens/ProfileScreen";
-// import SettingsScreen from "./screens/SettingsScreen";
-// import AccountScreen from "./screens/AccountScreen";
-// import NetworkScreen from "./screens/NetworkScreen";
-// import EditProfileScreen from "./screens/EditProfileScreen";
-// import SearchScreen from "./screens/SearchScreen";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// const Stack = createNativeStackNavigator();
-
-// export default function App() {
-//   const [initialRoute, setInitialRoute] = useState("Login");
-
-//   useEffect(() => {
-//     const checkUser = async () => {
-//       const uid = await AsyncStorage.getItem("user_uid");
-//       if (uid) {
-//         setInitialRoute("UserProfile");
-//       }
-//       else {
-//         setInitialRoute("Login");
-//       }
-//     };
-//     checkUser();
-//   }, []);
-
-//   return (
-//     <NavigationContainer>
-//       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-//         <Stack.Screen name="Login" component={LoginScreen} />
-//         <Stack.Screen name="SignUp" component={SignUpScreen} />
-//         <Stack.Screen name="UserInfo" component={UserInfoScreen} />
-//         <Stack.Screen name="UserProfile" component={UserProfile} />
-//         <Stack.Screen name="Profile" component={ProfileScreen} />
-//         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-//         <Stack.Screen name="Settings" component={SettingsScreen} />
-//         <Stack.Screen name="Account" component={AccountScreen} />
-//         <Stack.Screen name="Network" component={NetworkScreen} />
-//         <Stack.Screen name="Search" component={SearchScreen} />
-//       </Stack.Navigator>
-//     </NavigationContainer>
-//   );
-// }
-
-
-
-
-
-
 
 
 import "./polyfills";
@@ -85,6 +28,9 @@ import NetworkScreen from "./screens/NetworkScreen";
 import SearchScreen from "./screens/SearchScreen";
 import AppleSignIn from "./AppleSignIn"; // Component for Apple Sign In button
 import AccountTypeScreen from "./screens/AccountTypeScreen";
+import BusinessSetupScreen from "./screens/BusinessSetupScreen";
+
+
 const Stack = createNativeStackNavigator();
 
 const GOOGLE_SIGNUP_ENDPOINT =
@@ -102,17 +48,14 @@ export default function App() {
   const [initialRoute, setInitialRoute] = useState("Home");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-<<<<<<< HEAD
-  const [showSpinner, setShowSpinner] = useState(false);
-  const [signInInProgress, setSignInInProgress] = useState(false);
-  const [showUserInfo, setShowUserInfo] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showSignUp, setShowSignUp] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
-=======
+  // const [showSpinner, setShowSpinner] = useState(false);
+  // const [signInInProgress, setSignInInProgress] = useState(false);
+  // const [showUserInfo, setShowUserInfo] = useState(false);
+  // const [showUserProfile, setShowUserProfile] = useState(false);
+  // const [showSignUp, setShowSignUp] = useState(false);
+  // const [showLogin, setShowLogin] = useState(false);
+  // const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
 
->>>>>>> va_0324
   useEffect(() => {
     const checkUser = async () => {
       const uid = await AsyncStorage.getItem("user_uid");
@@ -323,110 +266,6 @@ export default function App() {
   console.log("URL Scheme exists:", !!config.googleURLScheme);
 
   return (
-<<<<<<< HEAD
-    <View style={styles.container}>
-      {/* Logic: There are 4 states to track.  
-      ShowUserInfo
-      ShowUserProfile
-      ShowSignUp
-      ShowLogin
-      The App displays different pages depending on which is true.  
-      The Home Page is displayed when userInfo is False (ie no user info) and showSignUp and showLogin are false.
-       */}
-      {!userInfo ? (
-        showSignUp ? (
-          <SignUpScreen
-            onGoogleSignUp={signUp}
-            onAppleSignUp={handleAppleSignUp}
-            onError={handleError}
-            onLoginPress={handleLoginClick}
-            onSignUpSuccess={(userInfo) => {
-              setUserInfo(userInfo);
-              setShowSignUp(false);
-              setShowUserInfo(true);
-            }}
-          />
-        ) : showLogin ? (
-          <LoginScreen
-            onGoogleSignIn={signIn}
-            onAppleSignIn={handleAppleSignIn}
-            onError={handleError}
-            onSignUpPress={handleSignUpClick}
-            onSignInSuccess={(userInfo) => {
-              setUserInfo(userInfo);
-              setShowLogin(false);
-              setShowUserInfo(false); // Don't show UserInfo screen
-              setShowUserProfile(true); // Show UserProfile directly
-            }}
-          />
-        ) : (
-          <>
-            <View style={styles.circlesContainer}>
-              <TouchableOpacity style={styles.circleBox} onPress={handleSignUpClick}>
-                <View style={[styles.circle, { backgroundColor: "#007AFF" }]}>
-                  <Text style={styles.circleText}>Sign Up</Text>
-                </View>
-              </TouchableOpacity>
-              <View style={styles.circleBox}>
-                <View style={[styles.circle, { backgroundColor: "#00C7BE" }]}>
-                  <Text style={styles.circleText}>How It Works</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.circleBox} onPress={handleLoginClick}>
-                <View style={[styles.circle, { backgroundColor: "#AF52DE" }]}>
-                  <Text style={styles.circleText}>Login</Text>
-                </View>
-              </TouchableOpacity>
-              <View style={styles.circleBox}>
-                <View style={[styles.circle, { backgroundColor: "#FF9500" }]}>
-                  <Text style={styles.circleText}>Every Circle</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.apiKeysContainer}>
-              <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
-              <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
-              <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
-              <Text style={styles.apiKeysText}>Web: {getLastTwoDigits(config.googleClientIds.web)}</Text>
-              <Text style={styles.apiKeysText}>URL Scheme: {config.googleURLScheme ? "..." + config.googleURLScheme.slice(-2) : "Not set"}</Text>
-              <Text style={styles.apiKeysText}>Maps API: {mapsApiKeyDisplay}</Text>
-              <Text style={styles.apiKeysText}>Apple Auth: {appleAuthStatus}</Text>
-              <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>
-            </View>
-            {/* Buttons below are for Google and Apple Sign In and Sign Up */}
-            {/* <View style={styles.authContainer}>
-              <Text style={styles.title}>Sign In</Text>
-              {error && <Text style={styles.error}>Error: {error}</Text>}
-              <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signIn} />
-              <AppleSignIn onSignIn={handleAppleSignIn} onError={handleError} />
-              <Text style={styles.title}>Sign Up</Text>
-              {error && <Text style={styles.error}>Error: {error}</Text>}
-              <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={signUp} />
-              <AppleSignIn onSignIn={handleAppleSignUp} onError={handleError} />
-            </View> */}
-            {showSpinner && (
-              <View style={styles.spinnerContainer}>
-                <ActivityIndicator size='large' color='#0000ff' />
-              </View>
-            )}
-          </>
-        )
-      ) : showUserInfo ? (
-        <UserInfoScreen onContinue={handleUserInfoComplete} />
-      ) : showUserProfile ? (
-        <NavigationProvider>
-          <AppNavigator onContinue={handleUserProfileComplete} onEdit={handleEditProfile} onLogout={signOut} />
-        </NavigationProvider>
-      ) : (
-        <View style={styles.mainContainer}>
-          <View style={styles.header}>
-            <Text>Welcome {userInfo.user.name}</Text>
-          </View>
-          <MapScreen onLogout={signOut} />
-        </View>
-      )}
-    </View>
-=======
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Home" component={HomeScreen} />
@@ -461,10 +300,10 @@ export default function App() {
         <Stack.Screen name="Account" component={AccountScreen} />
         <Stack.Screen name="Network" component={NetworkScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="BusinessSetup" component={BusinessSetupScreen} />
         
       </Stack.Navigator>
     </NavigationContainer>
->>>>>>> va_0324
   );
 }
 

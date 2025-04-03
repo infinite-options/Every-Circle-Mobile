@@ -87,9 +87,7 @@ const ProfileScreen = ({ route, navigation }) => {
       return (
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>{label}:</Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputText}>{value}</Text>
-          </View>
+            <Text style={styles.plainText}>{value}</Text>
         </View>
       );
     }
@@ -118,12 +116,29 @@ const ProfileScreen = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {renderField('First Name (Public)', user?.firstName, true)}
+      <View style={styles.cardContainer}>
+  <Text style={styles.nameText}>{user.firstName} {user.lastName}</Text>
+  {user.tagLine && user.tagLineIsPublic && (
+    <Text style={styles.tagline}>{user.tagLine}</Text>
+  )}
+  {user.shortBio && user.shortBioIsPublic && (
+    <Text style={styles.bio}>{user.shortBio}</Text>
+  )}
+  {user.phoneNumber && user.phoneIsPublic && (
+    <Text style={styles.contact}>{user.phoneNumber}</Text>
+  )}
+  {user.email && user.emailIsPublic && (
+    <Text style={styles.contact}>{user.email}</Text>
+  )}
+</View>
+
+
+      {/* {renderField('First Name (Public)', user?.firstName, true)}
       {renderField('Last Name (Public)', user?.lastName, true)}
       {renderField('Phone Number', user?.phoneNumber, user?.phoneIsPublic)}
       {renderField('Email', user?.email, user?.emailIsPublic)}
       {renderField('Tag Line (40 characters)', user?.tagLine, user?.tagLineIsPublic)}
-      {renderField('Short Bio (15 words)', user?.shortBio, user?.shortBioIsPublic)}
+      {renderField('Short Bio (15 words)', user?.shortBio, user?.shortBioIsPublic)} */}
 
       <MiniCard user={user} />
 
@@ -210,14 +225,52 @@ const styles = StyleSheet.create({
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
   inputContainer: { borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5, backgroundColor: '#f5f5f5' },
-  inputText: { fontSize: 14, color: '#333' },
-  editButton: { padding: 20, alignItems: 'center', justifyContent: 'center' },
+  plainText: {
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 10,
+  },
+    editButton: { padding: 10, alignItems: 'center', justifyContent: 'center' },
   editIcon: { width: 30, height: 30 },
   errorText: { fontSize: 18, color: 'red', textAlign: 'center', marginTop: 20 },
   navContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 20, paddingVertical: 10, borderTopWidth: 1, borderColor: '#ddd' },
   navButton: { alignItems: 'center' },
   navIcon: { width: 25, height: 25 },
-  navLabel: { fontSize: 12, color: '#333', marginTop: 4 }
+  navLabel: { fontSize: 12, color: '#333', marginTop: 4 },
+
+
+  cardContainer: {
+    padding: 10,
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  
+  nameText: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 8,
+  },
+  
+  tagline: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#777',
+    marginBottom: 12,
+  },
+  
+  bio: {
+    fontSize: 16,
+    color: '#777',
+    marginBottom: 20,
+  },
+  
+  contact: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 6,
+  },
+  
 });
 
 export default ProfileScreen;

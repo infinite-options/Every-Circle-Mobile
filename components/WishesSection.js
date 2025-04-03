@@ -39,15 +39,18 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic }) => {
   return (
     <View style={styles.sectionContainer}>
       <View style={styles.headerRow}>
+      <View style={styles.labelRow}>
         <Text style={styles.label}>Wishes</Text>
         <TouchableOpacity onPress={addWish}>
           <Text style={styles.addText}>+</Text>
         </TouchableOpacity>
+        </View>
         <TouchableOpacity onPress={toggleVisibility}>
           <Text style={[styles.toggleText, { color: isPublic ? "#4CAF50" : "#f44336" }]}>
             {isPublic ? "Public" : "Private"}
           </Text>
         </TouchableOpacity>
+        
       </View>
 
       {wishes.map((item, index) => (
@@ -102,7 +105,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   label: { fontSize: 18, fontWeight: "bold" },
-  addText: { color: "#000000", fontWeight: "bold",fontSize: 20 },
+  addText: { color: "#000000", fontWeight: "bold",fontSize: 24 },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10, // spacing between label and +
+  },
   toggleText: { fontWeight: "bold" },
   card: {
     backgroundColor: "#F5F5F5",
