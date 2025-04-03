@@ -259,46 +259,22 @@
 //   },
 // });
 
-
-
-
-
-
-
-
-
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // import SignUpScreen from "./screens/SignUpScreen";
 
-
 // Endpoints
-const SALT_ENDPOINT =
-  "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
-const LOGIN_ENDPOINT =
-  "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
-const PROFILE_ENDPOINT =
-  "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
+const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
+const PROFILE_ENDPOINT = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
 
 // Accept navigation from props
-export default function LoginScreen({
-  navigation,
-  onGoogleSignIn,
-  onAppleSignIn,
-  onError,
-}) {
+export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn, onError }) {
+  console.log("LoginScreen - Rendering");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isValid, setIsValid] = useState(false);
@@ -340,10 +316,7 @@ export default function LoginScreen({
 
       // 2. Hash password
       const salt = saltObject.result[0].password_salt;
-      const hashedPassword = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        password + salt
-      );
+      const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, password + salt);
 
       // 3. Login
       const loginResponse = await fetch(LOGIN_ENDPOINT, {
@@ -388,46 +361,16 @@ export default function LoginScreen({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome to Every Circle!</Text>
-        <Text style={styles.subtitle}>
-          Please choose a login option to continue.
-        </Text>
+        <Text style={styles.subtitle}>Please choose a login option to continue.</Text>
       </View>
 
       <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={handleEmailChange}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={handlePasswordChange}
-          secureTextEntry
-        />
+        <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' />
+        <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry />
       </View>
 
-      <TouchableOpacity
-        style={[styles.continueButton, isValid && styles.continueButtonActive]}
-        onPress={handleContinue}
-        disabled={!isValid || showSpinner}
-      >
-        {showSpinner ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text
-            style={[
-              styles.continueButtonText,
-              isValid && styles.continueButtonTextActive,
-            ]}
-          >
-            Continue
-          </Text>
-        )}
+      <TouchableOpacity style={[styles.continueButton, isValid && styles.continueButtonActive]} onPress={handleContinue} disabled={!isValid || showSpinner}>
+        {showSpinner ? <ActivityIndicator color='#fff' /> : <Text style={[styles.continueButtonText, isValid && styles.continueButtonTextActive]}>Continue</Text>}
       </TouchableOpacity>
 
       <View style={styles.dividerContainer}>
@@ -437,12 +380,7 @@ export default function LoginScreen({
       </View>
 
       <View style={styles.socialContainer}>
-        <GoogleSigninButton
-          style={styles.googleButton}
-          size={GoogleSigninButton.Size.Wide}
-          color={GoogleSigninButton.Color.Dark}
-          onPress={onGoogleSignIn}
-        />
+        <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignIn} />
         <AppleSignIn onSignIn={onAppleSignIn} onError={onError} />
       </View>
 
@@ -454,8 +392,6 @@ export default function LoginScreen({
           </Text>
         </Text>
       </View>
-
-
     </View>
   );
 }
@@ -504,4 +440,3 @@ const styles = StyleSheet.create({
   footerText: { fontSize: 16, color: "#666" },
   signUpText: { color: "#FF9500", fontWeight: "bold" },
 });
-
