@@ -181,6 +181,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
         <Text style={[styles.continueButtonText, isValid && styles.continueButtonTextActive]}>Continue</Text>
       </TouchableOpacity>
 
+
       <View style={styles.dividerContainer}>
         <View style={styles.divider} />
         <Text style={styles.dividerText}>OR</Text>
@@ -238,16 +239,19 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     backgroundColor: "#E5E5E5",
-    borderRadius: 25,
-    padding: 15,
-    alignItems: "center",
-    marginBottom: 30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginVertical: 20
   },
   continueButtonActive: {
     backgroundColor: "#FF9500",
   },
   continueButtonText: {
-    color: "#999",
+    color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -288,4 +292,5 @@ const styles = StyleSheet.create({
     color: "#FF9500",
     fontWeight: "bold",
   },
+
 });

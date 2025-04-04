@@ -47,6 +47,7 @@ const ProfileScreen = ({ route, navigation }) => {
         educationIsPublic: apiUser.personal_info?.profile_personal_education_is_public === '1',
         expertiseIsPublic: apiUser.personal_info?.profile_personal_expertise_is_public === '1',
         wishesIsPublic: apiUser.personal_info?.profile_personal_wishes_is_public === '1',
+        businessIsPublic: apiUser.personal_info?.profile_personal_business_is_public === '1',
       };
 
       try {
@@ -54,7 +55,7 @@ const ProfileScreen = ({ route, navigation }) => {
         userData.education = apiUser.education_info && typeof apiUser.education_info === 'string' ? JSON.parse(apiUser.education_info) : [];
         userData.expertise = apiUser.expertise_info && typeof apiUser.expertise_info === 'string' ? JSON.parse(apiUser.expertise_info) : [];
         userData.wishes = apiUser.wishes_info && typeof apiUser.wishes_info === 'string' ? JSON.parse(apiUser.wishes_info) : [];
-
+        userData.businesses = apiUser.business_info && typeof apiUser.business_info === 'string' ? JSON.parse(apiUser.business_info) : [];
         const socialLinks = apiUser.social_links && typeof apiUser.social_links === 'string' ? JSON.parse(apiUser.social_links) : {};
         userData.facebook = socialLinks.facebook || '';
         userData.twitter = socialLinks.twitter || '';
@@ -66,6 +67,7 @@ const ProfileScreen = ({ route, navigation }) => {
         userData.education = [];
         userData.expertise = [];
         userData.wishes = [];
+        userData.businesses = [];
         userData.facebook = '';
         userData.twitter = '';
         userData.linkedin = '';
@@ -167,6 +169,34 @@ const ProfileScreen = ({ route, navigation }) => {
           ))}
         </View>
       )}
+
+      {user.businesses?.some(bus => bus.isPublic) && (
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Businesses:</Text>
+          {user.businesses.filter(bus => bus.isPublic).map((bus, index) => (
+            <View key={index} style={styles.inputContainer}>
+              <Text style={styles.inputText}>{bus.name || 'Business not specified'}</Text>
+              <Text style={styles.inputText}>{bus.role || 'Role not specified'}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      
+
+      {user.expertise?.some(exp => exp.isPublic) && (
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Expertise:</Text>
+          {user.expertise.filter(exp => exp.isPublic).map((exp, index) => (
+            <View key={index} style={styles.inputContainer}>
+              <Text style={styles.inputText}>{exp.headline || 'No Title'}</Text>
+              <Text style={styles.inputText}>{exp.description || 'No Description'}</Text>
+              <Text style={styles.inputText}>cost: {exp.cost ? `$${exp.cost}` : 'Free'}</Text>
+              <Text style={styles.inputText}>💰 {exp.bounty ? `$${exp.bounty}` : 'Free'}</Text>
+            </View>
+          ))}
+        </View>
+      )}  
+      
 
       {user.wishes?.some(wish => wish.isPublic) && (
         <View style={styles.fieldContainer}>
