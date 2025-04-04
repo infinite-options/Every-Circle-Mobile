@@ -1,29 +1,25 @@
 import React from "react";
 import { View, TouchableOpacity, Image, StyleSheet } from "react-native";
-import { useNavigation } from "../contexts/NavigationContext";
+import { useNavigation } from "@react-navigation/native"; 
 
 export default function MenuBar() {
-  const { navigateTo } = useNavigation();
-
+  const navigation = useNavigation();
+  
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigateTo("Profile")} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigation.navigate("Profile")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/profile.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigateTo("Settings")} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/settings.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigateTo("Account")} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigation.navigate("Account")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/account.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigateTo("Network")} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigation.navigate("Network")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/network.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigateTo("Search")} style={styles.iconContainer}>
+      <TouchableOpacity onPress={() => navigation.navigate("Search")} style={styles.iconContainer}>
         <Image source={require("../assets/icons/search.png")} style={styles.icon} resizeMode='contain' />
       </TouchableOpacity>
     </View>

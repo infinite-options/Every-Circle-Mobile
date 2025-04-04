@@ -20,6 +20,7 @@ import SearchScreen from "./screens/SearchScreen";
 import AppleSignIn from "./AppleSignIn";
 import AccountTypeScreen from "./screens/AccountTypeScreen";
 import BusinessSetupScreen from "./screens/BusinessSetupScreen";
+import ChangePasswordScreen from "./screens/ChangePasswordScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -284,6 +285,7 @@ export default function App() {
         <Stack.Screen name='Network' component={NetworkScreen} />
         <Stack.Screen name='Search' component={SearchScreen} />
         <Stack.Screen name='BusinessSetup' component={BusinessSetupScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
