@@ -5,7 +5,8 @@ import ExperienceSection from '../components/ExperienceSection';
 import EducationSection from '../components/EducationSection';
 import WishesSection from '../components/WishesSection';
 import MiniCard from '../components/MiniCard';
-
+import ExpertiseSection from '../components/ExpertiseSection';
+import BusinessSection from '../components/BusinessSection';
 const ProfileScreenAPI = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
 
 const EditProfileScreen = ({ route, navigation }) => {
@@ -15,7 +16,7 @@ const EditProfileScreen = ({ route, navigation }) => {
   const [formData, setFormData] = useState({
     email: user?.email || '',
     firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    lastName: user?.lastName || '', 
     phoneNumber: user?.phoneNumber || '',
     tagLine: user?.tagLine || '',
     shortBio: user?.shortBio || '',
@@ -27,6 +28,8 @@ const EditProfileScreen = ({ route, navigation }) => {
     educationIsPublic: user?.educationIsPublic || false,
     expertiseIsPublic: user?.expertiseIsPublic || false,
     wishesIsPublic: user?.wishesIsPublic || false,
+    businessIsPublic: user?.businessIsPublic || false,
+    businesses: user?.businesses || [{ name: '', role: '', isPublic: true }],   
     experience: user?.experience || [{ company: '', title: '', startDate: '', endDate: '', isPublic: true }],
     education: user?.education || [{ school: '', degree: '', startDate: '', endDate: '', isPublic: true }],
     wishes: user?.wishes || [{ helpNeeds: '', details: '', isPublic: true }],
@@ -45,6 +48,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       if (fieldName === 'educationIsPublic' && prev.education.length === 1) updated.education[0].isPublic = newValue;
       if (fieldName === 'wishesIsPublic' && prev.wishes.length === 1) updated.wishes[0].isPublic = newValue;
       if (fieldName === 'expertiseIsPublic' && prev.expertise.length === 1) updated.expertise[0].isPublic = newValue;
+      if (fieldName === 'businessIsPublic' && prev.businesses.length === 1) updated.businesses[0].isPublic = newValue;
       return updated;
     });
   };
@@ -79,11 +83,13 @@ const EditProfileScreen = ({ route, navigation }) => {
       payload.append('profile_personal_education_is_public', formData.educationIsPublic ? '1' : '0');
       payload.append('profile_personal_expertise_is_public', formData.expertiseIsPublic ? '1' : '0');
       payload.append('profile_personal_wishes_is_public', formData.wishesIsPublic ? '1' : '0');
+      payload.append('profile_personal_business_is_public', formData.businessIsPublic ? '1' : '0');
 
       payload.append('experience_info', JSON.stringify(formData.experience || []));
       payload.append('education_info', JSON.stringify(formData.education || []));
       payload.append('expertise_info', JSON.stringify(formData.expertise || []));
       payload.append('wishes_info', JSON.stringify(formData.wishes || []));
+      payload.append('business_info', JSON.stringify(formData.businesses || []));
       payload.append('social_links', JSON.stringify({
         facebook: formData.facebook,
         twitter: formData.twitter,
@@ -117,12 +123,14 @@ const EditProfileScreen = ({ route, navigation }) => {
             profile_personal_experience_is_public: formData.experienceIsPublic ? '1' : '0',
             profile_personal_education_is_public: formData.educationIsPublic ? '1' : '0',
             profile_personal_expertise_is_public: formData.expertiseIsPublic ? '1' : '0',
-            profile_personal_wishes_is_public: formData.wishesIsPublic ? '1' : '0'
+            profile_personal_wishes_is_public: formData.wishesIsPublic ? '1' : '0',
+            profile_personal_business_is_public: formData.businessIsPublic ? '1' : '0'
           },
           experience_info: JSON.stringify(formData.experience || []),
           education_info: JSON.stringify(formData.education || []),
           expertise_info: JSON.stringify(formData.expertise || []),
           wishes_info: JSON.stringify(formData.wishes || []),
+          business_info: JSON.stringify(formData.businesses || []),
           social_links: JSON.stringify({
             facebook: formData.facebook,
             twitter: formData.twitter,
@@ -180,7 +188,8 @@ const EditProfileScreen = ({ route, navigation }) => {
     experienceIsPublic: formData.experienceIsPublic,
     educationIsPublic: formData.educationIsPublic,
     expertiseIsPublic: formData.expertiseIsPublic,
-    wishesIsPublic: formData.wishesIsPublic
+    wishesIsPublic: formData.wishesIsPublic,
+    businessIsPublic: formData.businessIsPublic,
   };
 
   return (
@@ -207,7 +216,11 @@ const EditProfileScreen = ({ route, navigation }) => {
 
       <ExperienceSection experience={formData.experience} setExperience={(e) => setFormData({ ...formData, experience: e })} toggleVisibility={() => toggleVisibility('experienceIsPublic')} isPublic={formData.experienceIsPublic} />
       <EducationSection education={formData.education} setEducation={(e) => setFormData({ ...formData, education: e })} toggleVisibility={() => toggleVisibility('educationIsPublic')} isPublic={formData.educationIsPublic} />
+      <BusinessSection businesses={formData.businesses} setBusinesses={(e) => setFormData({ ...formData, businesses: e })} toggleVisibility={() => toggleVisibility('businessIsPublic')} isPublic={formData.businessIsPublic} />
+      <ExpertiseSection expertise={formData.expertise} setExpertise={(e) => setFormData({ ...formData, expertise: e })} toggleVisibility={() => toggleVisibility('expertiseIsPublic')} isPublic={formData.expertiseIsPublic} />
+
       <WishesSection wishes={formData.wishes} setWishes={(e) => setFormData({ ...formData, wishes: e })} toggleVisibility={() => toggleVisibility('wishesIsPublic')} isPublic={formData.wishesIsPublic} />
+
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveText}>Save</Text>

@@ -59,6 +59,25 @@ export default function UserInfoScreen({ navigation }) {
     loadSavedData();
   }, []);
 
+
+
+  const formatPhoneNumber = (text) => {
+    const cleaned = ('' + text).replace(/\D/g, '');
+  
+    const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+  
+    if (!match) return text;
+  
+    let formatted = '';
+    if (match[1]) formatted += `(${match[1]}`;
+    if (match[1] && match[1].length === 3) formatted += ') ';
+    if (match[2]) formatted += match[2];
+    if (match[2] && match[2].length === 3) formatted += '-';
+    if (match[3]) formatted += match[3];
+  
+    return formatted;
+  };
+  
   const handleContinue = async () => {
     console.log("UserInfoScreen - Continue button pressed");
     if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim()) {
@@ -67,11 +86,11 @@ export default function UserInfoScreen({ navigation }) {
     }
 
     // Basic phone number validation
-    const phoneRegex = /^\+?[\d\s-]{10,}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      Alert.alert("Error", "Please enter a valid phone number");
-      return;
-    }
+    // const phoneRegex = /^\+?[\d\s-]{10,}$/;
+    // if (!phoneRegex.test(phoneNumber)) {
+    //   Alert.alert("Error", "Please enter a valid phone number");
+    //   return;
+    // }
 
     setLoading(true);
     try {
@@ -165,7 +184,13 @@ export default function UserInfoScreen({ navigation }) {
         <TextInput style={styles.input} value={lastName} onChangeText={setLastName} placeholder='Enter your last name' autoCapitalize='words' />
 
         <Text style={styles.label}>Phone Number</Text>
-        <TextInput style={styles.input} value={phoneNumber} onChangeText={setPhoneNumber} placeholder='Enter your phone number' keyboardType='phone-pad' />
+        <TextInput
+  style={styles.input}
+  value={phoneNumber}
+  onChangeText={(text) => setPhoneNumber(formatPhoneNumber(text))}
+  placeholder="(000) 000-0000"
+  keyboardType="phone-pad"
+/>
       </View>
 
       <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleContinue} disabled={loading}>

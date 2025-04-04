@@ -94,7 +94,7 @@ arcText: {
 },
 
   accountButtonPersonal: {
-    marginLeft: width * 0.5,
+    marginLeft: width * 0.55,
     width: width * 0.6,
     height: width * 0.6,
     borderRadius: width * 0.3,
@@ -104,7 +104,7 @@ arcText: {
   },
   personal: {
     backgroundColor: '#FFA500',
-    borderTopRightRadius: 10, // Chop right
+    // borderTopRightRadius: 10, 
   },
 
 
@@ -115,13 +115,13 @@ arcText: {
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'flex-end', 
-    marginRight: width * 0.5, 
+    marginRight: width * 0.55, 
     marginVertical: 20,
   },
   
   business: {
     backgroundColor: '#00C721',
-    borderTopLeftRadius: 10, // Chop left
+    // borderTopLeftRadius: 10, 
   },
   accountText: {
     color: '#000',
