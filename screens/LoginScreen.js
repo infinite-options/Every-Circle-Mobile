@@ -266,6 +266,7 @@ import AppleSignIn from "../AppleSignIn";
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // import SignUpScreen from "./screens/SignUpScreen";
+import axios from "axios";
 
 // Endpoints
 const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
@@ -332,8 +333,12 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       await AsyncStorage.setItem("user_uid", user_uid);
       await AsyncStorage.setItem("user_email_id", user_email);
 
+      console.log("--- debug --- user_uid:", user_uid);
+      console.log("--- debug --- user_email:", user_email);
+
       // 4. Fetch user profile
       const profileResponse = await fetch(`${PROFILE_ENDPOINT}/${user_uid}`);
+      // const profileResponse = await axios.get(`${PROFILE_ENDPOINT}/${user_uid}`);
       const fullUser = await profileResponse.json();
 
       if (!fullUser || fullUser.message === "Profile not found for this user") {
