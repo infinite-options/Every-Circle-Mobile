@@ -30,7 +30,7 @@ export default function UserInfoScreen({ navigation }) {
         // Check if profile exists
         if (userUid) {
           console.log("Checking for existing profile with userUid:", userUid);
-          const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+          const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/userprofileinfo/${userUid}`);
           const data = await response.json();
           console.log("Profile check response:", JSON.stringify(data, null, 2));
 
@@ -106,7 +106,7 @@ export default function UserInfoScreen({ navigation }) {
         console.log(`${key}: ${value}`);
       }
 
-      const endpoint = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+      const endpoint = "https://ioec2testsspm.infiniteoptions.com/userprofileinfo";
       const method = profileExists ? "PUT" : "POST";
 
       console.log("Making API request:", {
@@ -137,12 +137,12 @@ export default function UserInfoScreen({ navigation }) {
       }
 
       console.log("Profile update successful, proceeding to next screen");
-      
+
       // navigate to account type screen
-      Alert.alert('Success', 'Profile saved successfully!');
-      navigation.navigate('AccountType', {
-          user_uid: userUid,
-          email: email
+      Alert.alert("Success", "Profile saved successfully!");
+      navigation.navigate("AccountType", {
+        user_uid: userUid,
+        email: email,
       });
     } catch (error) {
       console.error("Error updating user profile:", error);

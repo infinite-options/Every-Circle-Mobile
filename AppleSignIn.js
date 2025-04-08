@@ -4,8 +4,10 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as WebBrowser from "expo-web-browser";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+console.log("AppleSignIn - Rendering");
+
 const AppleSignIn = ({ onSignIn, onError }) => {
-  console.log("AppleSignIn - Rendering");
+  // console.log("AppleSignIn - Rendering");
   const handleAppleSignIn = async () => {
     try {
       console.log("AppleSignIn - handleAppleSignIn");

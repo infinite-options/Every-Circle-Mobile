@@ -46,9 +46,23 @@ export default function App() {
     console.log("App.js - Starting useEffect");
     const checkUser = async () => {
       console.log("App.js - Checking user...");
-      const uid = await AsyncStorage.getItem("user_uid");
-      console.log("App.js - User UID:", uid);
-      if (uid) setInitialRoute("App");
+      try {
+        // Get all keys from AsyncStorage
+        const keys = await AsyncStorage.getAllKeys();
+        console.log("App.js - All AsyncStorage keys:", keys);
+
+        // Get all values for these keys
+        const values = await AsyncStorage.multiGet(keys);
+        console.log("App.js - All AsyncStorage values:", values);
+
+        // Get specific user_uid
+        const uid = await AsyncStorage.getItem("user_uid");
+        console.log("App.js - User UID:", uid);
+
+        if (uid) setInitialRoute("App");
+      } catch (error) {
+        console.error("App.js - Error reading AsyncStorage:", error);
+      }
       setLoading(false);
     };
 
