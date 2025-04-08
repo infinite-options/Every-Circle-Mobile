@@ -40,7 +40,7 @@ export default function App() {
   // const [showUserProfile, setShowUserProfile] = useState(false);
   // const [showSignUp, setShowSignUp] = useState(false);
   // const [showLogin, setShowLogin] = useState(false);
-  // const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
+  const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
 
   useEffect(() => {
     console.log("App.js - Starting useEffect");
@@ -229,6 +229,22 @@ export default function App() {
     );
   }
 
+  // Helper function to extract the last two digits before .apps.googleusercontent.com
+  const getLastTwoDigits = (clientId) => {
+    if (!clientId) return "Not set";
+
+    // Extract the part before .apps.googleusercontent.com
+    const match = clientId.match(/(.+)\.apps\.googleusercontent\.com$/);
+    if (match) {
+      const idPart = match[1];
+      // Get the last two digits of the ID part
+      return "..." + idPart.slice(-2);
+    }
+
+    // Fallback if the pattern doesn't match
+    return "..." + clientId.slice(-2);
+  };
+
   const HomeScreen = ({ navigation }) => {
     console.log("App.js - Rendering HomeScreen");
     return (
@@ -252,6 +268,16 @@ export default function App() {
               <Text style={styles.circleText}>Login</Text>
             </View>
           </TouchableOpacity>
+        </View>
+        <View style={styles.apiKeysContainer}>
+          <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
+          <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
+          <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
+          <Text style={styles.apiKeysText}>Web: {getLastTwoDigits(config.googleClientIds.web)}</Text>
+          <Text style={styles.apiKeysText}>URL Scheme: {config.googleURLScheme ? "..." + config.googleURLScheme.slice(-2) : "Not set"}</Text>
+          <Text style={styles.apiKeysText}>Maps API: {mapsApiKeyDisplay}</Text>
+          <Text style={styles.apiKeysText}>Apple Auth: {appleAuthStatus}</Text>
+          <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>
         </View>
       </View>
     );
@@ -345,7 +371,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     position: "absolute",
-    top: "60%",
+    top: "70%",
     width: "90%",
   },
 });
