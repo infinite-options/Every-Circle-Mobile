@@ -19,9 +19,8 @@ import NetworkScreen from "./screens/NetworkScreen";
 import SearchScreen from "./screens/SearchScreen";
 import AppleSignIn from "./AppleSignIn";
 import AccountTypeScreen from "./screens/AccountTypeScreen";
-import BusinessSetupScreen from "./screens/BusinessSetupScreen";
-import BusinessStep2Screen from "./screens/BusinessStep2Screen";
-import BusinessStep3Screen from "./screens/BusinessStep3Screen";
+import BusinessSetupController from "./screens/BusinessSetupController";
+import BusinessProfileScreen from "./screens/BusinessProfileScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -285,9 +284,8 @@ export default function App() {
         <Stack.Screen name='Account' component={AccountScreen} />
         <Stack.Screen name='Network' component={NetworkScreen} />
         <Stack.Screen name='Search' component={SearchScreen} />
-        <Stack.Screen name='BusinessSetup' component={BusinessSetupScreen} />
-        <Stack.Screen name='BusinessStep2' component={BusinessStep2Screen} />
-        <Stack.Screen name='BusinessStep3' component={BusinessStep3Screen} />
+        <Stack.Screen name='BusinessSetup' component={BusinessSetupController} />
+        <Stack.Screen name='BusinessProfile' component={BusinessProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

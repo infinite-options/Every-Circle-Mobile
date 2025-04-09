@@ -92,7 +92,6 @@ arcText: {
   fontSize: 16,
   fontWeight: 'bold',
 },
-
   accountButtonPersonal: {
     marginLeft: width * 0.55,
     width: width * 0.6,
@@ -106,7 +105,6 @@ arcText: {
     backgroundColor: '#FFA500',
     // borderTopRightRadius: 10, 
   },
-
 
   accountButtonBusiness: {
     width: width * 0.6,
