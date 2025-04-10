@@ -13,7 +13,7 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import * as Crypto from 'expo-crypto';
+import * as Crypto from "expo-crypto";
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation();
@@ -32,27 +32,48 @@ export default function ChangePasswordScreen() {
     const getUserInfo = async () => {
       try {
         const uid = await AsyncStorage.getItem("user_uid");
+        const storedEmail = await AsyncStorage.getItem("user_email_id");
+
         if (uid) {
           setUserId(uid);
           console.log("User UID:", uid);
-          
-          // Fetch user details to get email
-          const response = await fetch(
-            `https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`
-          );
-          const userData = await response.json();
-          console.log("User data fetched:", userData);
-          
-          // Get the email from the correct field
-          const email = userData.user_email || 
-                       (userData.personal_info ? userData.personal_info.profile_personal_email : null) ||
-                       "rbtest6@gmail.com"; // Fallback to the email shown in logs
-          
-          setUserEmail(email);
-          console.log("Setting user email to:", email);
+
+          if (storedEmail) {
+            setUserEmail(storedEmail);
+            console.log("Using stored email:", storedEmail);
+            return;
+          }
+
+          // Fetch user details to get email if not in AsyncStorage
+          try {
+            const response = await fetch(
+              `https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`
+            );
+            const userData = await response.json();
+            console.log("User data fetched:", userData);
+
+            // Get the email from the correct field
+            const email =
+              userData.user_email ||
+              (userData.personal_info
+                ? userData.personal_info.profile_personal_email
+                : null);
+
+            if (email) {
+              setUserEmail(email);
+              console.log("Setting user email to:", email);
+            } else {
+              Alert.alert("Error", "Could not retrieve user email. Please log in again.");
+            }
+          } catch (fetchError) {
+            console.error("Error fetching user profile:", fetchError);
+            Alert.alert("Error", "Could not retrieve user profile. Please try again later.");
+          }
+        } else {
+          Alert.alert("Error", "User ID not found. Please log in again.");
         }
       } catch (error) {
-        console.error("Error fetching user info:", error);
+        console.error("Error accessing AsyncStorage:", error);
       }
     };
 
@@ -80,7 +101,7 @@ export default function ChangePasswordScreen() {
 
   const handleChangePassword = async () => {
     if (!validateInputs()) return;
-    
+
     if (!userEmail) {
       Alert.alert("Error", "User email not found. Please try again later.");
       return;
@@ -89,7 +110,7 @@ export default function ChangePasswordScreen() {
     setIsLoading(true);
     try {
       console.log("Starting password change process for email:", userEmail);
-      
+
       // Get the password salt first
       console.log("Fetching password salt...");
       const saltResponse = await fetch(
@@ -107,7 +128,7 @@ export default function ChangePasswordScreen() {
 
       const saltData = await saltResponse.json();
       console.log("Salt response:", saltData);
-      
+
       if (saltData.code !== 200) {
         Alert.alert("Error", "Failed to retrieve account information");
         setIsLoading(false);
@@ -117,10 +138,13 @@ export default function ChangePasswordScreen() {
       const salt = saltData.result[0].password_salt;
       console.log("Got salt:", salt);
 
-      // Hash the current password to verify
+      // Hash the current password to verify using password + salt order
       console.log("Hashing current password...");
-      const currentPasswordHash = await hashPassword(currentPassword, salt);
-      console.log("Current password hash generated");
+      const currentPasswordHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        currentPassword + salt // Order: password then salt
+      );
+      console.log("Current password hash generated:", currentPasswordHash);
 
       // Verify current password by attempting login
       console.log("Verifying current password...");
@@ -140,25 +164,26 @@ export default function ChangePasswordScreen() {
 
       const verifyData = await verifyResponse.json();
       console.log("Verify response:", verifyData);
-      
+
       if (verifyData.code !== 200) {
         Alert.alert("Error", "Current password is incorrect");
         setIsLoading(false);
         return;
       }
 
-      // Hash the new password
-      console.log("Hashing new password...");
-      const newPasswordHash = await hashPassword(newPassword, salt);
-      console.log("New password hash generated");
+      // Instead of hashing the new password, we now directly send the new plain text password.
+      console.log("Using new password in plain text.");
 
-      // Update the password
-      console.log("Calling UpdateEmailPassword with:", {
+      // Create the request payload with plain new password
+      const updateRequest = {
         email: userEmail,
-        id: "",  // Try sending empty string as the API might not expect this field
-        password: newPasswordHash
-      });
-      
+        user_uid: userId,
+        password: newPassword,
+      };
+
+      console.log("Sending update request:", JSON.stringify(updateRequest));
+
+      // Updated endpoint: using UpdateEmailPassword instead of UpdatePassword.
       const updateResponse = await fetch(
         `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UpdateEmailPassword/EVERY-CIRCLE`,
         {
@@ -166,38 +191,46 @@ export default function ChangePasswordScreen() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            email: userEmail,
-            user_uid: userId,  // Try sending empty string for this field
-            password: newPasswordHash,
-          }),
+          body: JSON.stringify(updateRequest),
         }
       );
 
+      // Get response as text first to debug
+      const responseText = await updateResponse.text();
+      console.log("Raw update response:", responseText);
+
+      let updateData;
+      // After receiving responseText and parsing it:
+
       try {
-        const updateData = await updateResponse.json();
-        console.log("Update password response:", updateData);
-        
-        if (updateData.message === "User email and password updated successfully") {
-            Alert.alert(
-              "Success",
-              "Your password has been updated successfully",
-              [{ text: "OK", onPress: () => navigation.goBack() }]
-            );
-        } else {
-          // More detailed error message
+        updateData = JSON.parse(responseText);
+        console.log("Parsed update response:", updateData);
+
+        // Option A: Check if message includes "updated successfully"
+        if (updateData.message && updateData.message.toLowerCase().includes("updated successfully")) {
+          // Optionally store the new password plain text or clear it from storage.
+          // await AsyncStorage.setItem("current_password_hash", newPassword); // For example purposes only
+
           Alert.alert(
-            "Error", 
-            `Failed to update password: ${updateData.message || "Unknown error"}. Please try again later or contact support.`
+            "Success",
+            "Your password has been updated successfully",
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
+        } else {
+          Alert.alert(
+            "Error",
+            `Failed to update password: ${updateData.message || "Unknown error"}. Please try again later.`
           );
         }
-      } catch (error) {
-        console.error("Error parsing response:", error);
+      } catch (parseError) {
+        console.error("Error parsing update response:", parseError);
         Alert.alert(
-          "Error", 
-          "There was a problem communicating with the server. Please try again later."
+          "Error",
+          "The server returned an unexpected response. Please try again later.",
+          [{ text: "OK", onPress: () => navigation.goBack() }]
         );
       }
+
     } catch (error) {
       console.error("Error changing password:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
@@ -206,31 +239,11 @@ export default function ChangePasswordScreen() {
     }
   };
 
-  // Function to hash password with SHA-256 using expo-crypto
-  const hashPassword = async (password, salt) => {
-    try {
-      const combined = password + salt;
-      console.log("Hashing combined string...");
-      const hash = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        combined
-      );
-      console.log("Hash completed successfully");
-      return hash;
-    } catch (error) {
-      console.error("Hash error:", error);
-      throw error;
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Header with back button */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Change Password</Text>
@@ -321,19 +334,23 @@ export default function ChangePasswordScreen() {
                 size={16}
                 color={newPassword.length >= 6 ? "#4CAF50" : "#ccc"}
               />
-              <Text style={styles.requirementText}>
-                At least 6 characters
-              </Text>
+              <Text style={styles.requirementText}>At least 6 characters</Text>
             </View>
             <View style={styles.requirementItem}>
               <MaterialIcons
-                name={newPassword === confirmPassword && newPassword.length > 0 ? "check-circle" : "cancel"}
+                name={
+                  newPassword === confirmPassword && newPassword.length > 0
+                    ? "check-circle"
+                    : "cancel"
+                }
                 size={16}
-                color={newPassword === confirmPassword && newPassword.length > 0 ? "#4CAF50" : "#ccc"}
+                color={
+                  newPassword === confirmPassword && newPassword.length > 0
+                    ? "#4CAF50"
+                    : "#ccc"
+                }
               />
-              <Text style={styles.requirementText}>
-                Passwords match
-              </Text>
+              <Text style={styles.requirementText}>Passwords match</Text>
             </View>
           </View>
 
@@ -356,10 +373,7 @@ export default function ChangePasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f8f8",
-  },
+  container: { flex: 1, backgroundColor: "#f8f8f8" },
   header: {
     backgroundColor: "#8b58f9",
     paddingVertical: 15,
@@ -376,16 +390,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  backButton: {
-    padding: 5,
-  },
-  placeholder: {
-    width: 24,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-  },
+  backButton: { padding: 5 },
+  placeholder: { width: 24 },
+  scrollContent: { flexGrow: 1, padding: 20 },
   formContainer: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -412,17 +419,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: "#f9f9f9",
   },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    color: "#333",
-  },
-  eyeIcon: {
-    padding: 10,
-  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, height: 50, color: "#333" },
+  eyeIcon: { padding: 10 },
   requirementsContainer: {
     marginVertical: 15,
     padding: 15,
@@ -440,11 +439,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 5,
   },
-  requirementText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: "#555",
-  },
+  requirementText: { marginLeft: 8, fontSize: 14, color: "#555" },
   submitButton: {
     backgroundColor: "#8b58f9",
     borderRadius: 8,
