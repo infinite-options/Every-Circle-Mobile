@@ -232,7 +232,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
           <Image source={require('../assets/share.png')} style={styles.navIcon} />
           <Text style={styles.navLabel}>Share</Text>
         </TouchableOpacity>
