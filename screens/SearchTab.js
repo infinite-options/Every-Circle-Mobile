@@ -27,14 +27,14 @@ export default function SearchTab() {
   
   // Connected companies (direct and 1-away connections)
   const connections = [
-    { id: "1", type: "1 Away", color: "#3F8CFF", position: { x: -65, y: -140 } }, // Blue, top left
-    { id: "2", type: "Direct", color: "#F4A900", position: { x: -95, y: -60 } }, // Orange, left
-    { id: "3", type: "Direct", color: "#F4A900", position: { x: 0, y: -110 } }, // Orange, top
-    { id: "4", type: "1 Away", color: "#F4A900", position: { x: 85, y: -130 } }, // Orange, top right
-    { id: "5", type: "Direct", color: "#3F8CFF", position: { x: 105, y: -40 } }, // Blue, right
-    { id: "6", type: "Direct", color: "#F4A900", position: { x: 130, y: 20 } }, // Orange, right
-    { id: "7", type: "Direct", color: "#3F8CFF", position: { x: 70, y: 90 } }, // Blue, bottom right
-    { id: "8", type: "1 Away", color: "#F4A900", position: { x: 10, y: 150 } }, // Orange, bottom
+    { id: "1", type: "1 Away", color: "#3F8CFF", position: { x: -65, y: -240 } }, // Blue, top left
+    { id: "2", type: "Direct", color: "#F4A900", position: { x: -95, y: -150 } }, // Orange, left
+    { id: "3", type: "Direct", color: "#F4A900", position: { x: 20, y: -180 } }, // Orange, top
+    { id: "4", type: "1 Away", color: "#F4A900", position: { x: 100, y: -230 } }, // Orange, top right
+    { id: "5", type: "Direct", color: "#3F8CFF", position: { x: 120, y: -120 } }, // Blue, right
+    { id: "6", type: "Direct", color: "#F4A900", position: { x: 140, y: 0 } }, // Orange, right
+    { id: "7", type: "Direct", color: "#3F8CFF", position: { x: 120, y: 100 } }, // Blue, bottom right
+    { id: "8", type: "1 Away", color: "#F4A900", position: { x: 130, y: 180 } }, // Orange, bottom
   ];
 
   return (
@@ -93,7 +93,7 @@ export default function SearchTab() {
                 {
                   backgroundColor: node.color,
                   left: windowWidth / 2 + node.position.x - 30, // Adjust for node width
-                  top: windowHeight / 2 + node.position.y - 170, // Adjust to center in screen area and node height
+                  top: windowHeight / 2 + node.position.y - 170 - 30, // Adjust to center in screen area and node height
                 }
               ]}
             >
@@ -159,14 +159,15 @@ const styles = StyleSheet.create({
   centerCircleText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 15,
     textAlign: 'center',
+    marginTop: 30,
   },
   dollarIconContainer: {
     position: 'absolute',
     top: 30,
-    width: 20,
-    height: 20,
+    width: 15,
+    height: 15,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#000",
@@ -176,15 +177,15 @@ const styles = StyleSheet.create({
   dollarIcon: {
     color: '#000',
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 10,
   },
   ratingContainer: {
     flexDirection: 'row',
     marginTop: 10,
   },
   ratingDot: {
-    width: 12,
-    height: 12,
+    width: 10,
+    height: 10,
     borderRadius: 6,
     backgroundColor: "#FFFF99", // Light yellow
     marginHorizontal: 2,
