@@ -44,6 +44,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       setShowSpinner(true);
 
       // 1. Get salt
+      console.log("step 1");
       const saltResponse = await fetch(SALT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,15 +58,21 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       }
 
       // 2. Hash password
+      console.log("step 2");
       const salt = saltObject.result[0].password_salt;
       const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, password + salt);
 
       // 3. Login
+      console.log("user_id");
+      console.log("step 3");
+      console.log("https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE");
+
       const loginResponse = await fetch(LOGIN_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password: hashedPassword }),
       });
+      console.log(user_uid);
       const loginObject = await loginResponse.json();
       console.log("loginObject", loginObject);
 
@@ -94,10 +101,8 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
         headers: { "Content-Type": "application/json" },
       });
 
-
-
       console.log("profileResponse", profileResponse);
-    
+
       const fullUser = await profileResponse.json();
       console.log("fullUser", fullUser);
 
@@ -107,6 +112,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       }
 
       // 5. Navigate to Profile screen
+      console.log("step 5");
       navigation.navigate("Profile", {
         user: {
           ...fullUser,

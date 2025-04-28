@@ -16,10 +16,10 @@ export const NavigationProvider = ({ children }) => {
 };
 
 // Create a custom hook to use the navigation context
-export const useNavigation = () => {
+export const useCustomNavigation = () => {
   const context = useContext(NavigationContext);
   if (!context) {
-    throw new Error("useNavigation must be used within a NavigationProvider");
+    throw new Error("useCustomNavigation must be used within a NavigationProvider");
   }
   return context;
 };
