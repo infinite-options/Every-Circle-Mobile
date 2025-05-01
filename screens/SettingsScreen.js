@@ -9,8 +9,6 @@ import {
   ScrollView,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import MenuBar from "../components/MenuBar";
-// Use the official navigation hook from React Navigation
 import { useNavigation } from "@react-navigation/native";
 
 export default function SettingsScreen() {
@@ -210,8 +208,33 @@ export default function SettingsScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Bottom MenuBar */}
-      <MenuBar />
+      {/* Bottom Navigation */}
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+          <MaterialIcons name="person" size={24} color="#333" />
+          <Text style={styles.navLabel}>Profile</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
+          <MaterialIcons name="settings" size={24} color="#333" />
+          <Text style={styles.navLabel}>Settings</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
+          <MaterialIcons name="home" size={24} color="#333" />
+          <Text style={styles.navLabel}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+          <MaterialIcons name="share" size={24} color="#333" />
+          <Text style={styles.navLabel}>Share</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
+          <MaterialIcons name="search" size={24} color="#333" />
+          <Text style={styles.navLabel}>Search</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -242,7 +265,7 @@ const styles = StyleSheet.create({
   },
   settingsContainer: {
     padding: 15,
-    paddingBottom: 80, // Extra space for the MenuBar
+    paddingBottom: 80,
   },
   settingItem: {
     backgroundColor: "#fff",
@@ -270,5 +293,22 @@ const styles = StyleSheet.create({
   },
   darkItemText: {
     color: "#fff",
+  },
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  navButton: {
+    alignItems: 'center',
+  },
+  navLabel: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
   },
 });
