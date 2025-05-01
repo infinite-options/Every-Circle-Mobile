@@ -10,6 +10,7 @@ import BusinessSection from '../components/BusinessSection';
 const ProfileScreenAPI = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
 
 const EditProfileScreen = ({ route, navigation }) => {
+  console.log('in EditProfileScreen');
   const { user, profile_uid: routeProfileUID } = route.params || {};
   const [profileUID, setProfileUID] = useState(routeProfileUID || user?.profile_uid || '');
 
