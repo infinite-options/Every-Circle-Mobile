@@ -75,8 +75,11 @@ const ProfileScreen = ({ route, navigation }) => {
       }
 
       console.log(' Setting user data:', JSON.stringify(userData, null, 2));
+      console.log('1');
       setUser(userData);
+      console.log('2');
       setLoading(false);
+      console.log('3');
     } else {
       console.error(' No user data received in ProfileScreen');
       Alert.alert('Error', 'Failed to load profile data.');
