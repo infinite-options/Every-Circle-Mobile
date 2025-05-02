@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { Modal } from "react-native";
+
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
@@ -18,6 +20,7 @@ export default function SettingsScreen() {
   const [allowCookies, setAllowCookies] = useState(false);
   const [displayEmail, setDisplayEmail] = useState(true);
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState(false);
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -113,7 +116,7 @@ export default function SettingsScreen() {
           {/* Terms and Conditions */}
           <TouchableOpacity
             style={[styles.settingItem, darkMode && styles.darkSettingItem]}
-            onPress={() => navigation.navigate("TermsAndConditions")}
+            onPress={() => navigation.navigate('TermsAndConditions')}
           >
             <View style={styles.itemLabel}>
               <MaterialIcons
@@ -209,6 +212,17 @@ export default function SettingsScreen() {
       </SafeAreaView>
 
       {/* Bottom Navigation */}
+      <Modal visible={termsModalVisible} transparent={true} animationType="fade">
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalBox}>
+      <Text style={styles.modalText}>IRamya’m </Text>
+      <TouchableOpacity onPress={() => setTermsModalVisible(false)} style={styles.closeModalButton}>
+        <Text style={styles.closeButtonText}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
           <MaterialIcons name="person" size={24} color="#333" />
@@ -225,7 +239,7 @@ export default function SettingsScreen() {
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
           <MaterialIcons name="share" size={24} color="#333" />
           <Text style={styles.navLabel}>Share</Text>
         </TouchableOpacity>
@@ -311,4 +325,10 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 4,
   },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+modalBox: { backgroundColor: '#fff', padding: 20, borderRadius: 10, alignItems: 'center' },
+modalText: { fontSize: 18, fontWeight: 'bold' },
+closeModalButton: { marginTop: 15, backgroundColor: '#8b58f9', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 },
+closeButtonText: { color: '#fff', fontWeight: 'bold' }
+
 });
