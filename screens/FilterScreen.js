@@ -155,7 +155,7 @@ export default function FilterScreen({ navigation }) {
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Share")}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
           <Ionicons name="share-social" size={24} color="#333" />
           <Text style={styles.navLabel}>Share</Text>
         </TouchableOpacity>
