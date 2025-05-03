@@ -10,9 +10,9 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from '@react-navigation/native';
 import * as Crypto from "expo-crypto";
 
 export default function ChangePasswordScreen() {
@@ -368,6 +368,34 @@ export default function ChangePasswordScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      {/* Bottom Navigation Bar */}
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
+          <Ionicons name="person-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
+          <Ionicons name="settings-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+          <MaterialIcons name="account-balance" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
+          <Ionicons name="share-social-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
+          <Ionicons name="search-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+      </View>
+
     </SafeAreaView>
   );
 }
@@ -448,6 +476,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 15,
   },
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  navButton: {
+    alignItems: 'center',
+  },
+  navLabel: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
+  },  
   submitButtonText: {
     color: "#fff",
     fontSize: 16,

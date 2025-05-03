@@ -17,27 +17,27 @@ const NetworkScreen = ({ navigation }) => {
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
           <Image source={require('../assets/profile.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
           <Image source={require('../assets/setting.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Settings</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Home</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
           <Image source={require('../assets/share.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Share</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
           <Image source={require('../assets/search.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Search</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
       </View>
     </View>

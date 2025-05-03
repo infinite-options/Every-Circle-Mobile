@@ -226,27 +226,27 @@ export default function SettingsScreen() {
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
           <MaterialIcons name="person" size={24} color="#333" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
           <MaterialIcons name="settings" size={24} color="#333" />
-          <Text style={styles.navLabel}>Settings</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
           <MaterialIcons name="home" size={24} color="#333" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
           <MaterialIcons name="share" size={24} color="#333" />
-          <Text style={styles.navLabel}>Share</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
           <MaterialIcons name="search" size={24} color="#333" />
-          <Text style={styles.navLabel}>Search</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
       </View>
     </View>
