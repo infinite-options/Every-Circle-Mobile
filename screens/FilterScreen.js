@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
-  FlatList
+  FlatList,
+  SafeAreaView
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -31,6 +32,32 @@ export default function FilterScreen({ navigation }) {
   const networkOptions = [1, 2, 3, 4, 5];
   const bountyOptions = ["Any", "Low", "Medium", "High"];
   const ratingOptions = ["> 1", "> 2", "> 3", "> 4", "> 4.5"];
+
+  // Render option item for modals
+  const renderOptionItem = (options, selectedValue, onSelect) => {
+    return ({ item }) => {
+      const isSelected = 
+        typeof item === 'string' ? 
+        item === selectedValue : 
+        (selectedValue === item || (typeof item === 'string' && item.includes(selectedValue.toString())));
+      
+      return (
+        <TouchableOpacity
+          style={[styles.optionItem, isSelected && styles.selectedOption]}
+          onPress={() => {
+            onSelect(typeof item === 'string' && item.startsWith('>') ? parseInt(item.slice(1).trim()) : item);
+          }}
+        >
+          <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
+            {item}
+          </Text>
+          {isSelected && (
+            <Ionicons name="checkmark" size={24} color="#9C45F7" />
+          )}
+        </TouchableOpacity>
+      );
+    };
+  };
 
   return (
     <View style={styles.container}>
@@ -138,31 +165,159 @@ export default function FilterScreen({ navigation }) {
         </View>
       </ScrollView>
 
+      {/* Distance Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={distanceModalVisible}
+        onRequestClose={() => setDistanceModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Distance</Text>
+              <TouchableOpacity onPress={() => setDistanceModalVisible(false)}>
+                <Ionicons name="close" size={28} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={distanceOptions.map(d => `${d} mi`)}
+              renderItem={renderOptionItem(
+                distanceOptions.map(d => `${d} mi`), 
+                `${distance} mi`, 
+                (value) => {
+                  setDistance(parseInt(value));
+                  setDistanceModalVisible(false);
+                }
+              )}
+              keyExtractor={(item) => item.toString()}
+              style={styles.optionsList}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Network Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={networkModalVisible}
+        onRequestClose={() => setNetworkModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Network</Text>
+              <TouchableOpacity onPress={() => setNetworkModalVisible(false)}>
+                <Ionicons name="close" size={28} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={networkOptions}
+              renderItem={renderOptionItem(
+                networkOptions, 
+                network, 
+                (value) => {
+                  setNetwork(value);
+                  setNetworkModalVisible(false);
+                }
+              )}
+              keyExtractor={(item) => item.toString()}
+              style={styles.optionsList}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Bounty Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={bountyModalVisible}
+        onRequestClose={() => setBountyModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Bounty</Text>
+              <TouchableOpacity onPress={() => setBountyModalVisible(false)}>
+                <Ionicons name="close" size={28} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={bountyOptions}
+              renderItem={renderOptionItem(
+                bountyOptions, 
+                bounty, 
+                (value) => {
+                  setBounty(value);
+                  setBountyModalVisible(false);
+                }
+              )}
+              keyExtractor={(item) => item.toString()}
+              style={styles.optionsList}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Rating Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={ratingModalVisible}
+        onRequestClose={() => setRatingModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Rating</Text>
+              <TouchableOpacity onPress={() => setRatingModalVisible(false)}>
+                <Ionicons name="close" size={28} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={ratingOptions}
+              renderItem={renderOptionItem(
+                ratingOptions, 
+                `> ${rating}`, 
+                (value) => {
+                  setRating(value);
+                  setRatingModalVisible(false);
+                }
+              )}
+              keyExtractor={(item) => item.toString()}
+              style={styles.optionsList}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
       {/* Bottom Navigation Bar */}
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
           <Ionicons name="person" size={24} color="#333" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
           <Ionicons name="settings" size={24} color="#333" />
-          <Text style={styles.navLabel}>Settings</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
           <Ionicons name="home" size={24} color="#333" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
           <Ionicons name="share-social" size={24} color="#333" />
-          <Text style={styles.navLabel}>Share</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
           <Ionicons name="search" size={24} color="#333" />
-          <Text style={styles.navLabel}>Search</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -262,5 +417,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333",
     marginTop: 4,
+  },
+  
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+    maxHeight: "70%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  optionsList: {
+    paddingHorizontal: 20,
+  },
+  optionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  selectedOption: {
+    backgroundColor: "#f8f0ff",
+  },
+  optionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  selectedOptionText: {
+    color: "#9C45F7",
+    fontWeight: "500",
   },
 });

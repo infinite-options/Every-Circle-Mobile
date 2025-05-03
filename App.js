@@ -26,6 +26,7 @@ import ChangePasswordScreen from "./screens/ChangePasswordScreen";
 import FilterScreen from "./screens/FilterScreen";
 import TermsAndConditionsScreen from './screens/TermsAndConditionsScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+import SearchResults from './screens/SearchResults';
 
 const Stack = createNativeStackNavigator();
 
@@ -292,8 +293,9 @@ export default function App() {
         <Stack.Screen name='BusinessSetup' component={BusinessSetupController} />
         <Stack.Screen name='BusinessProfile' component={BusinessProfileScreen} />
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-        <Stack.Screen name="Filter" component={FilterScreen} />
+        <Stack.Screen name="Filters" component={FilterScreen} />
         <Stack.Screen name='SearchTab' component={SearchTab} /> 
+        <Stack.Screen name="SearchResults" component={SearchResults} />
         <Stack.Screen
           name="TermsAndConditions"
           component={TermsAndConditionsScreen}

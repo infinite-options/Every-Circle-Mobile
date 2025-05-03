@@ -13,7 +13,12 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function SearchScreen() {
   const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState("Plumber");
+  const onSearch = () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    navigation.navigate("SearchResults", { query: q });
+  };  
+  const [searchQuery, setSearchQuery] = useState("");
 
   const searchResults = [
     { id: "1", company: "ABC Plumbing", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
@@ -37,9 +42,22 @@ export default function SearchScreen() {
       </View>
       <View style={styles.resultActions}>
         <View style={styles.ratingContainer}>{renderStars(item.rating)}</View>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="share-social-outline" size={22} color="black" />
-        </TouchableOpacity>
+        <TouchableOpacity
+        style={styles.actionButton}
+        onPress={() =>
+          navigation.navigate("SearchTab", {
+            centerCompany: {
+              id:    item.id,
+              name:  item.company,
+              rating: item.rating,
+              // optionally any other props you want to pass
+            }
+          })
+        }
+      >
+        <Ionicons name="share-social-outline" size={22} color="black" />
+      </TouchableOpacity>
+
         {item.hasX && (
           <TouchableOpacity style={styles.actionButton}>
             <Text style={styles.xSymbol}>X</Text>
@@ -77,14 +95,26 @@ export default function SearchScreen() {
 
       {/* Main Content */}
       <View style={styles.contentContainer}>
-        <View style={styles.searchContainer}>
-          <TouchableOpacity style={styles.searchInput} onPress={handleSearchFocus}>
-            <Text style={styles.searchText}>{searchQuery || "Search..."}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton} onPress={() => navigation.navigate("Filter")}>
-            <Ionicons name="filter" size={22} color="black" />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="What are you looking for?"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+          onSubmitEditing={onSearch}
+        />
+        <TouchableOpacity style={styles.searchButton} onPress={onSearch}>
+          <Ionicons name="search" size={22} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => navigation.navigate("Filters")}
+        >
+          <MaterialIcons name="filter-list" size={22} color="black" />
+        </TouchableOpacity>
+      </View>
+
 
         <View style={styles.tableHeader}>
           <Text style={styles.tableHeaderText}>Company</Text>
@@ -104,27 +134,27 @@ export default function SearchScreen() {
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
           <MaterialIcons name="person" size={24} color="#333" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
           <MaterialIcons name="settings" size={24} color="#333" />
-          <Text style={styles.navLabel}>Settings</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
           <MaterialIcons name="home" size={24} color="#333" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
           <MaterialIcons name="share" size={24} color="#333" />
-          <Text style={styles.navLabel}>Share</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
           <MaterialIcons name="search" size={24} color="#333" />
-          <Text style={styles.navLabel}>Search</Text>
+          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -233,4 +263,17 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 4,
   },
+  searchButton: {
+    marginLeft: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    padding: 12,
+  }, 
+  filterButton: {
+    marginLeft: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 8,
+    padding: 12,
+  },
+   
 });

@@ -8,6 +8,7 @@ import {
   StyleSheet
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 export default function PrivacyPolicyScreen() {
   const navigation = useNavigation();
@@ -53,6 +54,34 @@ export default function PrivacyPolicyScreen() {
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
       </ScrollView>
+      {/* Bottom Navigation Bar */}
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
+          <Ionicons name="person-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
+          <Ionicons name="settings-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+          <MaterialIcons name="account-balance" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
+          <Ionicons name="share-social-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
+          <Ionicons name="search-outline" size={24} color="#333" />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+      </View>
+
     </SafeAreaView>
   );
 }
@@ -78,6 +107,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 6
   },
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  navButton: {
+    alignItems: 'center',
+  },
+  navLabel: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
+  },
+  
   closeButtonText: {
     color: '#fff',
     fontSize: 16,
