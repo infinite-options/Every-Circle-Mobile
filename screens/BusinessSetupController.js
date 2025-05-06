@@ -118,6 +118,8 @@ export default function BusinessSetupController({ navigation }) {
       const result = await response.json();
       if (response.ok) {
         navigation.navigate('BusinessProfile', { business_uid: result.business_uid });
+        // navigation.navigate('BusinessProfile');
+
         console.log('Business created successfully');
         console.log('result', result);
 
