@@ -218,7 +218,7 @@ const ProfileScreen = ({ route, navigation }) => {
     </ScrollView>
 
 <View style={styles.navContainer}>
-<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile',{user, profile_uid: profileUID})}>
   <Image source={require('../assets/profile.png')} style={styles.navIcon} />
   <Text style={styles.navLabel}>Profile</Text>
 </TouchableOpacity>

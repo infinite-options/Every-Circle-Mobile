@@ -1,3 +1,4 @@
+// SearchScreen.js
 import React, { useState } from "react";
 import {
   View,
@@ -6,57 +7,92 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Image,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 export default function SearchScreen() {
   const navigation = useNavigation();
-  const onSearch = () => {
-    const q = searchQuery.trim();
-    if (!q) return;
-    navigation.navigate("SearchResults", { query: q });
-  };  
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const searchResults = [
+  // --- stub initial data, so you see the four items by default ---
+  const initialResults = [
     { id: "1", company: "ABC Plumbing", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
     { id: "2", company: "Speedy Roto", rating: 3, hasPriceTag: false, hasX: true, hasDollar: false },
     { id: "3", company: "Fast Rooter", rating: 4, hasPriceTag: true, hasX: false, hasDollar: false },
     { id: "4", company: "Hector Handyman", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
   ];
 
-  const renderStars = (rating) => {
-    const stars = [];
-    for (let i = 0; i < rating; i++) {
-      stars.push(<View key={i} style={styles.starCircle} />);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState(initialResults);
+  const [loading, setLoading] = useState(false);
+
+  const onSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `https://ioec2testsspm.infiniteoptions.com/api/business_results/${encodeURIComponent(q)}`
+      );
+      const json = await res.json();
+      const list = (json.result || []).map((b, i) => ({
+            id: `${b.business_uid || i}`,
+            company: b.business_name,
+            // ← pull the actual star rating
+            rating: typeof b.rating_star === "number" ? b.rating_star : 0,
+            hasPriceTag: b.has_price_tag,
+            hasX: b.has_x,
+            hasDollar: b.has_dollar_sign,
+          }));
+      setResults(list);
+    } catch (err) {
+      console.warn("Search failed", err);
+      setResults([]);
     }
-    return <View style={{ flexDirection: "row" }}>{stars}</View>;
+    setLoading(false);
   };
 
-  const renderResultItem = (item) => (
-    <View key={item.id} style={styles.resultItem}>
+  const renderStars = (rating) => {
+    return (
+      <View style={{ flexDirection: "row" }}>
+        {Array.from({ length: rating }).map((_, i) => (
+          <View key={i} style={styles.starCircle} />
+        ))}
+      </View>
+    );
+  };
+
+  const renderResultItem = (item, idx) => (
+    <View key={`${item.id}-${idx}`} style={styles.resultItem}>
       <View style={styles.resultContent}>
         <Text style={styles.companyName}>{item.company}</Text>
       </View>
       <View style={styles.resultActions}>
-        <View style={styles.ratingContainer}>{renderStars(item.rating)}</View>
+      <View style={styles.ratingContainer}>
+        <Ionicons name="star" size={16} color="#FFCD3C" />
+        <Text style={styles.ratingText}>
+          {typeof item.rating === "number"
+            ? item.rating.toFixed(1)
+            : item.rating}
+        </Text>
+      </View>
+
+
         <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() =>
-          navigation.navigate("SearchTab", {
-            centerCompany: {
-              id:    item.id,
-              name:  item.company,
-              rating: item.rating,
-              // optionally any other props you want to pass
-            }
-          })
-        }
-      >
-        <Ionicons name="share-social-outline" size={22} color="black" />
-      </TouchableOpacity>
+          style={styles.actionButton}
+          onPress={() =>
+            navigation.navigate("SearchTab", {
+              centerCompany: {
+                id:     item.id,
+                name:   item.company,
+                rating: item.rating,
+              },
+            })
+          }
+        >
+          <Ionicons name="share-social-outline" size={22} color="black" />
+        </TouchableOpacity>
 
         {item.hasX && (
           <TouchableOpacity style={styles.actionButton}>
@@ -79,10 +115,6 @@ export default function SearchScreen() {
     </View>
   );
 
-  const handleSearchFocus = () => {
-    navigation.navigate("SearchTab");
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -95,26 +127,25 @@ export default function SearchScreen() {
 
       {/* Main Content */}
       <View style={styles.contentContainer}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="What are you looking for?"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          returnKeyType="search"
-          onSubmitEditing={onSearch}
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={onSearch}>
-          <Ionicons name="search" size={22} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => navigation.navigate("Filters")}
-        >
-          <MaterialIcons name="filter-list" size={22} color="black" />
-        </TouchableOpacity>
-      </View>
-
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="What are you looking for?"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            onSubmitEditing={onSearch}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={onSearch}>
+            <Ionicons name="search" size={22} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => navigation.navigate("Filters")}
+          >
+            <MaterialIcons name="filter-list" size={22} color="black" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.tableHeader}>
           <Text style={styles.tableHeaderText}>Company</Text>
@@ -122,7 +153,10 @@ export default function SearchScreen() {
         </View>
 
         <ScrollView style={styles.resultsContainer}>
-          {searchResults.map(renderResultItem)}
+          {loading
+            ? <Text style={styles.loadingText}>Loading…</Text>
+            : results.map((item, idx) => renderResultItem(item, idx))
+          }
         </ScrollView>
 
         <View style={styles.bannerAd}>
@@ -134,27 +168,18 @@ export default function SearchScreen() {
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
           <MaterialIcons name="person" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
           <MaterialIcons name="settings" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
           <MaterialIcons name="home" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
           <MaterialIcons name="share" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
           <MaterialIcons name="search" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -162,6 +187,16 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
+  ratingContainer: {
+       flexDirection: "row",
+       alignItems: "center",
+     },
+     ratingText: {
+       marginLeft: 4,
+       fontSize: 14,
+       fontWeight: "500",
+       color: "#333",
+     },
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
     backgroundColor: "#9C45F7",
@@ -176,6 +211,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 28, fontWeight: "bold", color: "#fff", flex: 1, textAlign: "center" },
   cartButton: { backgroundColor: "#fff", borderRadius: 20, padding: 5 },
+
   contentContainer: { flex: 1, padding: 20, paddingTop: 30, paddingBottom: 80 },
   searchContainer: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
   searchInput: {
@@ -183,11 +219,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     borderRadius: 8,
     padding: 12,
-    justifyContent: "center",
     marginRight: 10,
   },
-  searchText: { fontSize: 16, color: "#555" },
-  filterButton: { backgroundColor: "#f0f0f0", borderRadius: 8, padding: 12 },
+  searchButton: { marginLeft: 10, backgroundColor: "#f0f0f0", borderRadius: 8, padding: 12 },
+  filterButton: { marginLeft: 10, backgroundColor: "#f0f0f0", borderRadius: 8, padding: 12 },
+
   tableHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -197,7 +233,10 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   tableHeaderText: { fontSize: 16, color: "#888" },
+
   resultsContainer: { flex: 1, marginBottom: 15 },
+  loadingText: { textAlign: "center", marginVertical: 10 },
+
   resultItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -207,9 +246,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   resultContent: { flex: 1 },
-  companyName: { fontSize: 16, fontWeight: "500", marginBottom: 5, color: "#333" },
+  companyName: { fontSize: 16, fontWeight: "500", color: "#333" },
   resultActions: { flexDirection: "row", alignItems: "center" },
   actionButton: { marginLeft: 15 },
+
+  ratingContainer: { flexDirection: "row" },
   starCircle: {
     width: 20,
     height: 20,
@@ -235,6 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dollarSymbol: { fontSize: 14, fontWeight: "bold" },
+
   bannerAd: {
     backgroundColor: "#e0e0e0",
     padding: 20,
@@ -245,35 +287,14 @@ const styles = StyleSheet.create({
   },
   bannerAdText: { fontSize: 16, fontWeight: "bold" },
 
-  // Bottom Nav Bar
   navContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
   },
-  navButton: {
-    alignItems: 'center',
-  },
-  navLabel: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 4,
-  },
-  searchButton: {
-    marginLeft: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    padding: 12,
-  }, 
-  filterButton: {
-    marginLeft: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    padding: 12,
-  },
-   
+  navButton: { alignItems: "center" },
 });

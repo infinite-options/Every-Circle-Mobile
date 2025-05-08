@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,29 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Modal } from "react-native";
-
-
+import { useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function SettingsScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { user, profile_uid } = route.params || {};
   const [allowNotifications, setAllowNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [allowCookies, setAllowCookies] = useState(false);
-  const [displayEmail, setDisplayEmail] = useState(true);
+  const [displayEmail, setDisplayEmail]         = useState(true);
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState(false);
+
+  // on mount, pull saved values
+  useEffect(() => {
+    (async () => {
+      const e = await AsyncStorage.getItem("displayEmail");
+      const p = await AsyncStorage.getItem("displayPhone");
+      if (e !== null) setDisplayEmail(JSON.parse(e));
+      if (p !== null) setDisplayPhoneNumber(JSON.parse(p));
+    })();
+  }, []);
   const [termsModalVisible, setTermsModalVisible] = useState(false);
+  
 
   return (
     <View style={styles.container}>
@@ -133,9 +146,14 @@ export default function SettingsScreen() {
 
           {/* Edit User Information */}
           <TouchableOpacity
-            style={[styles.settingItem, darkMode && styles.darkSettingItem]}
-            onPress={() => navigation.navigate("EditUserInfo")}
-          >
+           style={[styles.settingItem, darkMode && styles.darkSettingItem]}
+           onPress={() =>
+             navigation.navigate("EditProfile", {
+              user, 
+              profile_uid,
+            })
+          }
+        >
             <View style={styles.itemLabel}>
               <MaterialIcons
                 name="edit"
@@ -181,11 +199,14 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <Switch
-              value={displayEmail}
-              onValueChange={setDisplayEmail}
-              trackColor={{ false: "#ccc", true: "#8b58f9" }}
-              thumbColor={displayEmail ? "#fff" : "#f4f3f4"}
-            />
+          value={displayEmail}
+          onValueChange={async (newVal) => {
+            setDisplayEmail(newVal);
+            await AsyncStorage.setItem("displayEmail", JSON.stringify(newVal));
+            // if you want ProfileScreen to refresh immediately:
+            navigation.navigate("Profile");
+          }}
+        />
           </View>
 
           {/* Display Phone Number */}
@@ -202,11 +223,13 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <Switch
-              value={displayPhoneNumber}
-              onValueChange={setDisplayPhoneNumber}
-              trackColor={{ false: "#ccc", true: "#8b58f9" }}
-              thumbColor={displayPhoneNumber ? "#fff" : "#f4f3f4"}
-            />
+          value={displayPhoneNumber}
+          onValueChange={async (newVal) => {
+            setDisplayPhoneNumber(newVal);
+            await AsyncStorage.setItem("displayPhone", JSON.stringify(newVal));
+            navigation.navigate("Profile");
+          }}
+        />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -215,7 +238,7 @@ export default function SettingsScreen() {
       <Modal visible={termsModalVisible} transparent={true} animationType="fade">
   <View style={styles.modalOverlay}>
     <View style={styles.modalBox}>
-      <Text style={styles.modalText}>IRamya’m </Text>
+      <Text style={styles.modalText}></Text>
       <TouchableOpacity onPress={() => setTermsModalVisible(false)} style={styles.closeModalButton}>
         <Text style={styles.closeButtonText}>Close</Text>
       </TouchableOpacity>
