@@ -11,27 +11,29 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import MenuBar from "../components/MenuBar";
 import { LineChart } from "react-native-chart-kit";
 import Svg, { Circle } from "react-native-svg";
-
+import { useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 export default function AccountScreen({ navigation }) {
   const [userUID, setUserUID] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+// above your effect or focus logic
+const checkAuth = async () => {
+  try {
+    const uid = await AsyncStorage.getItem("user_uid");
+    setUserUID(uid ?? "");
+  } catch {
+    setUserUID("");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await new Promise(r => setTimeout(r, 500));
-        const uid = await AsyncStorage.getItem("user_uid");
-        setUserUID(uid || "");
-        setIsLoading(false);
-        if (!uid) console.warn("AccountScreen - No user UID found");
-      } catch (error) {
-        console.error("AccountScreen - Error checking authentication:", error);
-        setUserUID("");
-        setIsLoading(false);
-      }
-    };
+useFocusEffect(
+  useCallback(() => {
     checkAuth();
-  }, []);
+  }, [])
+);
+
 
   const transactions = [
     { date: "1/10", description: "Santa Claus & ABC Plumbing", amount: "$0.10" },
