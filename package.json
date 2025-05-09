@@ -45,6 +45,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@react-native-community/cli": "latest",
+    "@react-native/metro-config": "^0.79.2",
     "react-native-dotenv": "^3.4.11"
   },
   "private": true
