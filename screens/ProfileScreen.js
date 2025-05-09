@@ -75,8 +75,11 @@ const ProfileScreen = ({ route, navigation }) => {
       }
 
       console.log(' Setting user data:', JSON.stringify(userData, null, 2));
+      console.log('1');
       setUser(userData);
+      console.log('2');
       setLoading(false);
+      console.log('3');
     } else {
       console.error(' No user data received in ProfileScreen');
       Alert.alert('Error', 'Failed to load profile data.');
@@ -215,7 +218,7 @@ const ProfileScreen = ({ route, navigation }) => {
     </ScrollView>
 
 <View style={styles.navContainer}>
-<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile',{user, profile_uid: profileUID})}>
   <Image source={require('../assets/profile.png')} style={styles.navIcon} />
   <Text style={styles.navLabel}>Profile</Text>
 </TouchableOpacity>
@@ -230,7 +233,7 @@ const ProfileScreen = ({ route, navigation }) => {
   <Text style={styles.navLabel}>Home</Text>
 </TouchableOpacity>
 
-<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+<TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
   <Image source={require('../assets/share.png')} style={styles.navIcon} />
   <Text style={styles.navLabel}>Share</Text>
 </TouchableOpacity>
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   container: { flex: 1, backgroundColor: '#fff', padding: 20 },
-  headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingTop: 10 },
   header: { fontSize: 24, fontWeight: 'bold' },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
@@ -273,7 +276,7 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 10,
   },
-    editButton: { padding: 10, alignItems: 'center', justifyContent: 'center' },
+    editButton: { padding: 10,marginTop: 5, alignItems: 'center', justifyContent: 'center' },
   editIcon: { width: 30, height: 30 },
   errorText: { fontSize: 18, color: 'red', textAlign: 'center', marginTop: 20 },
   navContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 20, paddingVertical: 10, borderTopWidth: 1, borderColor: '#ddd' },
