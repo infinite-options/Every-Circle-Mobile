@@ -57,11 +57,12 @@ const AccountTypeScreen = ({ navigation, route }) => {
 </View>
       <TouchableOpacity 
         style={[styles.accountButtonPersonal, styles.personal]} 
-        onPress={handleSelectAccount}>
+        onPress={() => navigation.navigate('Profile', { user: response.data })}>
         <Text style={styles.accountText}>Personal</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.accountButtonBusiness, styles.business]} onPress={() => navigation.navigate('BusinessSetup')}>
+      <TouchableOpacity style={[styles.accountButtonBusiness, styles.business]} 
+      onPress={() => navigation.navigate('BusinessSetup')}>
       <Text style={styles.accountText}>Business</Text>
       </TouchableOpacity>
 
