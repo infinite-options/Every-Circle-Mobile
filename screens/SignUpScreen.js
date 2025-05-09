@@ -27,16 +27,19 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
   };
 
   const handleEmailChange = (text) => {
+    // console.log("handleEmailChange", text);
     setEmail(text);
     validateInputs(text, password, confirmPassword);
   };
 
   const handlePasswordChange = (text) => {
+    // console.log("handlePasswordChange", text);
     setPassword(text);
     validateInputs(email, text, confirmPassword);
   };
 
   const handleConfirmPasswordChange = (text) => {
+    // console.log("handleConfirmPasswordChange", text);
     setConfirmPassword(text);
     validateInputs(email, password, text);
   };
@@ -49,6 +52,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
   const encryptPassword = async (password) => {
     console.log("Encrypting password:", password);
     const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, password);
+    // console.log("Encrypted password:", hash);
     return hash;
   };
 
@@ -96,7 +100,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
         "---Here 1---",
         JSON.stringify({
           email,
-          password: password,
+          password,
         })
       );
 
@@ -107,7 +111,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
         },
         body: JSON.stringify({
           email,
-          password: password,
+          password,
         }),
       });
       console.log("---Here 2---");
@@ -181,7 +185,6 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
         <Text style={[styles.continueButtonText, isValid && styles.continueButtonTextActive]}>Continue</Text>
       </TouchableOpacity>
 
-
       <View style={styles.dividerContainer}>
         <View style={styles.divider} />
         <Text style={styles.dividerText}>OR</Text>
@@ -242,10 +245,10 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginVertical: 20
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginVertical: 20,
   },
   continueButtonActive: {
     backgroundColor: "#FF9500",
@@ -292,5 +295,4 @@ const styles = StyleSheet.create({
     color: "#FF9500",
     fontWeight: "bold",
   },
-
 });
