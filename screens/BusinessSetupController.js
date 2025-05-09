@@ -7,7 +7,7 @@ import BusinessStep2 from './BusinessStep2';
 import BusinessStep3 from './BusinessStep3';
 import ContinueButton from '../components/ContinueButton';
 
-const BusinessProfileApi = 'https://ioec2testsspm.infiniteoptions.com/api/v3/business_v3';
+const BusinessProfileApi = 'https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo';
 
 export default function BusinessSetupController({ navigation }) {
   const [activeStep, setActiveStep] = useState(0);
@@ -17,6 +17,7 @@ export default function BusinessSetupController({ navigation }) {
     businessName: '',
     location: '',
     phoneNumber: '',
+    businessRole: '',
     einNumber: '',
     addressLine1: '',
     addressLine2: '',
@@ -38,6 +39,7 @@ export default function BusinessSetupController({ navigation }) {
     shortBio: '',
     tagLine: '',
     images: [],
+    businessCategoryId: '',
     categories: [],
     customTags: [],
     socialLinks: {
@@ -46,11 +48,33 @@ export default function BusinessSetupController({ navigation }) {
       linkedin: '',
       youtube: '',
     },
+    business_is_active: 1,
+    business_email_id_is_public: 1,
+    business_phone_number_is_public: 1,
+    // business_address_line_1_is_public: 1,
+    // business_address_line_2_is_public: 1,
+    // business_city_is_public: 1,
+    // business_state_is_public: 1,
+    // business_country_is_public: 1,
+    business_tag_line_is_public: 1,
+    business_short_bio_is_public: 1,
+    // business_google_rating_is_public: 1,
+    // business_google_photos_is_public: 1,
+    // business_yelp_is_public: 1,
+    // business_website_is_public: 1,
+    business_images_is_public: 1,
+    business_banner_ad_is_public: 1,
+    business_short_bio_is_public: 1,
+    business_services_is_public: 1,
+    business_owners_is_public: 1,
+    // email, phone number, tagline, shortbio, images, bannerads, shortbio, services,
+    // owners.
   });
 
   useEffect(() => {
     const fetchUid = async () => {
       const uid = await AsyncStorage.getItem('user_uid');
+      console.log('user_uid', uid);
       if (!uid) {
         Alert.alert('Error', 'User UID not found');
         return;
@@ -92,22 +116,50 @@ export default function BusinessSetupController({ navigation }) {
       data.append('business_longitude', formData.longitude);
       data.append('business_short_bio', formData.shortBio);
       data.append('business_tag_line', formData.tagLine);
-      data.append('business_google_photos', JSON.stringify(formData.images));
-      data.append('business_tags', JSON.stringify(formData.customTags));
+      // data.append('business_role', formData.businessRole);
+      data.append('business_category_id', formData.businessCategoryId);
+      // data.append('business_google_photos', JSON.stringify(formData.images));
+      // data.append('business_tags', JSON.stringify(formData.customTags));
       // data.append('business_categories_id', JSON.stringify(formData.categories));
       data.append('business_google_rating', formData.googleRating);
       data.append('business_google_photos', JSON.stringify(formData.businessGooglePhotos));
       // data.append('business_fav_image', formData.favImage);
       data.append('business_price_level', formData.priceLevel);
-      data.append('business_google_id', formData.googleId);
+      // data.append('business_google_id', formData.googleId);
       data.append('business_yelp', formData.yelp);
       data.append('business_website', formData.website);
+      // Facebook, Twitter, LinkedIn, Youtube
       // data.append('business_facebook', formData.socialLinks.facebook);
       // data.append('business_twitter', formData.socialLinks.twitter);
       // data.append('business_linkedin', formData.socialLinks.linkedin);
       // data.append('business_youtube', formData.socialLinks.youtube);
-      
-      console.log('formData', formData);
+
+      data.append('business_is_active', formData.business_is_active);
+
+
+data.append('business_email_id_is_public', formData.business_email_id_is_public);
+data.append('business_phone_number_is_public', formData.business_phone_number_is_public);
+data.append('business_tag_line_is_public', formData.business_tag_line_is_public);
+data.append('business_short_bio_is_public', formData.business_short_bio_is_public);
+data.append('business_images_is_public', formData.business_images_is_public);
+data.append('business_banner_ads_is_public', formData.business_banner_ad_is_public);
+data.append('business_short_bio_is_public', formData.business_short_bio_is_public);
+data.append('business_services_is_public', formData.business_services_is_public);
+data.append('business_owners_is_public', formData.business_owners_is_public);
+
+
+      // console.log('formData', formData);
+      // console.log('data', data);
+
+console.log('Formated Data -----------------------------');
+
+      const formatted = data._parts
+  .map(([key, value]) => `[${key}:${value}]`)
+  .join('');
+
+console.log('Formatted Output:', formatted);
+
+
       
       console.log('BusinessProfileApi', BusinessProfileApi);
       const response = await fetch(BusinessProfileApi, {
