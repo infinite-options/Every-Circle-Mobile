@@ -1,47 +1,94 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import MenuBar from "../components/MenuBar";
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
 
-export default function NetworkScreen() {
+const NetworkScreen = ({ navigation }) => {
   return (
-    <View style={styles.container}>
-      <View style={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Network</Text>
+    <View style={styles.pageContainer}>
+      <ScrollView style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>Network</Text>
         </View>
-
+        
         <View style={styles.content}>
-          <Text>Network content goes here</Text>
+          <Text>Fast Router</Text>
         </View>
-      </View>
+      </ScrollView>
 
-      <MenuBar />
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
+          <Image source={require('../assets/profile.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
+          <Image source={require('../assets/setting.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
+          <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
+          <Image source={require('../assets/share.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
+          <Image source={require('../assets/search.png')} style={styles.navIcon} />
+          <Text style={styles.navLabel}></Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    width: "100%",
+  pageContainer: { 
+    flex: 1, 
+    backgroundColor: '#fff', 
+    padding: 0
   },
-  contentContainer: {
-    flex: 1,
-    paddingTop: 60, // Manual safe area handling
-    padding: 20,
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff', 
+    padding: 20 
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 30,
+  headerContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 20 
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
+  header: { 
+    fontSize: 24, 
+    fontWeight: 'bold' 
   },
   content: {
     flex: 1,
   },
+  navContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    alignItems: 'center', 
+    marginBottom: 20, 
+    paddingVertical: 10, 
+    borderTopWidth: 1, 
+    borderColor: '#ddd' 
+  },
+  navButton: { 
+    alignItems: 'center' 
+  },
+  navIcon: { 
+    width: 25, 
+    height: 25 
+  },
+  navLabel: { 
+    fontSize: 12, 
+    color: '#333', 
+    marginTop: 4 
+  },
 });
+
+export default NetworkScreen;

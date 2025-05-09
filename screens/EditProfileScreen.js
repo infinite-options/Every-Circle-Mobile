@@ -10,6 +10,7 @@ import BusinessSection from '../components/BusinessSection';
 const ProfileScreenAPI = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
 
 const EditProfileScreen = ({ route, navigation }) => {
+  console.log('In EditProfileScreen');
   const { user, profile_uid: routeProfileUID } = route.params || {};
   const [profileUID, setProfileUID] = useState(routeProfileUID || user?.profile_uid || '');
 
@@ -245,7 +246,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Share')}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
           <Image source={require('../assets/share.png')} style={styles.navIcon} />
           <Text style={styles.navLabel}>Share</Text>
         </TouchableOpacity>
