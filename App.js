@@ -24,9 +24,10 @@ import BusinessProfileScreen from "./screens/BusinessProfileScreen";
 import SearchTab from "./screens/SearchTab";
 import ChangePasswordScreen from "./screens/ChangePasswordScreen";
 import FilterScreen from "./screens/FilterScreen";
-import TermsAndConditionsScreen from './screens/TermsAndConditionsScreen';
-import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+import TermsAndConditionsScreen from "./screens/TermsAndConditionsScreen";
+import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 //import SearchResults from './screens/SearchResults';
+import EditBusinessProfileScreen from "./screens/EditBusinessProfileScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -292,20 +293,13 @@ export default function App() {
         <Stack.Screen name='Search' component={SearchScreen} />
         <Stack.Screen name='BusinessSetup' component={BusinessSetupController} />
         <Stack.Screen name='BusinessProfile' component={BusinessProfileScreen} />
-        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-        <Stack.Screen name="Filters" component={FilterScreen} />
-        <Stack.Screen name='SearchTab' component={SearchTab} /> 
-        
-        <Stack.Screen
-          name="TermsAndConditions"
-          component={TermsAndConditionsScreen}
-          options={{ title: 'Terms & Conditions' }}
-        />
-        <Stack.Screen
-        name="PrivacyPolicy"
-        component={PrivacyPolicyScreen}
-        options={{ title: 'Privacy Policy' }}
-      />
+        <Stack.Screen name='ChangePassword' component={ChangePasswordScreen} />
+        <Stack.Screen name='Filters' component={FilterScreen} />
+        <Stack.Screen name='SearchTab' component={SearchTab} />
+
+        <Stack.Screen name='TermsAndConditions' component={TermsAndConditionsScreen} options={{ title: "Terms & Conditions" }} />
+        <Stack.Screen name='PrivacyPolicy' component={PrivacyPolicyScreen} options={{ title: "Privacy Policy" }} />
+        <Stack.Screen name='EditBusinessProfile' component={EditBusinessProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

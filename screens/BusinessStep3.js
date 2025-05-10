@@ -1,12 +1,29 @@
-// // BusinessStep3.js (Social Media Links)
 
 
-import React from 'react';
+
+// BusinessStep3.js (Social Media Links with AsyncStorage)
+import React, { useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
 export default function BusinessStep3({ formData, setFormData }) {
+  useEffect(() => {
+    const loadSavedForm = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('businessFormData');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setFormData(prev => ({ ...prev, ...parsed }));
+        }
+      } catch (err) {
+        console.error('Error loading saved form data:', err);
+      }
+    };
+    loadSavedForm();
+  }, []);
+
   const getLink = (platform) => {
     const entry = formData.social_links?.find(link => link.social_link_name === platform);
     return entry?.business_link_url || '';
@@ -22,17 +39,21 @@ export default function BusinessStep3({ formData, setFormData }) {
       updatedLinks.push({ social_link_name: platform, business_link_url: url });
     }
 
-    setFormData(prev => ({
-      ...prev,
-      social_links: updatedLinks
-    }));
+    const updated = {
+      ...formData,
+      social_links: updatedLinks,
+    };
+    setFormData(updated);
+    AsyncStorage.setItem('businessFormData', JSON.stringify(updated)).catch(err => console.error('Save error', err));
   };
 
   const handleWebsiteChange = (url) => {
-    setFormData(prev => ({
-      ...prev,
-      website: url
-    }));
+    const updated = {
+      ...formData,
+      website: url,
+    };
+    setFormData(updated);
+    AsyncStorage.setItem('businessFormData', JSON.stringify(updated)).catch(err => console.error('Save error', err));
   };
 
   return (
@@ -64,41 +85,41 @@ export default function BusinessStep3({ formData, setFormData }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#00C721',
-    flex: 1,
-    borderTopLeftRadius: width,
-    borderTopRightRadius: width,
-    borderBottomLeftRadius: width,
-    borderBottomRightRadius: width,
-    padding: 90,
-    paddingTop: 80,
-    alignSelf: 'center',
-    width: width * 1.3,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 80,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  label: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    alignSelf: 'flex-start',
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 20,
-    width: '100%',
-  },
+        backgroundColor: '#00C721',
+        flex: 1,
+        borderTopLeftRadius: width,
+        borderTopRightRadius: width,
+        // borderBottomLeftRadius: width,
+        // borderBottomRightRadius: width,
+        padding: 90,
+        paddingTop: 80,
+        alignSelf: 'center',
+        width: width * 1.3,
+      },
+      content: {
+        padding: 20,
+        paddingBottom: 80,
+        alignItems: 'center',
+      },
+      title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#fff',
+        textAlign: 'center',
+        marginBottom: 10,
+      },
+      label: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 5,
+        alignSelf: 'flex-start',
+      },
+      input: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 20,
+        width: '100%',
+      },
 });
