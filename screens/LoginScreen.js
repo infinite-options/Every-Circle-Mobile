@@ -30,11 +30,13 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
   };
 
   const handleEmailChange = (text) => {
+    // console.log("handleEmailChange", text);
     setEmail(text);
     validateInputs(text, password);
   };
 
   const handlePasswordChange = (text) => {
+    // console.log("handlePasswordChange", text);
     setPassword(text);
     validateInputs(email, text);
   };
@@ -42,6 +44,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
   const handleContinue = async () => {
     try {
       setShowSpinner(true);
+      // console.log("handleContinue", email, password);
 
       // 1. Get salt
       const saltResponse = await fetch(SALT_ENDPOINT, {
@@ -50,6 +53,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
         body: JSON.stringify({ email }),
       });
       const saltObject = await saltResponse.json();
+      // console.log("saltObject", saltObject);
 
       if (saltObject.code !== 200) {
         Alert.alert("Error", "User does not exist. Please Sign Up.");
@@ -58,7 +62,14 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
 
       // 2. Hash password
       const salt = saltObject.result[0].password_salt;
-      const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, password + salt);
+      // const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, password + salt);
+      const value = password + salt;
+
+      // Convert the value to UTF-8 bytes (similar to Python's str(value).encode())
+      const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, value, {
+        encoding: Crypto.CryptoEncoding.HEX, // Ensures hex encoding like Python's hexdigest()
+      });
+      console.log("hashedPassword", hashedPassword);
 
       // 3. Login
       const loginResponse = await fetch(LOGIN_ENDPOINT, {
@@ -94,10 +105,8 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
         headers: { "Content-Type": "application/json" },
       });
 
-
-
       console.log("profileResponse", profileResponse);
-    
+
       const fullUser = await profileResponse.json();
       console.log("fullUser", fullUser);
 
