@@ -247,6 +247,19 @@ const ProfileScreen = ({ route, navigation }) => {
   );
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: '#fff', padding: 0},
   scrollContainer: {
