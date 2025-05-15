@@ -142,7 +142,11 @@ const ProfileScreen = ({ route, navigation }) => {
       {renderField('Tag Line (40 characters)', user?.tagLine, user?.tagLineIsPublic)}
       {renderField('Short Bio (15 words)', user?.shortBio, user?.shortBioIsPublic)} */}
 
-      <MiniCard user={user} />
+      {/* <MiniCard user={user} /> */}
+
+
+      <MiniCard user={user} type="user" />
+
 
       {user.experience?.some(exp => exp.isPublic) && (
         <View style={styles.fieldContainer}>
