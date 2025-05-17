@@ -1,4 +1,4 @@
-package com.infiniteoptions.googleauthdemo
+package com.infiniteoptions.everycircle
 
 import android.app.Application
 import android.content.res.Configuration
