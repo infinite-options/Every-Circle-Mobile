@@ -31,6 +31,7 @@ target 'EveryCircle' do
     ]
   end
 
+
   config = use_native_modules!(config_command)
 
   use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']

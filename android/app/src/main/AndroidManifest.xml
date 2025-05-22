@@ -14,12 +14,12 @@
       <data android:scheme="https"/>
     </intent>
   </queries>
-  <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:usesCleartextTraffic="true">
+  <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true">
     <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyAPoq8L-jM4diZmj80ayQj6_8Gd8z5XwJY"/>
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="false"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="0"/>
-    <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true" android:screenOrientation="portrait" android:usesCleartextTraffic="true">
+    <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true" android:screenOrientation="portrait">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
@@ -28,13 +28,6 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="com.googleusercontent.apps.466541803518-mpejfib4i7g8m88tbk4hpgfrmqlt9aho"/>
-        <data android:scheme="com.infiniteoptions.googleauthdemo"/>
-        <data android:scheme="exp+google-auth-demo"/>
-        <data android:scheme="com.everycircle.app"/>
-        <data android:scheme="com.everycircle.app"/>
-        <data android:scheme="exp+every-circle"/>
-        <data android:scheme="com.googleusercontent.apps.336598290180-e89eo7pqbfs7ilj3hjpj1fvr661cdnn2"/>
         <data android:scheme="com.googleusercontent.apps.255320444536-fjgkn445u968bhsp7i57fpqquemqbmn5"/>
         <data android:scheme="com.infiniteoptions.everycircle"/>
         <data android:scheme="exp+everycirlce"/>

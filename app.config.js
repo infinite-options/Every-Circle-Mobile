@@ -32,10 +32,8 @@ module.exports = ({ config: expoConfig }) => ({
         ],
         NSLocationWhenInUseUsageDescription: "This app needs access to location to show it on the map.",
         NSLocationAlwaysUsageDescription: "This app needs access to location to show it on the map.",
-        GMSApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
       },
       config: {
-        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
         usesNonExemptEncryption: false,
         signInWithAppleServicesId: process.env.EXPO_PUBLIC_APPLE_SERVICES_ID,
       },
@@ -82,9 +80,9 @@ module.exports = ({ config: expoConfig }) => ({
       [
         "expo-location",
         {
-          locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location."
-        }
-      ]
+          locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location.",
+        },
+      ],
     ],
     extra: {
       eas: {
