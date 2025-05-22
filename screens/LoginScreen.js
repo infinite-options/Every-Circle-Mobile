@@ -7,12 +7,30 @@ import AppleSignIn from "../AppleSignIn";
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import Constants from "expo-constants";
+import config from "../config";
 // import SignUpScreen from "./screens/SignUpScreen";
 
 // Endpoints
 const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
 const PROFILE_ENDPOINT = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+
+// Helper function to extract the last two digits before .apps.googleusercontent.com
+const getLastTwoDigits = (clientId) => {
+  if (!clientId) return "Not set";
+
+  // Extract the part before .apps.googleusercontent.com
+  const match = clientId.match(/(.+)\.apps\.googleusercontent\.com$/);
+  if (match) {
+    const idPart = match[1];
+    // Get the last two digits of the ID part
+    return "..." + idPart.slice(-2);
+  }
+
+  // Fallback if the pattern doesn't match
+  return "..." + clientId.slice(-2);
+};
 
 // Accept navigation from props
 export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn, onError }) {
@@ -166,6 +184,20 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
           </Text>
         </Text>
       </View>
+
+      {/* API Keys Info - For debugging */}
+      {__DEV__ && (
+        <View style={styles.apiKeysContainer}>
+          <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
+          <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
+          <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
+          <Text style={styles.apiKeysText}>Web: {getLastTwoDigits(config.googleClientIds.web)}</Text>
+          <Text style={styles.apiKeysText}>URL Scheme: {config.googleURLScheme ? "..." + config.googleURLScheme.slice(-2) : "Not set"}</Text>
+          <Text style={styles.apiKeysText}>Maps API: {getLastTwoDigits(config.googleMapsApiKey)}</Text>
+          <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>
+          <Text style={styles.apiKeysText}>iOS Build: {Constants.expoConfig?.ios?.buildNumber || "Not set"}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -213,4 +245,25 @@ const styles = StyleSheet.create({
   footer: { alignItems: "center" },
   footerText: { fontSize: 16, color: "#666" },
   signUpText: { color: "#FF9500", fontWeight: "bold" },
+  apiKeysContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    width: "90%",
+    alignSelf: "center",
+  },
+  apiKeysTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#333",
+  },
+  apiKeysText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
 });
