@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function UserInfoScreen({ navigation }) {
+export default function UserInfoScreen({ navigation, route }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -11,6 +11,13 @@ export default function UserInfoScreen({ navigation }) {
   const [profilePersonalUid, setProfilePersonalUid] = useState(null);
 
   useEffect(() => {
+    // Pre-populate from Google user info if present
+    if (route?.params?.googleUserInfo) {
+      const { firstName: gFirst, lastName: gLast, email: gEmail } = route.params.googleUserInfo;
+      if (gFirst) setFirstName(gFirst);
+      if (gLast) setLastName(gLast);
+      // Optionally, you could store email/profile picture as well
+    }
     // Load saved first and last name if they exist
     const loadSavedData = async () => {
       try {
@@ -24,8 +31,8 @@ export default function UserInfoScreen({ navigation }) {
           userUid,
         });
 
-        if (savedFirstName) setFirstName(savedFirstName);
-        if (savedLastName) setLastName(savedLastName);
+        if (savedFirstName && !firstName) setFirstName(savedFirstName);
+        if (savedLastName && !lastName) setLastName(savedLastName);
 
         // Check if profile exists
         if (userUid) {
@@ -57,7 +64,8 @@ export default function UserInfoScreen({ navigation }) {
     };
 
     loadSavedData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route?.params?.googleUserInfo]);
 
   const formatPhoneNumber = (text) => {
     const cleaned = ("" + text).replace(/\D/g, "");

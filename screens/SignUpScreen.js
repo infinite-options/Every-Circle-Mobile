@@ -11,18 +11,30 @@ const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaw
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
 
-export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation }) {
+export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation, route }) {
   console.log("SignUpScreen - Rendering");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isValid, setIsValid] = useState(false);
+  const [isGoogleSignUp, setIsGoogleSignUp] = useState(false);
+
+  // Handle pre-populated Google user info
+  useEffect(() => {
+    if (route.params?.googleUserInfo) {
+      console.log("SignUpScreen - Received Google user info:", route.params.googleUserInfo);
+      const { email: googleEmail, firstName, lastName } = route.params.googleUserInfo;
+      setEmail(googleEmail);
+      setIsGoogleSignUp(true);
+      // Pre-populate other fields if needed
+    }
+  }, [route.params?.googleUserInfo]);
 
   const validateInputs = (email, password, confirmPassword) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const isEmailValid = emailRegex.test(email);
-    const isPasswordValid = password.length >= 6;
-    const doPasswordsMatch = password === confirmPassword;
+    const isPasswordValid = isGoogleSignUp ? true : password.length >= 6;
+    const doPasswordsMatch = isGoogleSignUp ? true : password === confirmPassword;
 
     setIsValid(isEmailValid && isPasswordValid && doPasswordsMatch);
   };
@@ -56,21 +68,52 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
 
   const handleContinue = async () => {
     try {
-      const createAccountResponse = await fetch(CREATE_ACCOUNT_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      if (isGoogleSignUp) {
+        const { googleUserInfo } = route.params;
+        const payload = {
+          email: googleUserInfo.email,
+          password: "GOOGLE_LOGIN",
+          google_auth_token: googleUserInfo.accessToken,
+          social_id: googleUserInfo.googleId,
+          first_name: googleUserInfo.firstName,
+          last_name: googleUserInfo.lastName,
+          profile_picture: googleUserInfo.profilePicture,
+        };
 
-      const createAccountData = await createAccountResponse.json();
-      if (createAccountData.message === "User already exists") {
-        Alert.alert("User Already Exists", "This email is already registered. Please log in instead.", [{ text: "OK", style: "cancel" }]);
-      } else if (createAccountData.code === 281 && createAccountData.user_uid) {
-        await AsyncStorage.setItem("user_uid", createAccountData.user_uid);
-        await AsyncStorage.setItem("user_email_id", email);
-        navigation.navigate("UserInfo");
+        const response = await fetch(GOOGLE_SIGNUP_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+        if (result.user_uid) {
+          await AsyncStorage.setItem("user_uid", result.user_uid);
+          await AsyncStorage.setItem("user_email_id", googleUserInfo.email);
+          navigation.navigate("UserInfo", {
+            googleUserInfo: googleUserInfo,
+          });
+        } else {
+          throw new Error("Failed to create account");
+        }
       } else {
-        throw new Error("Failed to create account");
+        // Regular email/password signup
+        const createAccountResponse = await fetch(CREATE_ACCOUNT_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const createAccountData = await createAccountResponse.json();
+        if (createAccountData.message === "User already exists") {
+          Alert.alert("User Already Exists", "This email is already registered. Please log in instead.", [{ text: "OK", style: "cancel" }]);
+        } else if (createAccountData.code === 281 && createAccountData.user_uid) {
+          await AsyncStorage.setItem("user_uid", createAccountData.user_uid);
+          await AsyncStorage.setItem("user_email_id", email);
+          navigation.navigate("UserInfo");
+        } else {
+          throw new Error("Failed to create account");
+        }
       }
     } catch (error) {
       console.error("Error in account creation:", error);
@@ -82,29 +125,37 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome to Every Circle!</Text>
-        <Text style={styles.subtitle}>Please create your account to continue.</Text>
+        <Text style={styles.subtitle}>{isGoogleSignUp ? "Complete your sign up" : "Please create your account to continue."}</Text>
       </View>
 
       <View style={styles.inputContainer}>
-        <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' />
-        <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry />
-        <TextInput style={styles.input} placeholder='Confirm Password' value={confirmPassword} onChangeText={handleConfirmPasswordChange} secureTextEntry />
+        <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' editable={!isGoogleSignUp} />
+        {!isGoogleSignUp && (
+          <>
+            <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry />
+            <TextInput style={styles.input} placeholder='Confirm Password' value={confirmPassword} onChangeText={handleConfirmPasswordChange} secureTextEntry />
+          </>
+        )}
       </View>
 
       <TouchableOpacity style={[styles.continueButton, isValid && styles.continueButtonActive]} onPress={handleContinue} disabled={!isValid}>
-        <Text style={[styles.continueButtonText, isValid && styles.continueButtonTextActive]}>Continue</Text>
+        <Text style={[styles.continueButtonText, isValid && styles.continueButtonTextActive]}>{isGoogleSignUp ? "Complete Sign Up" : "Continue"}</Text>
       </TouchableOpacity>
 
-      <View style={styles.dividerContainer}>
-        <View style={styles.divider} />
-        <Text style={styles.dividerText}>OR</Text>
-        <View style={styles.divider} />
-      </View>
+      {!isGoogleSignUp && (
+        <>
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
 
-      <View style={styles.socialContainer}>
-        <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignUp} />
-        {Platform.OS === "ios" && <AppleSignIn onSignIn={onAppleSignUp} onError={onError} />}
-      </View>
+          <View style={styles.socialContainer}>
+            <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignUp} />
+            {Platform.OS === "ios" && <AppleSignIn onSignIn={onAppleSignUp} onError={onError} />}
+          </View>
+        </>
+      )}
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

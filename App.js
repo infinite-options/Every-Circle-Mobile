@@ -108,6 +108,38 @@ export default function App() {
 
         console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
 
+        if (fullUser.message === "Profile not found for this user") {
+          // Sign out from Google when profile is not found
+          await GoogleSignin.signOut();
+
+          Alert.alert("User Not Found", "This account is not registered. Would you like to sign up?", [
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => {
+                // No need to do anything here as we've already signed out
+              },
+            },
+            {
+              text: "Sign Up",
+              onPress: () => {
+                // Navigate directly to UserInfo with Google user info
+                navigation.navigate("UserInfo", {
+                  googleUserInfo: {
+                    email: userInfo.user.email,
+                    firstName: userInfo.user.givenName,
+                    lastName: userInfo.user.familyName,
+                    profilePicture: userInfo.user.photo,
+                    googleId: userInfo.user.id,
+                    accessToken: userInfo.idToken,
+                  },
+                });
+              },
+            },
+          ]);
+          return;
+        }
+
         navigation.navigate("Profile", {
           user: {
             ...fullUser,
@@ -129,7 +161,19 @@ export default function App() {
           },
           {
             text: "Sign Up",
-            onPress: () => navigation.navigate("SignUp"),
+            onPress: () => {
+              // Navigate directly to UserInfo with Google user info
+              navigation.navigate("UserInfo", {
+                googleUserInfo: {
+                  email: userInfo.user.email,
+                  firstName: userInfo.user.givenName,
+                  lastName: userInfo.user.familyName,
+                  profilePicture: userInfo.user.photo,
+                  googleId: userInfo.user.id,
+                  accessToken: userInfo.idToken,
+                },
+              });
+            },
           },
         ]);
       }
