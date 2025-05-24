@@ -13,19 +13,24 @@ const AppleSignIn = ({ onSignIn, onError }) => {
         const credential = await AppleAuthentication.signInAsync({
           requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
         });
-        console.log("AppleSignIn - received credential", credential);
+        console.log("AppleSignIn Success- received credential", credential);
 
         // User is authenticated.  Do we need an if statement here?
 
         // If we received the user's name, store it for future use
         if (credential.fullName && credential.fullName.familyName !== null) {
-          console.log("AppleSignIn - received name details");
+          console.log("AppleSignIn - received name details", credential.fullName);
           const userFullName = {
             givenName: credential.fullName.givenName,
             familyName: credential.fullName.familyName,
           };
           console.log("AppleSignIn - storing user id:", credential.user);
-          await AsyncStorage.setItem(`apple_user_${credential.user}`, JSON.stringify(userFullName));
+          try {
+            await AsyncStorage.setItem(`apple_user_${credential.user}`, JSON.stringify(userFullName));
+            console.log("User full name stored successfully");
+          } catch (error) {
+            console.error("Error storing user full name:", error);
+          }
 
           // User is authenticated
           const userInfo = {

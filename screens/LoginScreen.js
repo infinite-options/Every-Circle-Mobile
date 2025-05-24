@@ -1,7 +1,7 @@
 // LoginScreen.js
 
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from "react-native";
 import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import * as Crypto from "expo-crypto";
@@ -30,6 +30,26 @@ const getLastTwoDigits = (clientId) => {
 
   // Fallback if the pattern doesn't match
   return "..." + clientId.slice(-2);
+};
+
+// Helper function to extract the first four digits/letters of the unique part before .apps.googleusercontent.com
+const getFirstFourDigits = (clientId) => {
+  if (!clientId) return "Not set";
+
+  // Extract the part before .apps.googleusercontent.com
+  const match = clientId.match(/([\w-]+)-([\w]+)\.apps\.googleusercontent\.com$/);
+  if (match) {
+    const uniquePart = match[2];
+    return uniquePart.slice(0, 4);
+  }
+
+  // Fallback: try to extract the part after the first hyphen
+  const fallback = clientId.split("-")[1];
+  if (fallback) {
+    return fallback.slice(0, 4);
+  }
+
+  return "Not found";
 };
 
 // Accept navigation from props
@@ -173,7 +193,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
 
       <View style={styles.socialContainer}>
         <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignIn} />
-        <AppleSignIn onSignIn={onAppleSignIn} onError={onError} />
+        {Platform.OS === "ios" && <AppleSignIn onSignIn={onAppleSignIn} onError={onError} />}
       </View>
 
       <View style={styles.footer}>
@@ -188,11 +208,11 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       {/* API Keys Info - For debugging */}
       {__DEV__ && (
         <View style={styles.apiKeysContainer}>
-          <Text style={styles.apiKeysTitle}>API Keys (Last 2 Digits):</Text>
-          <Text style={styles.apiKeysText}>iOS: {getLastTwoDigits(config.googleClientIds.ios)}</Text>
-          <Text style={styles.apiKeysText}>Android: {getLastTwoDigits(config.googleClientIds.android)}</Text>
-          <Text style={styles.apiKeysText}>Web: {getLastTwoDigits(config.googleClientIds.web)}</Text>
-          <Text style={styles.apiKeysText}>URL Scheme: {config.googleURLScheme ? "..." + config.googleURLScheme.slice(-2) : "Not set"}</Text>
+          <Text style={styles.apiKeysTitle}>API Keys (First 4 Digits):</Text>
+          <Text style={styles.apiKeysText}>iOS: {getFirstFourDigits(config.googleClientIds.ios)}</Text>
+          <Text style={styles.apiKeysText}>Android: {getFirstFourDigits(config.googleClientIds.android)}</Text>
+          <Text style={styles.apiKeysText}>Web: {getFirstFourDigits(config.googleClientIds.web)}</Text>
+          <Text style={styles.apiKeysText}>URL Scheme: {config.googleURLScheme ? config.googleURLScheme.split("-").pop().slice(0, 4) : "Not set"}</Text>
           <Text style={styles.apiKeysText}>Maps API: {getLastTwoDigits(config.googleMapsApiKey)}</Text>
           <Text style={styles.apiKeysText}>Environment: {__DEV__ ? "Development" : "Production"}</Text>
           <Text style={styles.apiKeysText}>iOS Build: {Constants.expoConfig?.ios?.buildNumber || "Not set"}</Text>

@@ -39,6 +39,7 @@ export const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
 
 export default function App() {
+  console.log("------- Program Starting in App.js -------");
   const [initialRoute, setInitialRoute] = useState("Home");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,16 +53,15 @@ export default function App() {
 
   useEffect(() => {
     console.log("App.js - Starting useEffect");
-    const checkUser = async () => {
-      console.log("App.js - Checking user...");
-      const uid = await AsyncStorage.getItem("user_uid");
-      console.log("App.js - User UID:", uid);
-      if (uid) setInitialRoute("App");
-      setLoading(false);
-    };
-
-    const configureGoogle = async () => {
+    const initialize = async () => {
       try {
+        // Check user first
+        console.log("App.js - Checking user...");
+        const uid = await AsyncStorage.getItem("user_uid");
+        console.log("App.js - User UID:", uid);
+        if (uid) setInitialRoute("App");
+
+        // Configure Google Sign-In
         console.log("App.js - Configuring Google Sign-In...");
         await GoogleSignin.configure({
           iosClientId: config.googleClientIds.ios,
@@ -69,23 +69,36 @@ export default function App() {
           webClientId: config.googleClientIds.web,
           offlineAccess: true,
         });
-        await GoogleSignin.signOut();
         console.log("App.js - Google Sign-In configured successfully");
       } catch (err) {
-        console.error("App.js - Google SignIn config error:", err);
+        console.error("App.js - Initialization error:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    configureGoogle();
-    checkUser();
+    initialize();
   }, []);
 
   const signInHandler = useCallback(async (navigation) => {
+    console.log("App.js - signInHandler - Starting");
     try {
+      // First check if user is already signed in
+      const isSignedIn = await GoogleSignin.isSignedIn();
+      if (isSignedIn) {
+        await GoogleSignin.signOut();
+      }
+
+      // Check for Play Services
       await GoogleSignin.hasPlayServices();
+
+      // Start new sign in process
       const userInfo = await GoogleSignin.signIn();
+      console.log("App.js - Google Sign In successful:", userInfo);
+
       const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userInfo.user.email}`);
       const result = await response.json();
+
       if (result.message === "Correct Email" && result.result?.[0]) {
         const user_uid = result.result[0];
         await AsyncStorage.setItem("user_uid", user_uid);
@@ -102,29 +115,91 @@ export default function App() {
           },
           profile_uid: fullUser.personal_info?.profile_personal_uid || "",
         });
+      } else {
+        // Sign out from Google when user is not found
+        await GoogleSignin.signOut();
+
+        Alert.alert("User Not Found", "This account is not registered. Would you like to sign up?", [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              // No need to do anything here as we've already signed out
+            },
+          },
+          {
+            text: "Sign Up",
+            onPress: () => navigation.navigate("SignUp"),
+          },
+        ]);
       }
     } catch (err) {
-      setError(err.message);
-      Alert.alert("Sign In Failed", err.message);
+      console.error("App.js - Google Sign In error:", err);
+      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled the login flow
+        return;
+      }
+      if (err.code === statusCodes.IN_PROGRESS) {
+        // Sign in is in progress already
+        Alert.alert("Sign In In Progress", "Please wait for the current sign in process to complete.");
+        return;
+      }
+      Alert.alert("Sign In Failed", "Please try again.");
     }
   }, []);
 
   const signUpHandler = useCallback(async (navigation) => {
+    console.log("App.js - signUpHandler - Starting");
     try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const tokens = await GoogleSignin.getTokens();
+      // Check if already signed in
+      const isSignedIn = await GoogleSignin.isSignedIn();
+      console.log("App.js - Is user already signed in?", isSignedIn);
 
+      if (isSignedIn) {
+        console.log("App.js - Signing out existing user");
+        await GoogleSignin.signOut();
+      }
+
+      // Check for Play Services
+      console.log("App.js - Checking Play Services");
+      await GoogleSignin.hasPlayServices();
+      console.log("App.js - Play Services available");
+
+      // Get user info from Google
+      console.log("App.js - Starting Google Sign In");
+      const userInfo = await GoogleSignin.signIn();
+      console.log("App.js - Google Sign In successful");
+      console.log("App.js - User Info:", {
+        email: userInfo.user.email,
+        name: userInfo.user.name,
+        givenName: userInfo.user.givenName,
+        familyName: userInfo.user.familyName,
+        photo: userInfo.user.photo,
+        id: userInfo.user.id,
+      });
+
+      // Get tokens for backend authentication
+      console.log("App.js - Getting tokens");
+      const tokens = await GoogleSignin.getTokens();
+      console.log("App.js - Tokens received:", {
+        accessToken: tokens.accessToken ? "Present" : "Missing",
+        idToken: tokens.idToken ? "Present" : "Missing",
+      });
+
+      // Create the sign-up payload
       const payload = {
         email: userInfo.user.email,
         password: "GOOGLE_LOGIN",
         google_auth_token: tokens.accessToken,
         social_id: userInfo.user.id,
-        first_name: userInfo.user.givenName,
-        last_name: userInfo.user.familyName,
-        profile_picture: userInfo.user.photo,
+        first_name: userInfo.user.givenName || "",
+        last_name: userInfo.user.familyName || "",
+        profile_picture: userInfo.user.photo || "",
       };
+      console.log("App.js - Sign up payload prepared:", payload);
 
+      // Make the sign-up request
+      console.log("App.js - Making sign-up request");
       const response = await fetch(GOOGLE_SIGNUP_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -132,13 +207,36 @@ export default function App() {
       });
 
       const result = await response.json();
+      console.log("App.js - Sign up response:", result);
+
       if (result.user_uid) {
+        console.log("App.js - Sign up successful, storing user data");
         await AsyncStorage.setItem("user_uid", result.user_uid);
+        await AsyncStorage.setItem("user_email_id", userInfo.user.email);
         navigation.navigate("UserInfo");
+      } else if (result.message === "User already exists") {
+        console.log("App.js - User already exists");
+        Alert.alert("Account Exists", "This Google account is already registered. Please sign in instead.", [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("Login"),
+          },
+        ]);
+      } else {
+        throw new Error("Failed to create account");
       }
     } catch (err) {
-      setError(err.message);
-      Alert.alert("Sign Up Failed", err.message);
+      console.error("App.js - Google Sign Up error:", err);
+      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log("App.js - User cancelled the sign-in flow");
+        return;
+      }
+      if (err.code === statusCodes.IN_PROGRESS) {
+        console.log("App.js - Sign in already in progress");
+        Alert.alert("Sign In In Progress", "Please wait for the current sign in process to complete.", [{ text: "OK" }]);
+        return;
+      }
+      Alert.alert("Sign Up Failed", "Unable to create account. Please try again.", [{ text: "OK" }]);
     }
   }, []);
 
