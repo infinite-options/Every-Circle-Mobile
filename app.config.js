@@ -51,6 +51,10 @@ module.exports = ({ config: expoConfig }) => ({
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
         },
       },
+      buildToolsVersion: "34.0.0",
+      compileSdkVersion: 34,
+      targetSdkVersion: 34,
+      minSdkVersion: 24,
     },
     web: {
       favicon: "./assets/favicon.png",
@@ -83,6 +87,7 @@ module.exports = ({ config: expoConfig }) => ({
           locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location.",
         },
       ],
+      "expo-font",
     ],
     extra: {
       eas: {

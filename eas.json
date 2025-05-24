@@ -12,6 +12,13 @@
         "env": {
           "GOOGLE_URL_SCHEME": "${process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME}"
         }
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug",
+        "env": {
+          "ANDROID_NDK_HOME": "/opt/android-ndk"
+        }
       }
     },
     "preview": {

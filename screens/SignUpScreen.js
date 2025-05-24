@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
 import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,8 +9,9 @@ import * as Crypto from "expo-crypto";
 
 const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
+const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
 
-export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, onSignUpSuccess, navigation }) {
+export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation }) {
   console.log("SignUpScreen - Rendering");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,19 +28,16 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
   };
 
   const handleEmailChange = (text) => {
-    // console.log("handleEmailChange", text);
     setEmail(text);
     validateInputs(text, password, confirmPassword);
   };
 
   const handlePasswordChange = (text) => {
-    // console.log("handlePasswordChange", text);
     setPassword(text);
     validateInputs(email, text, confirmPassword);
   };
 
   const handleConfirmPasswordChange = (text) => {
-    // console.log("handleConfirmPasswordChange", text);
     setConfirmPassword(text);
     validateInputs(email, password, text);
   };
@@ -58,111 +56,25 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
 
   const handleContinue = async () => {
     try {
-      // First, check if the email exists
-      //   console.log("Checking if email exists:", email);
-      //   const saltResponse = await fetch(ACCOUNT_SALT_ENDPOINT, {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify({ email }),
-      //   });
-
-      //   const saltData = await saltResponse.json();
-      //   console.log("Salt endpoint response:", saltData);
-
-      //   if (saltData.code === 200) {
-      //     // Email exists, show error
-      //     Alert.alert("Account Exists", "An account with this email already exists. Would you like to log in?", [
-      //       {
-      //         text: "Cancel",
-      //         style: "cancel",
-      //       },
-      //       {
-      //         text: "Log In",
-      //         onPress: onLoginPress,
-      //       },
-      //     ]);
-      //     return;
-      //   }
-
-      //   // Email doesn't exist, proceed with account creation
-      //   console.log("Creating new account for email:", email, password);
-      //   const encryptedPassword = await encryptPassword(password);
-      //   console.log("Password encrypted (SHA256): ", encryptedPassword);
-      //   console.log(
-      //     JSON.stringify({
-      //       email: email,
-      //       password: encryptedPassword,
-      //     })
-      //   );
-      console.log(
-        "---Here 1---",
-        JSON.stringify({
-          email,
-          password,
-        })
-      );
-
       const createAccountResponse = await fetch(CREATE_ACCOUNT_ENDPOINT, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-      console.log("---Here 2---");
 
       const createAccountData = await createAccountResponse.json();
-      console.log("Create account response:", createAccountData);
-
       if (createAccountData.message === "User already exists") {
-        // In the future just log in the user
-        Alert.alert("User Already Exists", "This email is already registered. Please log in instead.", [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-        ]);
+        Alert.alert("User Already Exists", "This email is already registered. Please log in instead.", [{ text: "OK", style: "cancel" }]);
       } else if (createAccountData.code === 281 && createAccountData.user_uid) {
-        // Store user data
         await AsyncStorage.setItem("user_uid", createAccountData.user_uid);
         await AsyncStorage.setItem("user_email_id", email);
-
-        // Create userInfo object similar to Google Sign Up
-        const userInfo = {
-          user: {
-            email: email,
-            name: email.split("@")[0], // Use email username as name
-            id: createAccountData.user_uid,
-          },
-        };
-
-        console.log("Sign up success with userInfo:", userInfo);
-        // onSignUpSuccess(userInfo);
         navigation.navigate("UserInfo");
-
-        // Show success message
-        // Alert.alert("Success", "Account created successfully!", [
-        //   {
-        //     text: "OK",
-        //     onPress: () => {
-        //       // Call onSignUpSuccess with userInfo to trigger navigation
-        //       if (onSignUpSuccess) {
-        //         onSignUpSuccess(userInfo);
-        //       }
-        //     },
-        //   },
-        // ]);
       } else {
-        throw new Error("Failed to create account. User already exists.");
+        throw new Error("Failed to create account");
       }
     } catch (error) {
       console.error("Error in account creation:", error);
-      Alert.alert("Error", "Failed to create account. Please try again. Error 1", [{ text: "OK" }]);
+      Alert.alert("Error", "Failed to create account. Please try again.");
     }
   };
 
@@ -170,14 +82,12 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome to Every Circle!</Text>
-        <Text style={styles.subtitle}>Please choose a signup option to continue.</Text>
+        <Text style={styles.subtitle}>Please create your account to continue.</Text>
       </View>
 
       <View style={styles.inputContainer}>
         <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' />
-
         <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry />
-
         <TextInput style={styles.input} placeholder='Confirm Password' value={confirmPassword} onChangeText={handleConfirmPasswordChange} secureTextEntry />
       </View>
 
@@ -193,7 +103,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, o
 
       <View style={styles.socialContainer}>
         <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignUp} />
-        <AppleSignIn onSignIn={onAppleSignUp} onError={onError} />
+        {Platform.OS === "ios" && <AppleSignIn onSignIn={onAppleSignUp} onError={onError} />}
       </View>
 
       <View style={styles.footer}>

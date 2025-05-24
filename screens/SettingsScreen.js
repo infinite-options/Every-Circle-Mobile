@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, Switch, TouchableOpacity, SafeAreaView, ScrollView, Alert } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Modal } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
 export default function SettingsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -20,7 +14,7 @@ export default function SettingsScreen() {
   const [allowNotifications, setAllowNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [allowCookies, setAllowCookies] = useState(false);
-  const [displayEmail, setDisplayEmail]         = useState(true);
+  const [displayEmail, setDisplayEmail] = useState(true);
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState(false);
 
   // on mount, pull saved values
@@ -33,7 +27,40 @@ export default function SettingsScreen() {
     })();
   }, []);
   const [termsModalVisible, setTermsModalVisible] = useState(false);
-  
+
+  const handleLogout = async () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            // Sign out from Google
+            const isSignedIn = await GoogleSignin.isSignedIn();
+            if (isSignedIn) {
+              await GoogleSignin.signOut();
+            }
+
+            // Clear all stored data
+            await AsyncStorage.multiRemove(["user_uid", "user_email_id", "displayEmail", "displayPhone"]);
+
+            // Navigate to Login screen
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          } catch (error) {
+            console.error("Logout error:", error);
+            Alert.alert("Error", "Failed to logout. Please try again.");
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -48,227 +75,146 @@ export default function SettingsScreen() {
           {/* Allow Notifications */}
           <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="notifications"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Allow notifications
-              </Text>
+              <MaterialIcons name='notifications' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Allow notifications</Text>
             </View>
-            <Switch
-              value={allowNotifications}
-              onValueChange={setAllowNotifications}
-              trackColor={{ false: "#ccc", true: "#8b58f9" }}
-              thumbColor={allowNotifications ? "#fff" : "#f4f3f4"}
-            />
+            <Switch value={allowNotifications} onValueChange={setAllowNotifications} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={allowNotifications ? "#fff" : "#f4f3f4"} />
           </View>
 
           {/* Dark Mode */}
           <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="brightness-2"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Dark mode
-              </Text>
+              <MaterialIcons name='brightness-2' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Dark mode</Text>
             </View>
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: "#ccc", true: "#8b58f9" }}
-              thumbColor={darkMode ? "#fff" : "#f4f3f4"}
-            />
+            <Switch value={darkMode} onValueChange={setDarkMode} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={darkMode ? "#fff" : "#f4f3f4"} />
           </View>
 
           {/* Allow Cookies */}
           <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="cookie"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Allow Cookies
-              </Text>
+              <MaterialIcons name='cookie' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Allow Cookies</Text>
             </View>
-            <Switch
-              value={allowCookies}
-              onValueChange={setAllowCookies}
-              trackColor={{ false: "#ccc", true: "#8b58f9" }}
-              thumbColor={allowCookies ? "#fff" : "#f4f3f4"}
-            />
+            <Switch value={allowCookies} onValueChange={setAllowCookies} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={allowCookies ? "#fff" : "#f4f3f4"} />
           </View>
 
           {/* Privacy Policy */}
-          <TouchableOpacity
-            style={[styles.settingItem, darkMode && styles.darkSettingItem]}
-            onPress={() => navigation.navigate("PrivacyPolicy")}
-          >
+          <TouchableOpacity style={[styles.settingItem, darkMode && styles.darkSettingItem]} onPress={() => navigation.navigate("PrivacyPolicy")}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="privacy-tip"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Privacy Policy
-              </Text>
+              <MaterialIcons name='privacy-tip' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Privacy Policy</Text>
             </View>
           </TouchableOpacity>
 
           {/* Terms and Conditions */}
-          <TouchableOpacity
-            style={[styles.settingItem, darkMode && styles.darkSettingItem]}
-            onPress={() => navigation.navigate('TermsAndConditions')}
-          >
+          <TouchableOpacity style={[styles.settingItem, darkMode && styles.darkSettingItem]} onPress={() => navigation.navigate("TermsAndConditions")}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="description"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Terms and Conditions
-              </Text>
+              <MaterialIcons name='description' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Terms and Conditions</Text>
             </View>
           </TouchableOpacity>
 
           {/* Edit User Information */}
           <TouchableOpacity
-           style={[styles.settingItem, darkMode && styles.darkSettingItem]}
-           onPress={() =>
-             navigation.navigate("EditProfile", {
-              user, 
-              profile_uid,
-            })
-          }
-        >
+            style={[styles.settingItem, darkMode && styles.darkSettingItem]}
+            onPress={() =>
+              navigation.navigate("EditProfile", {
+                user,
+                profile_uid,
+              })
+            }
+          >
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="edit"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Edit User Information
-              </Text>
+              <MaterialIcons name='edit' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Edit User Information</Text>
             </View>
           </TouchableOpacity>
 
           {/* Change Password */}
-          <TouchableOpacity
-            style={[styles.settingItem, darkMode && styles.darkSettingItem]}
-            onPress={() => navigation.navigate("ChangePassword")}
-          >
+          <TouchableOpacity style={[styles.settingItem, darkMode && styles.darkSettingItem]} onPress={() => navigation.navigate("ChangePassword")}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="lock"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Change Password
-              </Text>
+              <MaterialIcons name='lock' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Change Password</Text>
             </View>
           </TouchableOpacity>
 
           {/* Display Email */}
           <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="email"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Display Email
-              </Text>
+              <MaterialIcons name='email' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Display Email</Text>
             </View>
             <Switch
-          value={displayEmail}
-          onValueChange={async (newVal) => {
-            setDisplayEmail(newVal);
-            await AsyncStorage.setItem("displayEmail", JSON.stringify(newVal));
-            // if you want ProfileScreen to refresh immediately:
-            navigation.navigate("Profile");
-          }}
-        />
+              value={displayEmail}
+              onValueChange={async (newVal) => {
+                setDisplayEmail(newVal);
+                await AsyncStorage.setItem("displayEmail", JSON.stringify(newVal));
+                // if you want ProfileScreen to refresh immediately:
+                navigation.navigate("Profile");
+              }}
+            />
           </View>
 
           {/* Display Phone Number */}
           <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
             <View style={styles.itemLabel}>
-              <MaterialIcons
-                name="phone"
-                size={20}
-                style={styles.icon}
-                color={darkMode ? "#fff" : "#666"}
-              />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>
-                Display Phone Number
-              </Text>
+              <MaterialIcons name='phone' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Display Phone Number</Text>
             </View>
             <Switch
-          value={displayPhoneNumber}
-          onValueChange={async (newVal) => {
-            setDisplayPhoneNumber(newVal);
-            await AsyncStorage.setItem("displayPhone", JSON.stringify(newVal));
-            navigation.navigate("Profile");
-          }}
-        />
+              value={displayPhoneNumber}
+              onValueChange={async (newVal) => {
+                setDisplayPhoneNumber(newVal);
+                await AsyncStorage.setItem("displayPhone", JSON.stringify(newVal));
+                navigation.navigate("Profile");
+              }}
+            />
           </View>
+
+          {/* Logout Button */}
+          <TouchableOpacity style={[styles.logoutButton, darkMode && styles.darkLogoutButton]} onPress={handleLogout}>
+            <MaterialIcons name='logout' size={20} style={styles.icon} color={darkMode ? "#fff" : "#FF3B30"} />
+            <Text style={[styles.logoutText, darkMode && styles.darkLogoutText]}>Logout</Text>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
 
       {/* Bottom Navigation */}
-      <Modal visible={termsModalVisible} transparent={true} animationType="fade">
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalBox}>
-      <Text style={styles.modalText}></Text>
-      <TouchableOpacity onPress={() => setTermsModalVisible(false)} style={styles.closeModalButton}>
-        <Text style={styles.closeButtonText}>Close</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
+      <Modal visible={termsModalVisible} transparent={true} animationType='fade'>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalText}></Text>
+            <TouchableOpacity onPress={() => setTermsModalVisible(false)} style={styles.closeModalButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
-          <MaterialIcons name="person" size={24} color="#333" />
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
+          <MaterialIcons name='person' size={24} color='#333' />
           <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
-          <MaterialIcons name="settings" size={24} color="#333" />
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
+          <MaterialIcons name='settings' size={24} color='#333' />
           <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
-          <MaterialIcons name="home" size={24} color="#333" />
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+          <MaterialIcons name='home' size={24} color='#333' />
           <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
-          <MaterialIcons name="share" size={24} color="#333" />
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
+          <MaterialIcons name='share' size={24} color='#333' />
           <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
-          <MaterialIcons name="search" size={24} color="#333" />
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
+          <MaterialIcons name='search' size={24} color='#333' />
           <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
       </View>
@@ -332,26 +278,49 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   navContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
   },
   navButton: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   navLabel: {
     fontSize: 12,
-    color: '#333',
+    color: "#333",
     marginTop: 4,
   },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-modalBox: { backgroundColor: '#fff', padding: 20, borderRadius: 10, alignItems: 'center' },
-modalText: { fontSize: 18, fontWeight: 'bold' },
-closeModalButton: { marginTop: 15, backgroundColor: '#8b58f9', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 },
-closeButtonText: { color: '#fff', fontWeight: 'bold' }
-
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
+  modalBox: { backgroundColor: "#fff", padding: 20, borderRadius: 10, alignItems: "center" },
+  modalText: { fontSize: 18, fontWeight: "bold" },
+  closeModalButton: { marginTop: 15, backgroundColor: "#8b58f9", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 },
+  closeButtonText: { color: "#fff", fontWeight: "bold" },
+  logoutButton: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    marginTop: 20,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FF3B30",
+  },
+  darkLogoutButton: {
+    backgroundColor: "#333",
+    borderColor: "#FF3B30",
+  },
+  logoutText: {
+    fontSize: 16,
+    color: "#FF3B30",
+    marginLeft: 10,
+  },
+  darkLogoutText: {
+    color: "#FF3B30",
+  },
 });
