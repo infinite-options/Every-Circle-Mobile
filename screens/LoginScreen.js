@@ -59,6 +59,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
   const [password, setPassword] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   const validateInputs = (email, password) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -192,8 +193,38 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       </View>
 
       <View style={styles.socialContainer}>
-        <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignIn} />
-        {Platform.OS === "ios" && <AppleSignIn onSignIn={onAppleSignIn} onError={onError} />}
+        <GoogleSigninButton
+          style={styles.googleButton}
+          size={GoogleSigninButton.Size.Wide}
+          color={GoogleSigninButton.Color.Dark}
+          onPress={async () => {
+            if (!signingIn) {
+              setSigningIn(true);
+              try {
+                await onGoogleSignIn();
+              } finally {
+                setSigningIn(false);
+              }
+            }
+          }}
+          disabled={signingIn}
+        />
+        {Platform.OS === "ios" && (
+          <AppleSignIn
+            onSignIn={async (...args) => {
+              if (!signingIn) {
+                setSigningIn(true);
+                try {
+                  await onAppleSignIn(...args);
+                } finally {
+                  setSigningIn(false);
+                }
+              }
+            }}
+            onError={onError}
+            disabled={signingIn}
+          />
+        )}
       </View>
 
       <View style={styles.footer}>
