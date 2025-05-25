@@ -39,7 +39,6 @@ export const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
 
 export default function App() {
-  console.log("------- Program Starting in App.js -------");
   const [initialRoute, setInitialRoute] = useState("Home");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,7 +51,7 @@ export default function App() {
   // const [appleAuthStatus, setAppleAuthStatus] = useState("Checking...");
 
   useEffect(() => {
-    console.log("App.js - Starting useEffect");
+    console.log("------- Program Starting in App.js -------");
     const initialize = async () => {
       try {
         // Check user first
@@ -193,7 +192,7 @@ export default function App() {
   }, []);
 
   const signUpHandler = useCallback(async (navigation) => {
-    console.log("App.js - signUpHandler - Starting");
+    console.log("App.js - signUpHandler - Google Button Pressed");
     try {
       // Check if already signed in
       const isSignedIn = await GoogleSignin.isSignedIn();
@@ -257,7 +256,11 @@ export default function App() {
         console.log("App.js - Sign up successful, storing user data");
         await AsyncStorage.setItem("user_uid", result.user_uid);
         await AsyncStorage.setItem("user_email_id", userInfo.user.email);
-        navigation.navigate("UserInfo");
+        // if (user_uid) {
+        //   navigation.navigate("UserInfo");
+        // } else {
+        //   Alert.alert("Error", "Failed to store user ID. Please try again.");
+        // }
       } else if (result.message === "User already exists") {
         console.log("App.js - User already exists");
         Alert.alert("Account Exists", "This Google account is already registered. Please sign in instead.", [
@@ -268,6 +271,11 @@ export default function App() {
         ]);
       } else {
         throw new Error("Failed to create account");
+      }
+      if (await AsyncStorage.getItem("user_uid")) {
+        navigation.navigate("UserInfo");
+      } else {
+        Alert.alert("Error", "Failed to store user ID. Please try again.");
       }
     } catch (err) {
       console.error("App.js - Google Sign Up error:", err);
