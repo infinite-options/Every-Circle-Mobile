@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityInd
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function UserInfoScreen({ navigation, route }) {
+  // console.log("UserInfoScreen - route.params:", route.params);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -11,21 +12,27 @@ export default function UserInfoScreen({ navigation, route }) {
   const [profilePersonalUid, setProfilePersonalUid] = useState(null);
 
   useEffect(() => {
+    console.log("UserInfoScreen - route.params:", route.params);
     // Pre-populate from Google user info if present
     if (route?.params?.googleUserInfo) {
       const { firstName: gFirst, lastName: gLast, email: gEmail } = route.params.googleUserInfo;
       if (gFirst) setFirstName(gFirst);
       if (gLast) setLastName(gLast);
+      if (gEmail) {
+        AsyncStorage.setItem("user_email", gEmail);
+      }
       // Optionally, you could store email/profile picture as well
     }
     // Load saved first and last name if they exist
     const loadSavedData = async () => {
       try {
+        const savedEmail = await AsyncStorage.getItem("user_email");
         const savedFirstName = await AsyncStorage.getItem("user_first_name");
         const savedLastName = await AsyncStorage.getItem("user_last_name");
         const userUid = await AsyncStorage.getItem("user_uid");
 
         console.log("Loading saved data:", {
+          savedEmail,
           savedFirstName,
           savedLastName,
           userUid,
@@ -104,6 +111,7 @@ export default function UserInfoScreen({ navigation, route }) {
       await AsyncStorage.setItem("user_first_name", firstName.trim());
       await AsyncStorage.setItem("user_last_name", lastName.trim());
       await AsyncStorage.setItem("user_phone_number", phoneNumber.trim());
+      console.log("UserInfoScreen - AsyncStorage - saved data");
 
       // Get the user_uid from AsyncStorage
       const userUid = await AsyncStorage.getItem("user_uid");
@@ -111,6 +119,9 @@ export default function UserInfoScreen({ navigation, route }) {
       if (!userUid) {
         throw new Error("User UID not found");
       }
+
+      console.log("UserInfoScreen - AsyncStorage - userUid", userUid);
+      console.log("UserInfoScreen - AsyncStorage - email", email);
 
       // Create form data for the API request
       const formData = new FormData();

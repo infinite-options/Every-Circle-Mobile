@@ -12,7 +12,7 @@ const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazon
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
 
 export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation, route }) {
-  console.log("SignUpScreen - Rendering");
+  console.log("SignUpScreen - Rendering after Sign Up Button Press");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -86,6 +86,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           body: JSON.stringify(payload),
         });
 
+        console.log("SignUpScreen - Google Signup Response:", response);
         const result = await response.json();
         if (result.user_uid) {
           await AsyncStorage.setItem("user_uid", result.user_uid);
