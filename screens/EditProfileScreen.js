@@ -7,7 +7,10 @@ import WishesSection from "../components/WishesSection";
 import MiniCard from "../components/MiniCard";
 import ExpertiseSection from "../components/ExpertiseSection";
 import BusinessSection from "../components/BusinessSection";
+import * as ImagePicker from "expo-image-picker";
+
 const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
 
 const EditProfileScreen = ({ route, navigation }) => {
   console.log("In EditProfileScreen");
@@ -41,6 +44,11 @@ const EditProfileScreen = ({ route, navigation }) => {
     youtube: user?.youtube || "",
   });
 
+  const [profileImage, setProfileImage] = useState(user?.profile_personal_image || "");
+  const [profileImageUri, setProfileImageUri] = useState(user?.profile_personal_image || "");
+  const [deleteProfileImage, setDeleteProfileImage] = useState("");
+  const [pendingPicker, setPendingPicker] = useState(null);
+
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => {
       const newValue = !prev[fieldName];
@@ -53,6 +61,81 @@ const EditProfileScreen = ({ route, navigation }) => {
       return updated;
     });
   };
+
+  const handlePickImage = () => {
+    console.log("handlePickImage called");
+    Alert.alert("Profile Image", "Choose an option", [
+      {
+        text: "Take Photo",
+        onPress: () => {
+          console.log("Setting pendingPicker to camera");
+          setPendingPicker("camera");
+        },
+      },
+      {
+        text: "Choose from Library",
+        onPress: () => {
+          console.log("Setting pendingPicker to library");
+          setPendingPicker("library");
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  useEffect(() => {
+    if (pendingPicker) {
+      console.log("useEffect running for pendingPicker:", pendingPicker);
+    }
+    const pick = async () => {
+      if (pendingPicker === "camera") {
+        console.log("Launching Camera Picker");
+        const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
+        if (camStatus !== "granted") {
+          Alert.alert("Permission required", "Permission to access camera is required!");
+          setPendingPicker(null);
+          return;
+        }
+        let result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaType.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          if (profileImageUri && profileImageUri !== result.assets[0].uri) {
+            setDeleteProfileImage(profileImageUri);
+          }
+          setProfileImageUri(result.assets[0].uri);
+        }
+      } else if (pendingPicker === "library") {
+        console.log("In Library Picker");
+        const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (libStatus !== "granted") {
+          Alert.alert("Permission required", "Permission to access media library is required!");
+          setPendingPicker(null);
+          return;
+        }
+        let result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaType.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          if (profileImageUri && profileImageUri !== result.assets[0].uri) {
+            setDeleteProfileImage(profileImageUri);
+          }
+          setProfileImageUri(result.assets[0].uri);
+        }
+      }
+      setPendingPicker(null);
+    };
+    if (pendingPicker) {
+      pick();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPicker]);
 
   const handleSave = async () => {
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
@@ -100,6 +183,20 @@ const EditProfileScreen = ({ route, navigation }) => {
           youtube: formData.youtube,
         })
       );
+
+      if (profileImageUri && profileImageUri !== profileImage) {
+        const uriParts = profileImageUri.split(".");
+        const fileType = uriParts[uriParts.length - 1];
+        payload.append("profile_image", {
+          uri: profileImageUri,
+          name: `profile.${fileType}`,
+          type: `image/${fileType}`,
+        });
+      }
+
+      if (deleteProfileImage) {
+        payload.append("delete_profile_image", deleteProfileImage);
+      }
 
       const response = await axios({
         method: "put",
@@ -200,6 +297,14 @@ const EditProfileScreen = ({ route, navigation }) => {
 
       {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
       {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
+      {/* Profile Image Upload Section */}
+      <View style={styles.imageSection}>
+        <Text style={styles.label}>Profile Image</Text>
+        <Image source={profileImageUri ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} style={styles.profileImage} />
+        <TouchableOpacity onPress={handlePickImage}>
+          <Text style={styles.uploadLink}>Upload Image</Text>
+        </TouchableOpacity>
+      </View>
       {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
       {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
       {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
@@ -208,7 +313,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       <View style={styles.previewSection}>
         <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
         <View style={styles.previewCard}>
-          <MiniCard user={previewUser} />
+          <MiniCard user={{ ...previewUser, profileImage: profileImageUri || DEFAULT_PROFILE_IMAGE }} />
         </View>
       </View>
 
@@ -313,6 +418,11 @@ const styles = StyleSheet.create({
   navButton: { alignItems: "center" },
   navIcon: { width: 25, height: 25 },
   navLabel: { fontSize: 12, color: "#333", marginTop: 4 },
+  imageSection: { alignItems: "center", marginBottom: 20 },
+  profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10, backgroundColor: "#eee" },
+  uploadLink: { color: "#007AFF", textDecorationLine: "underline", marginBottom: 10 },
+  previewSection: { marginBottom: 20 },
+  previewCard: { padding: 10, borderWidth: 1, borderColor: "#ccc", borderRadius: 5 },
 });
 
 export default EditProfileScreen;
