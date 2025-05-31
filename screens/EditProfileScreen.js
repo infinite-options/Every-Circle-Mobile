@@ -17,6 +17,13 @@ const EditProfileScreen = ({ route, navigation }) => {
   const { user, profile_uid: routeProfileUID } = route.params || {};
   const [profileUID, setProfileUID] = useState(routeProfileUID || user?.profile_uid || "");
 
+  // Always initialize profileImageUri with the current profile image from the user object
+  const initialProfileImage = user?.profile_personal_image || user?.profileImage || "";
+  const [profileImage, setProfileImage] = useState(initialProfileImage);
+  const [profileImageUri, setProfileImageUri] = useState(initialProfileImage);
+  const [deleteProfileImage, setDeleteProfileImage] = useState("");
+  // const [pendingPicker, setPendingPicker] = useState(null);
+
   const [formData, setFormData] = useState({
     email: user?.email || "",
     firstName: user?.firstName || "",
@@ -33,6 +40,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     expertiseIsPublic: user?.expertiseIsPublic || false,
     wishesIsPublic: user?.wishesIsPublic || false,
     businessIsPublic: user?.businessIsPublic || false,
+    imageIsPublic: user?.imageIsPublic || false,
     businesses: user?.businesses || [{ name: "", role: "", isPublic: true }],
     experience: user?.experience || [{ company: "", title: "", startDate: "", endDate: "", isPublic: true }],
     education: user?.education || [{ school: "", degree: "", startDate: "", endDate: "", isPublic: true }],
@@ -43,11 +51,6 @@ const EditProfileScreen = ({ route, navigation }) => {
     linkedin: user?.linkedin || "",
     youtube: user?.youtube || "",
   });
-
-  const [profileImage, setProfileImage] = useState(user?.profile_personal_image || "");
-  const [profileImageUri, setProfileImageUri] = useState(user?.profile_personal_image || "");
-  const [deleteProfileImage, setDeleteProfileImage] = useState("");
-  const [pendingPicker, setPendingPicker] = useState(null);
 
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => {
@@ -62,80 +65,60 @@ const EditProfileScreen = ({ route, navigation }) => {
     });
   };
 
-  const handlePickImage = () => {
+  const handlePickImage = async () => {
     console.log("handlePickImage called");
-    Alert.alert("Profile Image", "Choose an option", [
-      {
-        text: "Take Photo",
-        onPress: () => {
-          console.log("Setting pendingPicker to camera");
-          setPendingPicker("camera");
-        },
-      },
-      {
-        text: "Choose from Library",
-        onPress: () => {
-          console.log("Setting pendingPicker to library");
-          setPendingPicker("library");
-        },
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  };
+    try {
+      console.log("Requesting media library permissions...");
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log("Media library permission status:", status);
 
-  useEffect(() => {
-    if (pendingPicker) {
-      console.log("useEffect running for pendingPicker:", pendingPicker);
-    }
-    const pick = async () => {
-      if (pendingPicker === "camera") {
-        console.log("Launching Camera Picker");
-        const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
-        if (camStatus !== "granted") {
-          Alert.alert("Permission required", "Permission to access camera is required!");
-          setPendingPicker(null);
-          return;
-        }
-        let result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaType.Images,
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.7,
-        });
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-          if (profileImageUri && profileImageUri !== result.assets[0].uri) {
-            setDeleteProfileImage(profileImageUri);
-          }
-          setProfileImageUri(result.assets[0].uri);
-        }
-      } else if (pendingPicker === "library") {
-        console.log("In Library Picker");
-        const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (libStatus !== "granted") {
-          Alert.alert("Permission required", "Permission to access media library is required!");
-          setPendingPicker(null);
-          return;
-        }
-        let result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaType.Images,
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.7,
-        });
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-          if (profileImageUri && profileImageUri !== result.assets[0].uri) {
-            setDeleteProfileImage(profileImageUri);
-          }
-          setProfileImageUri(result.assets[0].uri);
-        }
+      if (status !== "granted") {
+        console.log("Permission not granted");
+        Alert.alert("Permission required", "Permission to access media library is required!");
+        return;
       }
-      setPendingPicker(null);
-    };
-    if (pendingPicker) {
-      pick();
+
+      console.log("Launching image library...");
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      console.log("Image picker result:", JSON.stringify(result, null, 2));
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        console.log("Image selected successfully");
+        if (profileImageUri && profileImageUri !== result.assets[0].uri) {
+          console.log("Setting deleteProfileImage to:", profileImageUri);
+          setDeleteProfileImage(profileImageUri);
+        }
+        console.log("Setting new profile image URI:", result.assets[0].uri);
+        setProfileImageUri(result.assets[0].uri);
+      } else {
+        console.log("No image selected or picker was canceled");
+      }
+    } catch (error) {
+      console.error("Error picking image - Full error:", error);
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+
+      // More specific error messages based on error type
+      let errorMessage = "Failed to pick image. ";
+      if (error.name === "PermissionDenied") {
+        errorMessage += "Permission was denied.";
+      } else if (error.name === "ImagePickerError") {
+        errorMessage += "There was an error with the image picker.";
+      } else if (error.message.includes("permission")) {
+        errorMessage += "Permission issue detected.";
+      } else if (error.message.includes("canceled")) {
+        errorMessage += "Operation was canceled.";
+      }
+
+      Alert.alert("Error", errorMessage);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingPicker]);
+  };
 
   const handleSave = async () => {
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
@@ -168,6 +151,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       payload.append("profile_personal_expertise_is_public", formData.expertiseIsPublic ? 1 : 0);
       payload.append("profile_personal_wishes_is_public", formData.wishesIsPublic ? 1 : 0);
       payload.append("profile_personal_business_is_public", formData.businessIsPublic ? 1 : 0);
+      payload.append("profile_personal_image_is_public", formData.imageIsPublic ? 1 : 0);
 
       payload.append("experience_info", JSON.stringify(formData.experience || []));
       payload.append("education_info", JSON.stringify(formData.education || []));
@@ -184,28 +168,52 @@ const EditProfileScreen = ({ route, navigation }) => {
         })
       );
 
+      // Add profile image to payload if it exists and is different from the current one
       if (profileImageUri && profileImageUri !== profileImage) {
+        console.log("Adding new profile image to payload:", profileImageUri);
         const uriParts = profileImageUri.split(".");
         const fileType = uriParts[uriParts.length - 1];
-        payload.append("profile_image", {
+
+        // Create the file object for the image
+        const imageFile = {
           uri: profileImageUri,
           name: `profile.${fileType}`,
           type: `image/${fileType}`,
-        });
+        };
+
+        payload.append("profile_image", imageFile);
       }
 
+      // If there's an image to delete, add it to the payload
       if (deleteProfileImage) {
+        console.log("Adding delete_profile_image to payload:", deleteProfileImage);
         payload.append("delete_profile_image", deleteProfileImage);
       }
 
+      // Add profile image public/private flag to payload
+      // payload.append("profile_personal_image_is_public", formData.imageIsPublic ? 1 : 0);
+
+      // Log all FormData entries before sending
+      console.log("FormData being sent to API:");
+      for (let pair of payload.entries()) {
+        console.log(pair[0] + ":", pair[1]);
+      }
+
+      console.log("Payload being sent to API:", payload);
+
+      console.log("Sending payload to server...");
       const response = await axios({
         method: "put",
         url: `${ProfileScreenAPI}?profile_uid=${trimmedProfileUID}`,
         data: payload,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Accept: "application/json",
+        },
       });
 
       if (response.status === 200) {
+        console.log("Profile update successful");
         Alert.alert("Success", "Profile updated successfully!");
 
         const updatedUserData = {
@@ -217,10 +225,12 @@ const EditProfileScreen = ({ route, navigation }) => {
             profile_personal_phone_number: formData.phoneNumber,
             profile_personal_tag_line: formData.tagLine,
             profile_personal_short_bio: formData.shortBio,
+            profile_personal_image: profileImageUri, // Add the new image URI to the updated user data
             profile_personal_email_is_public: formData.emailIsPublic ? 1 : 0,
             profile_personal_phone_number_is_public: formData.phoneIsPublic ? 1 : 0,
             profile_personal_tag_line_is_public: formData.tagLineIsPublic ? 1 : 0,
             profile_personal_short_bio_is_public: formData.shortBioIsPublic ? 1 : 0,
+            profile_personal_image_is_public: formData.imageIsPublic ? 1 : 0, // Add the public/private flag
             profile_personal_experience_is_public: formData.experienceIsPublic ? 1 : 0,
             profile_personal_education_is_public: formData.educationIsPublic ? 1 : 0,
             profile_personal_expertise_is_public: formData.expertiseIsPublic ? 1 : 0,
@@ -245,11 +255,12 @@ const EditProfileScreen = ({ route, navigation }) => {
           profile_uid: trimmedProfileUID,
         });
       } else {
+        console.error("Profile update failed:", response);
         Alert.alert("Error", "Failed to update profile.");
       }
     } catch (error) {
-      Alert.alert("Error", "Update failed. Please try again.");
       console.error("Update Error:", error);
+      Alert.alert("Error", "Update failed. Please try again.");
     }
   };
 
@@ -291,6 +302,14 @@ const EditProfileScreen = ({ route, navigation }) => {
     businessIsPublic: formData.businessIsPublic,
   };
 
+  // Profile Image Public/Private Toggle Handler
+  const toggleProfileImageVisibility = () => {
+    setFormData((prev) => ({
+      ...prev,
+      imageIsPublic: !prev.imageIsPublic,
+    }));
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Edit Profile</Text>
@@ -301,6 +320,11 @@ const EditProfileScreen = ({ route, navigation }) => {
       <View style={styles.imageSection}>
         <Text style={styles.label}>Profile Image</Text>
         <Image source={profileImageUri ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} style={styles.profileImage} />
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+          <TouchableOpacity onPress={toggleProfileImageVisibility}>
+            <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>{formData.imageIsPublic ? "Public" : "Private"}</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity onPress={handlePickImage}>
           <Text style={styles.uploadLink}>Upload Image</Text>
         </TouchableOpacity>
@@ -336,6 +360,7 @@ const EditProfileScreen = ({ route, navigation }) => {
         setBusinesses={(e) => setFormData({ ...formData, businesses: e })}
         toggleVisibility={() => toggleVisibility("businessIsPublic")}
         isPublic={formData.businessIsPublic}
+        publicPrivateTextStyle={{ fontWeight: "bold" }}
       />
       <ExpertiseSection
         expertise={formData.expertise}
@@ -356,7 +381,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile", { user, profile_uid: profileUID })}>
           <Image source={require("../assets/profile.png")} style={styles.navIcon} />
           <Text style={styles.navLabel}>Profile</Text>
         </TouchableOpacity>
