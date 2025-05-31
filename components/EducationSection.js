@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 
 const EducationSection = ({ education, setEducation, toggleVisibility, isPublic }) => {
   const addEducation = () => {
@@ -30,83 +23,50 @@ const EducationSection = ({ education, setEducation, toggleVisibility, isPublic 
     updated[index].isPublic = !updated[index].isPublic;
     setEducation(updated);
 
-      // If it's the only entry, sync the outer toggle too
-  if (updated.length === 1) {
-    toggleVisibility("educationIsPublic");
-  }
+    // If it's the only entry, sync the outer toggle too
+    if (updated.length === 1) {
+      toggleVisibility("educationIsPublic");
+    }
   };
 
   return (
     <View style={styles.sectionContainer}>
       <View style={styles.headerRow}>
-      <View style={styles.labelRow}>
-        <Text style={styles.label}>Education</Text>
-        <TouchableOpacity onPress={addEducation}>
-          <Text style={styles.addText}>+</Text>
-        </TouchableOpacity>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>Education</Text>
+          <TouchableOpacity onPress={addEducation}>
+            <Text style={styles.addText}>+</Text>
+          </TouchableOpacity>
         </View>
         <TouchableOpacity onPress={toggleVisibility}>
           <Text style={[styles.toggleText, { color: isPublic ? "#4CAF50" : "#f44336" }]}> {isPublic ? "Public" : "Private"}</Text>
         </TouchableOpacity>
       </View>
 
+      {education.map((item, index) => (
+        <View key={index} style={[styles.card, index > 0 && styles.cardSpacing]}>
+          <View style={styles.rowHeader}>
+            <Text style={styles.label}>Entry #{index + 1}</Text>
 
-
-        {education.map((item, index) => (
-            <View key={index} style={styles.card}>
-                    <View style={styles.rowHeader}>
-                    <Text style={styles.label}>Entry #{index + 1}</Text>
-
-
-
-
-
-
-              {/* Individual public/private toggle */}
-              <TouchableOpacity onPress={() => toggleEntryVisibility(index)}>
-                <Text style={{ color: item.isPublic ? '#4CAF50' : '#f44336', fontWeight: 'bold' }}>
-                  {item.isPublic ? 'Public' : 'Private'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              style={styles.input}
-              placeholder="School"
-              value={item.school}
-              onChangeText={(text) => handleInputChange(index, "school", text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Degree"
-              value={item.degree}
-              onChangeText={(text) => handleInputChange(index, "degree", text)}
-            />
-            <View style={styles.dateRow}>
-              <TextInput
-                style={styles.dateInput}
-                placeholder="MM/YYYY"
-                value={item.startDate}
-                onChangeText={(text) => handleInputChange(index, "startDate", text)}
-              />
-              <Text style={styles.dash}> - </Text>
-              <TextInput
-                style={styles.dateInput}
-                placeholder="MM/YYYY"
-                value={item.endDate}
-                onChangeText={(text) => handleInputChange(index, "endDate", text)}
-              />
-              <TouchableOpacity onPress={() => deleteEducation(index)}>
-                
-                <Image source={require('../assets/delete.png')} style={styles.deleteIcon} />
-              </TouchableOpacity>
-            </View>
+            {/* Individual public/private toggle */}
+            <TouchableOpacity onPress={() => toggleEntryVisibility(index)}>
+              <Text style={{ color: item.isPublic ? "#4CAF50" : "#f44336", fontWeight: "bold", marginLeft: 10 }}>{item.isPublic ? "Public" : "Private"}</Text>
+            </TouchableOpacity>
           </View>
- ) )}
-
-       
-      
- </View>
-);
+          <TextInput style={styles.input} placeholder='School' value={item.school} onChangeText={(text) => handleInputChange(index, "school", text)} />
+          <TextInput style={styles.input} placeholder='Degree' value={item.degree} onChangeText={(text) => handleInputChange(index, "degree", text)} />
+          <View style={styles.dateRow}>
+            <TextInput style={styles.dateInput} placeholder='MM/YYYY' value={item.startDate} onChangeText={(text) => handleInputChange(index, "startDate", text)} />
+            <Text style={styles.dash}> - </Text>
+            <TextInput style={styles.dateInput} placeholder='MM/YYYY' value={item.endDate} onChangeText={(text) => handleInputChange(index, "endDate", text)} />
+            <TouchableOpacity onPress={() => deleteEducation(index)}>
+              <Image source={require("../assets/delete.png")} style={styles.deleteIcon} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -118,10 +78,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   label: { fontSize: 18, fontWeight: "bold" },
-  addText: { color: "#000000", fontWeight: "bold",fontSize: 24},
+  addText: { color: "#000000", fontWeight: "bold", fontSize: 24 },
   labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10, // spacing between label and +
   },
   toggleText: { fontWeight: "bold" },
@@ -129,14 +89,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 0,
     borderWidth: 1,
     borderColor: "#ccc",
   },
   rowHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   input: {
@@ -161,8 +121,11 @@ const styles = StyleSheet.create({
     width: "35%",
   },
   dash: { fontSize: 16, fontWeight: "bold" },
- 
+
   deleteIcon: { width: 20, height: 20 },
+  cardSpacing: {
+    marginTop: 16,
+  },
 });
 
 export default EducationSection;

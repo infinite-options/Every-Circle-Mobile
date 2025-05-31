@@ -119,7 +119,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.pageContainer}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Your Profile</Text>
           <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate("EditProfile", { user: user, profile_uid: profileUID })}>
@@ -152,13 +152,11 @@ const ProfileScreen = ({ route, navigation }) => {
             <Text style={styles.label}>Experience:</Text>
             {user.experience
               .filter((exp) => exp.isPublic)
-              .map((exp, index) => (
-                <View key={index} style={styles.inputContainer}>
-                  <Text style={styles.inputText}>
-                    {exp.startDate || "MM/YYYY"} - {exp.endDate || "MM/YYYY"}
-                  </Text>
-                  <Text style={styles.inputText}>{exp.title || "Title not specified"}</Text>
-                  <Text style={styles.inputText}>{exp.company || "Company not specified"}</Text>
+              .map((exp, index, arr) => (
+                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                  <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
+                  <Text style={styles.inputText}>{exp.title || ""}</Text>
+                  <Text style={styles.inputText}>{exp.company || ""}</Text>
                 </View>
               ))}
           </View>
@@ -170,12 +168,10 @@ const ProfileScreen = ({ route, navigation }) => {
             {user.education
               .filter((edu) => edu.isPublic)
               .map((edu, index) => (
-                <View key={index} style={styles.inputContainer}>
-                  <Text style={styles.inputText}>
-                    {edu.startDate || "Start"} - {edu.endDate || "End"}
-                  </Text>
-                  <Text style={styles.inputText}>{edu.degree || "Degree not specified"}</Text>
-                  <Text style={styles.inputText}>{edu.school || "School not specified"}</Text>
+                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                  <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
+                  <Text style={styles.inputText}>{edu.degree || ""}</Text>
+                  <Text style={styles.inputText}>{edu.school || ""}</Text>
                 </View>
               ))}
           </View>
@@ -187,9 +183,9 @@ const ProfileScreen = ({ route, navigation }) => {
             {user.businesses
               .filter((bus) => bus.isPublic)
               .map((bus, index) => (
-                <View key={index} style={styles.inputContainer}>
-                  <Text style={styles.inputText}>{bus.name || "Business not specified"}</Text>
-                  <Text style={styles.inputText}>{bus.role || "Role not specified"}</Text>
+                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                  <Text style={styles.inputText}>{bus.name || ""}</Text>
+                  <Text style={styles.inputText}>{bus.role || ""}</Text>
                 </View>
               ))}
           </View>
@@ -201,11 +197,15 @@ const ProfileScreen = ({ route, navigation }) => {
             {user.expertise
               .filter((exp) => exp.isPublic)
               .map((exp, index) => (
-                <View key={index} style={styles.inputContainer}>
-                  <Text style={styles.inputText}>{exp.name || "No Title"}</Text>
-                  <Text style={styles.inputText}>{exp.description || "No Description"}</Text>
-                  <Text style={styles.inputText}>cost: {exp.cost ? `$${exp.cost}` : "Free"}</Text>
-                  <Text style={styles.inputText}>💰 {exp.bounty ? `$${exp.bounty}` : "Free"}</Text>
+                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                  <Text style={styles.inputText}>{exp.name || ""}</Text>
+                  <Text style={styles.inputText}>{exp.description || ""}</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={styles.inputText}>{exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}</Text>
+                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>
+                      {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
+                    </Text>
+                  </View>
                 </View>
               ))}
           </View>
@@ -217,10 +217,12 @@ const ProfileScreen = ({ route, navigation }) => {
             {user.wishes
               .filter((wish) => wish.isPublic)
               .map((wish, index) => (
-                <View key={index} style={styles.inputContainer}>
-                  <Text style={styles.inputText}>{wish.helpNeeds || "No Title"}</Text>
-                  <Text style={styles.inputText}>{wish.details || "No Description"}</Text>
-                  <Text style={styles.inputText}>💰 {wish.amount ? `$${wish.amount}` : "Free"}</Text>
+                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                  <Text style={styles.inputText}>{wish.helpNeeds || ""}</Text>
+                  <Text style={styles.inputText}>{wish.details || ""}</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
+                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+                  </View>
                 </View>
               ))}
           </View>
