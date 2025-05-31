@@ -14,6 +14,7 @@ const ProfileScreen = ({ route, navigation }) => {
     if (route.params?.user) {
       const apiUser = route.params.user;
       console.log(" Received API User Data:", JSON.stringify(apiUser, null, 2));
+      // console.log(" profile_personal_image:", apiUser?.profile_personal_image);
 
       const extractedProfileUID = route.params.profile_uid || apiUser.personal_info?.profile_personal_uid || "";
       console.log(" Extracted Profile UID in ProfileScreen:", extractedProfileUID);
@@ -40,6 +41,7 @@ const ProfileScreen = ({ route, navigation }) => {
         shortBio: apiUser.personal_info?.profile_personal_short_bio || "",
         emailIsPublic: apiUser.personal_info?.profile_personal_email_is_public === 1,
         phoneIsPublic: apiUser.personal_info?.profile_personal_phone_number_is_public === 1,
+        imageIsPublic: apiUser.personal_info?.profile_personal_image_is_public === 1,
         tagLineIsPublic: apiUser.personal_info?.profile_personal_tag_line_is_public === 1,
         shortBioIsPublic: apiUser.personal_info?.profile_personal_short_bio_is_public === 1,
         experienceIsPublic: apiUser.personal_info?.profile_personal_experience_is_public === 1,
@@ -47,9 +49,12 @@ const ProfileScreen = ({ route, navigation }) => {
         expertiseIsPublic: apiUser.personal_info?.profile_personal_expertise_is_public === 1,
         wishesIsPublic: apiUser.personal_info?.profile_personal_wishes_is_public === 1,
         businessIsPublic: apiUser.personal_info?.profile_personal_business_is_public === 1,
+        profileImage: apiUser.personal_info?.profile_personal_image ? String(apiUser.personal_info.profile_personal_image) : "what",
+        // profileImage: apiUser.personal_info?.profile_personal_image || "",
       };
       console.log("Tag Line:", apiUser.personal_info?.profile_personal_tag_line);
       console.log("Tag Line Is Public:", apiUser.personal_info?.profile_personal_tag_line_is_public);
+      console.log("Profile Image from API:", apiUser.personal_info?.profile_personal_image);
 
       try {
         userData.experience = apiUser.experience_info && typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : [];
@@ -123,6 +128,7 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.cardContainer}>
+          <Image source={user.profileImage && user.profileImage !== "" && user.imageIsPublic ? { uri: String(user.profileImage) } : require("../assets/profile.png")} style={styles.profileImage} />
           <Text style={styles.nameText}>
             {user.firstName} {user.lastName}
           </Text>
@@ -305,6 +311,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#555",
     marginBottom: 6,
+  },
+
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+    backgroundColor: "#eee",
   },
 });
 
