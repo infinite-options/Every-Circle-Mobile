@@ -9,7 +9,7 @@ const MiniCard = ({ user }) => {
   const tagLine = user?.personal_info?.profile_personal_tagline || user?.tagLine || "";
   const email = user?.user_email || user?.email || "";
   const phone = user?.personal_info?.profile_personal_phone_number || user?.phoneNumber || "";
-  const profileImage = user?.profile_personal_image || user?.profileImage || null;
+  const profileImage = user?.profileImage;
 
   // Extract visibility flags
   const emailIsPublic = user?.personal_info?.profile_personal_email_is_public == 1 || user?.emailIsPublic;
@@ -20,7 +20,7 @@ const MiniCard = ({ user }) => {
   return (
     <View style={styles.cardContainer}>
       {/* Profile Image */}
-      <Image source={profileImage && profileImage !== "" && user.imageIsPublic ? { uri: String(profileImage) } : require("../assets/profile.png")} style={styles.profileImage} />
+      <Image source={profileImage && profileImage !== "" ? { uri: String(profileImage) } : require("../assets/profile.png")} style={styles.profileImage} />
 
       {/* User Info */}
       <View style={styles.textContainer}>

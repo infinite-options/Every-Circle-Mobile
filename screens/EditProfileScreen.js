@@ -45,7 +45,11 @@ const EditProfileScreen = ({ route, navigation }) => {
     experience: user?.experience || [{ company: "", title: "", startDate: "", endDate: "", isPublic: true }],
     education: user?.education || [{ school: "", degree: "", startDate: "", endDate: "", isPublic: true }],
     wishes: user?.wishes || [{ helpNeeds: "", details: "", isPublic: true }],
-    expertise: user?.expertise || [{ headline: "", description: "", cost: "", bounty: "", isPublic: true }],
+    expertise: (user?.expertise || [{ headline: "", description: "", cost: "", bounty: "", isPublic: true }]).map((e) => ({
+      ...e,
+      bounty: e.bounty ? e.bounty.replace(/\$/g, "") : "",
+      cost: e.cost ? e.cost.replace(/\$/g, "") : "",
+    })),
     facebook: user?.facebook || "",
     twitter: user?.twitter || "",
     linkedin: user?.linkedin || "",
@@ -300,6 +304,8 @@ const EditProfileScreen = ({ route, navigation }) => {
     expertiseIsPublic: formData.expertiseIsPublic,
     wishesIsPublic: formData.wishesIsPublic,
     businessIsPublic: formData.businessIsPublic,
+    // Only show the image if imageIsPublic is true and there is an uploaded image
+    profileImage: formData.imageIsPublic && profileImageUri ? profileImageUri : "",
   };
 
   // Profile Image Public/Private Toggle Handler
@@ -337,7 +343,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       <View style={styles.previewSection}>
         <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
         <View style={styles.previewCard}>
-          <MiniCard user={{ ...previewUser, profileImage: profileImageUri || DEFAULT_PROFILE_IMAGE }} />
+          <MiniCard user={previewUser} />
         </View>
       </View>
 
