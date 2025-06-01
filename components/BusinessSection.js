@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 
 const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic }) => {
   const addBusiness = () => {
@@ -17,7 +10,7 @@ const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic
   const deleteBusiness = (index) => {
     const updated = businesses.filter((_, i) => i !== index);
     setBusinesses(updated);
-  };    
+  };
 
   const handleInputChange = (index, field, value) => {
     const updated = [...businesses];
@@ -32,48 +25,34 @@ const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic
 
     // Sync outer toggle if it's the only one
     if (updated.length === 1) {
-      toggleVisibility('businessIsPublic');
+      toggleVisibility("businessIsPublic");
     }
   };
 
   return (
     <View style={styles.sectionContainer}>
       <View style={styles.headerRow}>
-      <View style={styles.labelRow}>
-        <Text style={styles.label}>Businesses</Text>
-        <TouchableOpacity onPress={addBusiness}>
-          <Text style={styles.addText}>+</Text>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>Businesses</Text>
+          <TouchableOpacity onPress={addBusiness}>
+            <Text style={styles.addText}>+</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={toggleVisibility}>
+          <Text style={[styles.toggleText, { color: isPublic ? "#4CAF50" : "#f44336" }]}>{isPublic ? "Public" : "Private"}</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity onPress={toggleVisibility}>
-        <Text style={[styles.toggleText, { color: isPublic ? '#4CAF50' : '#f44336' }]}>
-          {isPublic ? 'Public' : 'Private'}
-        </Text>
-    </TouchableOpacity>
-    </View>
 
       {businesses.map((item, index) => (
         <View key={index} style={styles.card}>
           <View style={styles.rowHeader}>
             <Text style={styles.label}>Business #{index + 1}</Text>
             <TouchableOpacity onPress={() => toggleEntryVisibility(index)}>
-              <Text style={{ color: item.isPublic ? '#4CAF50' : '#f44336', fontWeight: 'bold' }}>
-                {item.isPublic ? 'Public' : 'Private'}
-              </Text>
+              <Text style={{ color: item.isPublic ? "#4CAF50" : "#f44336", fontWeight: "bold" }}>{item.isPublic ? "Public" : "Private"}</Text>
             </TouchableOpacity>
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Business Name"
-            value={item.name}
-            onChangeText={(text) => handleInputChange(index, "name", text)}
-        />
-          <TextInput
-            style={styles.input}
-            placeholder="Your Role / Designation"
-            value={item.role}
-            onChangeText={(text) => handleInputChange(index, "role", text)}
-          />
+          <TextInput style={styles.input} placeholder='Business Name' value={item.name} onChangeText={(text) => handleInputChange(index, "name", text)} />
+          <TextInput style={styles.input} placeholder='Your Role / Designation' value={item.role} onChangeText={(text) => handleInputChange(index, "role", text)} />
           <TouchableOpacity onPress={() => deleteBusiness(index)} style={styles.deleteButton}>
             <Image source={require("../assets/delete.png")} style={styles.deleteIcon} />
           </TouchableOpacity>
@@ -92,8 +71,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   label: { fontSize: 18, fontWeight: "bold" },
@@ -107,9 +86,9 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
   },
   rowHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   input: {

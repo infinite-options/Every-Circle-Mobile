@@ -11,6 +11,92 @@ const ProfileScreen = ({ route, navigation }) => {
   const [profileUID, setProfileUID] = useState("");
 
   useEffect(() => {
+    async function fetchUserData(profileUID) {
+      try {
+        const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
+        const apiUser = await response.json();
+        if (!apiUser || apiUser.message === "Profile not found for this user") {
+          console.error("No user data received from API");
+          Alert.alert("Error", "Failed to load profile data from server.");
+          setLoading(false);
+          return;
+        }
+        // Map API data to display fields (same as in main logic)
+        const userData = {
+          profile_uid: profileUID,
+          email: apiUser?.user_email || "",
+          firstName: apiUser.personal_info?.profile_personal_first_name || "",
+          lastName: apiUser.personal_info?.profile_personal_last_name || "",
+          phoneNumber: apiUser.personal_info?.profile_personal_phone_number || "",
+          tagLine: apiUser.personal_info?.profile_personal_tag_line || "",
+          shortBio: apiUser.personal_info?.profile_personal_short_bio || "",
+          emailIsPublic: apiUser.personal_info?.profile_personal_email_is_public === 1,
+          phoneIsPublic: apiUser.personal_info?.profile_personal_phone_number_is_public === 1,
+          imageIsPublic: apiUser.personal_info?.profile_personal_image_is_public === 1,
+          tagLineIsPublic: apiUser.personal_info?.profile_personal_tag_line_is_public === 1,
+          shortBioIsPublic: apiUser.personal_info?.profile_personal_short_bio_is_public === 1,
+          experienceIsPublic: apiUser.personal_info?.profile_personal_experience_is_public === 1,
+          educationIsPublic: apiUser.personal_info?.profile_personal_education_is_public === 1,
+          expertiseIsPublic: apiUser.personal_info?.profile_personal_expertise_is_public === 1,
+          wishesIsPublic: apiUser.personal_info?.profile_personal_wishes_is_public === 1,
+          businessIsPublic: apiUser.personal_info?.profile_personal_business_is_public === 1,
+          profileImage: apiUser.personal_info?.profile_personal_image ? String(apiUser.personal_info.profile_personal_image) : "",
+        };
+        userData.experience = apiUser.experience_info
+          ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
+              company: exp.profile_experience_company_name || "",
+              title: exp.profile_experience_position || "",
+              startDate: exp.profile_experience_start_date || "",
+              endDate: exp.profile_experience_end_date || "",
+              isPublic: exp.profile_experience_is_public === 1 || exp.isPublic === true,
+            }))
+          : [];
+        userData.education = apiUser.education_info
+          ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
+              school: edu.profile_education_school_name || "",
+              degree: edu.profile_education_degree || "",
+              startDate: edu.profile_education_start_date || "",
+              endDate: edu.profile_education_end_date || "",
+              isPublic: edu.profile_education_is_public === 1 || edu.isPublic === true,
+            }))
+          : [];
+        userData.businesses = apiUser.business_info
+          ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
+              name: bus.profile_business_name || "",
+              role: bus.profile_business_role || "",
+              isPublic: bus.profile_business_is_public === 1 || bus.isPublic === true,
+            }))
+          : [];
+        userData.expertise = apiUser.expertise_info
+          ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
+              name: exp.profile_expertise_title || "",
+              description: exp.profile_expertise_description || "",
+              cost: exp.profile_expertise_cost || "",
+              bounty: exp.profile_expertise_bounty || "",
+              isPublic: exp.profile_expertise_is_public === 1 || exp.isPublic === true,
+            }))
+          : [];
+        userData.wishes = apiUser.wishes_info
+          ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
+              helpNeeds: wish.profile_wish_title || "",
+              details: wish.profile_wish_description || "",
+              amount: wish.profile_wish_bounty || "",
+              isPublic: wish.profile_wish_is_public === 1 || wish.isPublic === true,
+            }))
+          : [];
+        const socialLinks = apiUser.social_links && typeof apiUser.social_links === "string" ? JSON.parse(apiUser.social_links) : {};
+        userData.facebook = socialLinks.facebook || "";
+        userData.twitter = socialLinks.twitter || "";
+        userData.linkedin = socialLinks.linkedin || "";
+        userData.youtube = socialLinks.youtube || "";
+        setUser(userData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setLoading(false);
+      }
+    }
+
     if (route.params?.user) {
       const apiUser = route.params.user;
       console.log(" Received API User Data:", JSON.stringify(apiUser, null, 2));
@@ -59,52 +145,52 @@ const ProfileScreen = ({ route, navigation }) => {
       try {
         userData.experience = apiUser.experience_info
           ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
-              company: exp.company || "",
-              title: exp.title || "",
-              startDate: exp.startDate || "",
-              endDate: exp.endDate || "",
-              isPublic: exp.isPublic === true || exp.isPublic === 1,
+              company: exp.profile_experience_company_name || "",
+              title: exp.profile_experience_position || "",
+              startDate: exp.profile_experience_start_date || "",
+              endDate: exp.profile_experience_end_date || "",
+              isPublic: exp.profile_experience_is_public === 1 || exp.isPublic === true,
             }))
           : [];
         console.log("Mapped experience:", userData.experience);
 
         userData.education = apiUser.education_info
           ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
-              school: edu.school || "",
-              degree: edu.degree || "",
-              startDate: edu.startDate || "",
-              endDate: edu.endDate || "",
-              isPublic: edu.isPublic === true || edu.isPublic === 1,
+              school: edu.profile_education_school_name || "",
+              degree: edu.profile_education_degree || "",
+              startDate: edu.profile_education_start_date || "",
+              endDate: edu.profile_education_end_date || "",
+              isPublic: edu.profile_education_is_public === 1 || edu.isPublic === true,
             }))
           : [];
         console.log("Mapped education:", userData.education);
 
         userData.businesses = apiUser.business_info
           ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
-              name: bus.name || "",
-              role: bus.role || "",
-              isPublic: bus.isPublic === true || bus.isPublic === 1,
+              name: bus.profile_business_name || "",
+              role: bus.profile_business_role || "",
+              isPublic: bus.profile_business_is_public === 1 || bus.isPublic === true,
             }))
           : [];
         console.log("Mapped businesses:", userData.businesses);
 
         userData.expertise = apiUser.expertise_info
           ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
-              name: exp.name || "",
-              description: exp.description || "",
-              cost: exp.cost || "",
-              bounty: exp.bounty || "",
-              isPublic: exp.isPublic === true || exp.isPublic === 1,
+              name: exp.profile_expertise_title || "",
+              description: exp.profile_expertise_description || "",
+              cost: exp.profile_expertise_cost || "",
+              bounty: exp.profile_expertise_bounty || "",
+              isPublic: exp.profile_expertise_is_public === 1 || exp.isPublic === true,
             }))
           : [];
         console.log("Mapped expertise:", userData.expertise);
 
         userData.wishes = apiUser.wishes_info
           ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
-              helpNeeds: wish.helpNeeds || "",
-              details: wish.details || "",
-              amount: wish.amount || "",
-              isPublic: wish.isPublic === true || wish.isPublic === 1,
+              helpNeeds: wish.profile_wish_title || "",
+              details: wish.profile_wish_description || "",
+              amount: wish.profile_wish_bounty || "",
+              isPublic: wish.profile_wish_is_public === 1 || wish.isPublic === true,
             }))
           : [];
         console.log("Mapped wishes:", userData.wishes);
@@ -133,6 +219,8 @@ const ProfileScreen = ({ route, navigation }) => {
       console.log("2");
       setLoading(false);
       console.log("3");
+    } else if (route.params?.profile_uid) {
+      fetchUserData(route.params.profile_uid);
     } else {
       console.error(" No user data received in ProfileScreen");
       Alert.alert("Error", "Failed to load profile data.");
