@@ -62,6 +62,15 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleNavigateProfile = async () => {
+    const user_uid = await AsyncStorage.getItem("user_uid");
+    if (user_uid) {
+      navigation.navigate("Profile", { profile_uid: user_uid });
+    } else {
+      navigation.navigate("Profile");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={[styles.safeArea, darkMode && styles.darkContainer]}>
@@ -193,7 +202,7 @@ export default function SettingsScreen() {
       </Modal>
 
       <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
+        <TouchableOpacity style={styles.navButton} onPress={handleNavigateProfile}>
           <MaterialIcons name='person' size={24} color='#333' />
           <Text style={styles.navLabel}></Text>
         </TouchableOpacity>
