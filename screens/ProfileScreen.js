@@ -57,11 +57,58 @@ const ProfileScreen = ({ route, navigation }) => {
       console.log("Profile Image from API:", apiUser.personal_info?.profile_personal_image);
 
       try {
-        userData.experience = apiUser.experience_info && typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : [];
-        userData.education = apiUser.education_info && typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : [];
-        userData.expertise = apiUser.expertise_info && typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : [];
-        userData.wishes = apiUser.wishes_info && typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : [];
-        userData.businesses = apiUser.business_info && typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : [];
+        userData.experience = apiUser.experience_info
+          ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
+              company: exp.company || "",
+              title: exp.title || "",
+              startDate: exp.startDate || "",
+              endDate: exp.endDate || "",
+              isPublic: exp.isPublic === true || exp.isPublic === 1,
+            }))
+          : [];
+        console.log("Mapped experience:", userData.experience);
+
+        userData.education = apiUser.education_info
+          ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
+              school: edu.school || "",
+              degree: edu.degree || "",
+              startDate: edu.startDate || "",
+              endDate: edu.endDate || "",
+              isPublic: edu.isPublic === true || edu.isPublic === 1,
+            }))
+          : [];
+        console.log("Mapped education:", userData.education);
+
+        userData.businesses = apiUser.business_info
+          ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
+              name: bus.name || "",
+              role: bus.role || "",
+              isPublic: bus.isPublic === true || bus.isPublic === 1,
+            }))
+          : [];
+        console.log("Mapped businesses:", userData.businesses);
+
+        userData.expertise = apiUser.expertise_info
+          ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
+              name: exp.name || "",
+              description: exp.description || "",
+              cost: exp.cost || "",
+              bounty: exp.bounty || "",
+              isPublic: exp.isPublic === true || exp.isPublic === 1,
+            }))
+          : [];
+        console.log("Mapped expertise:", userData.expertise);
+
+        userData.wishes = apiUser.wishes_info
+          ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
+              helpNeeds: wish.helpNeeds || "",
+              details: wish.details || "",
+              amount: wish.amount || "",
+              isPublic: wish.isPublic === true || wish.isPublic === 1,
+            }))
+          : [];
+        console.log("Mapped wishes:", userData.wishes);
+
         const socialLinks = apiUser.social_links && typeof apiUser.social_links === "string" ? JSON.parse(apiUser.social_links) : {};
         userData.facebook = socialLinks.facebook || "";
         userData.twitter = socialLinks.twitter || "";
@@ -147,86 +194,76 @@ const ProfileScreen = ({ route, navigation }) => {
 
         <MiniCard user={user} />
 
-        {user.experience?.some((exp) => exp.isPublic) && (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Experience:</Text>
-            {user.experience
-              .filter((exp) => exp.isPublic)
-              .map((exp, index, arr) => (
-                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                  <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
-                  <Text style={styles.inputText}>{exp.title || ""}</Text>
-                  <Text style={styles.inputText}>{exp.company || ""}</Text>
-                </View>
-              ))}
-          </View>
-        )}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Experience:</Text>
+          {user.experience
+            ?.filter((exp) => exp.isPublic)
+            .map((exp, index, arr) => (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
+                <Text style={styles.inputText}>{exp.title || ""}</Text>
+                <Text style={styles.inputText}>{exp.company || ""}</Text>
+              </View>
+            ))}
+        </View>
 
-        {user.education?.some((edu) => edu.isPublic) && (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Education:</Text>
-            {user.education
-              .filter((edu) => edu.isPublic)
-              .map((edu, index) => (
-                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                  <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
-                  <Text style={styles.inputText}>{edu.degree || ""}</Text>
-                  <Text style={styles.inputText}>{edu.school || ""}</Text>
-                </View>
-              ))}
-          </View>
-        )}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Education:</Text>
+          {user.education
+            ?.filter((edu) => edu.isPublic)
+            .map((edu, index) => (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
+                <Text style={styles.inputText}>{edu.degree || ""}</Text>
+                <Text style={styles.inputText}>{edu.school || ""}</Text>
+              </View>
+            ))}
+        </View>
 
-        {user.businesses?.some((bus) => bus.isPublic) && (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Businesses:</Text>
-            {user.businesses
-              .filter((bus) => bus.isPublic)
-              .map((bus, index) => (
-                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                  <Text style={styles.inputText}>{bus.name || ""}</Text>
-                  <Text style={styles.inputText}>{bus.role || ""}</Text>
-                </View>
-              ))}
-          </View>
-        )}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Businesses:</Text>
+          {user.businesses
+            ?.filter((bus) => bus.isPublic)
+            .map((bus, index) => (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                <Text style={styles.inputText}>{bus.name || ""}</Text>
+                <Text style={styles.inputText}>{bus.role || ""}</Text>
+              </View>
+            ))}
+        </View>
 
-        {user.expertise?.some((exp) => exp.isPublic) && (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Expertise:</Text>
-            {user.expertise
-              .filter((exp) => exp.isPublic)
-              .map((exp, index) => (
-                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                  <Text style={styles.inputText}>{exp.name || ""}</Text>
-                  <Text style={styles.inputText}>{exp.description || ""}</Text>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={styles.inputText}>{exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}</Text>
-                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>
-                      {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
-                    </Text>
-                  </View>
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Expertise:</Text>
+          {user.expertise
+            ?.filter((exp) => exp.isPublic)
+            .map((exp, index) => (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                <Text style={styles.inputText}>{exp.name || ""}</Text>
+                <Text style={styles.inputText}>{exp.description || ""}</Text>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={styles.inputText}>{exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}</Text>
+                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>
+                    {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
+                  </Text>
                 </View>
-              ))}
-          </View>
-        )}
+              </View>
+            ))}
+        </View>
 
-        {user.wishes?.some((wish) => wish.isPublic) && (
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Wishes:</Text>
-            {user.wishes
-              .filter((wish) => wish.isPublic)
-              .map((wish, index) => (
-                <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                  <Text style={styles.inputText}>{wish.helpNeeds || ""}</Text>
-                  <Text style={styles.inputText}>{wish.details || ""}</Text>
-                  <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
-                  </View>
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Wishes:</Text>
+          {user.wishes
+            ?.filter((wish) => wish.isPublic)
+            .map((wish, index) => (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                <Text style={styles.inputText}>{wish.helpNeeds || ""}</Text>
+                <Text style={styles.inputText}>{wish.details || ""}</Text>
+                <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
+                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
                 </View>
-              ))}
-          </View>
-        )}
+              </View>
+            ))}
+        </View>
       </ScrollView>
 
       <View style={styles.navContainer}>
@@ -269,7 +306,19 @@ const styles = StyleSheet.create({
   header: { fontSize: 24, fontWeight: "bold" },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
-  inputContainer: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5, backgroundColor: "#f5f5f5" },
+  inputContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "#f5f5f5",
+    marginBottom: 4,
+  },
+  inputText: {
+    fontSize: 15,
+    color: "#333",
+    marginBottom: 4,
+  },
   plainText: {
     fontSize: 15,
     color: "#333",
