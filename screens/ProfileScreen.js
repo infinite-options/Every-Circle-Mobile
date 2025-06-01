@@ -44,6 +44,7 @@ const ProfileScreen = ({ route, navigation }) => {
         };
         userData.experience = apiUser.experience_info
           ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
+              profile_experience_uid: exp.profile_experience_uid || "",
               company: exp.profile_experience_company_name || "",
               title: exp.profile_experience_position || "",
               startDate: exp.profile_experience_start_date || "",
@@ -53,6 +54,7 @@ const ProfileScreen = ({ route, navigation }) => {
           : [];
         userData.education = apiUser.education_info
           ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
+              profile_education_uid: edu.profile_education_uid || "",
               school: edu.profile_education_school_name || "",
               degree: edu.profile_education_degree || "",
               startDate: edu.profile_education_start_date || "",
@@ -62,6 +64,7 @@ const ProfileScreen = ({ route, navigation }) => {
           : [];
         userData.businesses = apiUser.business_info
           ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
+              profile_business_uid: bus.profile_business_uid || "",
               name: bus.profile_business_name || "",
               role: bus.profile_business_role || "",
               isPublic: bus.profile_business_is_public === 1 || bus.isPublic === true,
@@ -69,6 +72,7 @@ const ProfileScreen = ({ route, navigation }) => {
           : [];
         userData.expertise = apiUser.expertise_info
           ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
+              profile_expertise_uid: exp.profile_expertise_uid || "",
               name: exp.profile_expertise_title || "",
               description: exp.profile_expertise_description || "",
               cost: exp.profile_expertise_cost || "",
@@ -78,6 +82,7 @@ const ProfileScreen = ({ route, navigation }) => {
           : [];
         userData.wishes = apiUser.wishes_info
           ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
+              profile_wish_uid: wish.profile_wish_uid || "",
               helpNeeds: wish.profile_wish_title || "",
               details: wish.profile_wish_description || "",
               amount: wish.profile_wish_bounty || "",
@@ -145,6 +150,7 @@ const ProfileScreen = ({ route, navigation }) => {
       try {
         userData.experience = apiUser.experience_info
           ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
+              profile_experience_uid: exp.profile_experience_uid || "",
               company: exp.profile_experience_company_name || "",
               title: exp.profile_experience_position || "",
               startDate: exp.profile_experience_start_date || "",
@@ -156,6 +162,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
         userData.education = apiUser.education_info
           ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
+              profile_education_uid: edu.profile_education_uid || "",
               school: edu.profile_education_school_name || "",
               degree: edu.profile_education_degree || "",
               startDate: edu.profile_education_start_date || "",
@@ -167,6 +174,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
         userData.businesses = apiUser.business_info
           ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
+              profile_business_uid: bus.profile_business_uid || "",
               name: bus.profile_business_name || "",
               role: bus.profile_business_role || "",
               isPublic: bus.profile_business_is_public === 1 || bus.isPublic === true,
@@ -176,6 +184,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
         userData.expertise = apiUser.expertise_info
           ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
+              profile_expertise_uid: exp.profile_expertise_uid || "",
               name: exp.profile_expertise_title || "",
               description: exp.profile_expertise_description || "",
               cost: exp.profile_expertise_cost || "",
@@ -187,6 +196,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
         userData.wishes = apiUser.wishes_info
           ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
+              profile_wish_uid: wish.profile_wish_uid || "",
               helpNeeds: wish.profile_wish_title || "",
               details: wish.profile_wish_description || "",
               amount: wish.profile_wish_bounty || "",
