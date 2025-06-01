@@ -220,42 +220,8 @@ const EditProfileScreen = ({ route, navigation }) => {
         console.log("Profile update successful");
         Alert.alert("Success", "Profile updated successfully!");
 
-        const updatedUserData = {
-          user_email: formData.email,
-          personal_info: {
-            profile_personal_uid: trimmedProfileUID,
-            profile_personal_first_name: formData.firstName,
-            profile_personal_last_name: formData.lastName,
-            profile_personal_phone_number: formData.phoneNumber,
-            profile_personal_tag_line: formData.tagLine,
-            profile_personal_short_bio: formData.shortBio,
-            profile_personal_image: profileImageUri, // Add the new image URI to the updated user data
-            profile_personal_email_is_public: formData.emailIsPublic ? 1 : 0,
-            profile_personal_phone_number_is_public: formData.phoneIsPublic ? 1 : 0,
-            profile_personal_tag_line_is_public: formData.tagLineIsPublic ? 1 : 0,
-            profile_personal_short_bio_is_public: formData.shortBioIsPublic ? 1 : 0,
-            profile_personal_image_is_public: formData.imageIsPublic ? 1 : 0, // Add the public/private flag
-            profile_personal_experience_is_public: formData.experienceIsPublic ? 1 : 0,
-            profile_personal_education_is_public: formData.educationIsPublic ? 1 : 0,
-            profile_personal_expertise_is_public: formData.expertiseIsPublic ? 1 : 0,
-            profile_personal_wishes_is_public: formData.wishesIsPublic ? 1 : 0,
-            profile_personal_business_is_public: formData.businessIsPublic ? 1 : 0,
-          },
-          experience_info: JSON.stringify(formData.experience || []),
-          education_info: JSON.stringify(formData.education || []),
-          expertise_info: JSON.stringify(formData.expertise || []),
-          wishes_info: JSON.stringify(formData.wishes || []),
-          business_info: JSON.stringify(formData.businesses || []),
-          social_links: JSON.stringify({
-            facebook: formData.facebook,
-            twitter: formData.twitter,
-            linkedin: formData.linkedin,
-            youtube: formData.youtube,
-          }),
-        };
-
+        // Only navigate with profile_uid, not user object
         navigation.navigate("Profile", {
-          user: updatedUserData,
           profile_uid: trimmedProfileUID,
         });
       } else {
