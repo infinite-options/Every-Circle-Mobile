@@ -1,19 +1,10 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator, ScrollView, Image, Dimensions } from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from "@react-navigation/native";
 import * as Crypto from "expo-crypto";
+import BottomNavBar from "../components/BottomNavBar";
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation();
@@ -46,18 +37,12 @@ export default function ChangePasswordScreen() {
 
           // Fetch user details to get email if not in AsyncStorage
           try {
-            const response = await fetch(
-              `https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`
-            );
+            const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`);
             const userData = await response.json();
             console.log("User data fetched:", userData);
 
             // Get the email from the correct field
-            const email =
-              userData.user_email ||
-              (userData.personal_info
-                ? userData.personal_info.profile_personal_email
-                : null);
+            const email = userData.user_email || (userData.personal_info ? userData.personal_info.profile_personal_email : null);
 
             if (email) {
               setUserEmail(email);
@@ -113,18 +98,15 @@ export default function ChangePasswordScreen() {
 
       // Get the password salt first
       console.log("Fetching password salt...");
-      const saltResponse = await fetch(
-        `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: userEmail,
-          }),
-        }
-      );
+      const saltResponse = await fetch(`https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userEmail,
+        }),
+      });
 
       const saltData = await saltResponse.json();
       console.log("Salt response:", saltData);
@@ -148,19 +130,16 @@ export default function ChangePasswordScreen() {
 
       // Verify current password by attempting login
       console.log("Verifying current password...");
-      const verifyResponse = await fetch(
-        `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: userEmail,
-            password: currentPasswordHash,
-          }),
-        }
-      );
+      const verifyResponse = await fetch(`https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          password: currentPasswordHash,
+        }),
+      });
 
       const verifyData = await verifyResponse.json();
       console.log("Verify response:", verifyData);
@@ -184,16 +163,13 @@ export default function ChangePasswordScreen() {
       console.log("Sending update request:", JSON.stringify(updateRequest));
 
       // Updated endpoint: using UpdateEmailPassword instead of UpdatePassword.
-      const updateResponse = await fetch(
-        `https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UpdateEmailPassword/EVERY-CIRCLE`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updateRequest),
-        }
-      );
+      const updateResponse = await fetch(`https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UpdateEmailPassword/EVERY-CIRCLE`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateRequest),
+      });
 
       // Get response as text first to debug
       const responseText = await updateResponse.text();
@@ -211,26 +187,14 @@ export default function ChangePasswordScreen() {
           // Optionally store the new password plain text or clear it from storage.
           // await AsyncStorage.setItem("current_password_hash", newPassword); // For example purposes only
 
-          Alert.alert(
-            "Success",
-            "Your password has been updated successfully",
-            [{ text: "OK", onPress: () => navigation.goBack() }]
-          );
+          Alert.alert("Success", "Your password has been updated successfully", [{ text: "OK", onPress: () => navigation.goBack() }]);
         } else {
-          Alert.alert(
-            "Error",
-            `Failed to update password: ${updateData.message || "Unknown error"}. Please try again later.`
-          );
+          Alert.alert("Error", `Failed to update password: ${updateData.message || "Unknown error"}. Please try again later.`);
         }
       } catch (parseError) {
         console.error("Error parsing update response:", parseError);
-        Alert.alert(
-          "Error",
-          "The server returned an unexpected response. Please try again later.",
-          [{ text: "OK", onPress: () => navigation.goBack() }]
-        );
+        Alert.alert("Error", "The server returned an unexpected response. Please try again later.", [{ text: "OK", onPress: () => navigation.goBack() }]);
       }
-
     } catch (error) {
       console.error("Error changing password:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
@@ -244,7 +208,7 @@ export default function ChangePasswordScreen() {
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={24} color="#fff" />
+          <MaterialIcons name='arrow-back' size={24} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerText}>Change Password</Text>
         <View style={styles.placeholder} />
@@ -252,76 +216,46 @@ export default function ChangePasswordScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.formContainer}>
-          <Text style={styles.subtitle}>
-            Enter your current password and a new password below
-          </Text>
+          <Text style={styles.subtitle}>Enter your current password and a new password below</Text>
 
           {/* Current Password Input */}
           <View style={styles.inputContainer}>
-            <MaterialIcons name="lock" size={20} color="#666" style={styles.inputIcon} />
+            <MaterialIcons name='lock' size={20} color='#666' style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Current Password"
-              placeholderTextColor="#999"
+              placeholder='Current Password'
+              placeholderTextColor='#999'
               secureTextEntry={!showCurrentPassword}
               value={currentPassword}
               onChangeText={setCurrentPassword}
             />
-            <TouchableOpacity
-              onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-              style={styles.eyeIcon}
-            >
-              <MaterialIcons
-                name={showCurrentPassword ? "visibility-off" : "visibility"}
-                size={20}
-                color="#666"
-              />
+            <TouchableOpacity onPress={() => setShowCurrentPassword(!showCurrentPassword)} style={styles.eyeIcon}>
+              <MaterialIcons name={showCurrentPassword ? "visibility-off" : "visibility"} size={20} color='#666' />
             </TouchableOpacity>
           </View>
 
           {/* New Password Input */}
           <View style={styles.inputContainer}>
-            <MaterialIcons name="lock" size={20} color="#666" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="New Password"
-              placeholderTextColor="#999"
-              secureTextEntry={!showNewPassword}
-              value={newPassword}
-              onChangeText={setNewPassword}
-            />
-            <TouchableOpacity
-              onPress={() => setShowNewPassword(!showNewPassword)}
-              style={styles.eyeIcon}
-            >
-              <MaterialIcons
-                name={showNewPassword ? "visibility-off" : "visibility"}
-                size={20}
-                color="#666"
-              />
+            <MaterialIcons name='lock' size={20} color='#666' style={styles.inputIcon} />
+            <TextInput style={styles.input} placeholder='New Password' placeholderTextColor='#999' secureTextEntry={!showNewPassword} value={newPassword} onChangeText={setNewPassword} />
+            <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)} style={styles.eyeIcon}>
+              <MaterialIcons name={showNewPassword ? "visibility-off" : "visibility"} size={20} color='#666' />
             </TouchableOpacity>
           </View>
 
           {/* Confirm New Password Input */}
           <View style={styles.inputContainer}>
-            <MaterialIcons name="lock" size={20} color="#666" style={styles.inputIcon} />
+            <MaterialIcons name='lock' size={20} color='#666' style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Confirm New Password"
-              placeholderTextColor="#999"
+              placeholder='Confirm New Password'
+              placeholderTextColor='#999'
               secureTextEntry={!showConfirmPassword}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
             />
-            <TouchableOpacity
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              style={styles.eyeIcon}
-            >
-              <MaterialIcons
-                name={showConfirmPassword ? "visibility-off" : "visibility"}
-                size={20}
-                color="#666"
-              />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+              <MaterialIcons name={showConfirmPassword ? "visibility-off" : "visibility"} size={20} color='#666' />
             </TouchableOpacity>
           </View>
 
@@ -329,73 +263,27 @@ export default function ChangePasswordScreen() {
           <View style={styles.requirementsContainer}>
             <Text style={styles.requirementsTitle}>Password Requirements:</Text>
             <View style={styles.requirementItem}>
-              <MaterialIcons
-                name={newPassword.length >= 6 ? "check-circle" : "cancel"}
-                size={16}
-                color={newPassword.length >= 6 ? "#4CAF50" : "#ccc"}
-              />
+              <MaterialIcons name={newPassword.length >= 6 ? "check-circle" : "cancel"} size={16} color={newPassword.length >= 6 ? "#4CAF50" : "#ccc"} />
               <Text style={styles.requirementText}>At least 6 characters</Text>
             </View>
             <View style={styles.requirementItem}>
               <MaterialIcons
-                name={
-                  newPassword === confirmPassword && newPassword.length > 0
-                    ? "check-circle"
-                    : "cancel"
-                }
+                name={newPassword === confirmPassword && newPassword.length > 0 ? "check-circle" : "cancel"}
                 size={16}
-                color={
-                  newPassword === confirmPassword && newPassword.length > 0
-                    ? "#4CAF50"
-                    : "#ccc"
-                }
+                color={newPassword === confirmPassword && newPassword.length > 0 ? "#4CAF50" : "#ccc"}
               />
               <Text style={styles.requirementText}>Passwords match</Text>
             </View>
           </View>
 
           {/* Submit Button */}
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleChangePassword}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>Update Password</Text>
-            )}
+          <TouchableOpacity style={styles.submitButton} onPress={handleChangePassword} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator size='small' color='#fff' /> : <Text style={styles.submitButtonText}>Update Password</Text>}
           </TouchableOpacity>
         </View>
       </ScrollView>
       {/* Bottom Navigation Bar */}
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-          <Ionicons name="person-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <Ionicons name="settings-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <MaterialIcons name="account-balance" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <Ionicons name="share-social-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <Ionicons name="search-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-      </View>
-
+      <BottomNavBar navigation={navigation} />
     </SafeAreaView>
   );
 }
@@ -476,23 +364,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 15,
   },
-  navContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  navButton: {
-    alignItems: 'center',
-  },
-  navLabel: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 4,
-  },  
   submitButtonText: {
     color: "#fff",
     fontSize: 16,

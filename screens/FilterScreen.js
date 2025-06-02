@@ -1,16 +1,8 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-  FlatList,
-  SafeAreaView
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Modal, FlatList, SafeAreaView, Image, Dimensions, TextInput } from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import BottomNavBar from "../components/BottomNavBar";
 
 export default function FilterScreen({ navigation }) {
   const [distanceEnabled, setDistanceEnabled] = useState(true);
@@ -36,24 +28,17 @@ export default function FilterScreen({ navigation }) {
   // Render option item for modals
   const renderOptionItem = (options, selectedValue, onSelect) => {
     return ({ item }) => {
-      const isSelected = 
-        typeof item === 'string' ? 
-        item === selectedValue : 
-        (selectedValue === item || (typeof item === 'string' && item.includes(selectedValue.toString())));
-      
+      const isSelected = typeof item === "string" ? item === selectedValue : selectedValue === item || (typeof item === "string" && item.includes(selectedValue.toString()));
+
       return (
         <TouchableOpacity
           style={[styles.optionItem, isSelected && styles.selectedOption]}
           onPress={() => {
-            onSelect(typeof item === 'string' && item.startsWith('>') ? parseInt(item.slice(1).trim()) : item);
+            onSelect(typeof item === "string" && item.startsWith(">") ? parseInt(item.slice(1).trim()) : item);
           }}
         >
-          <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
-            {item}
-          </Text>
-          {isSelected && (
-            <Ionicons name="checkmark" size={24} color="#9C45F7" />
-          )}
+          <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>{item}</Text>
+          {isSelected && <Ionicons name='checkmark' size={24} color='#9C45F7' />}
         </TouchableOpacity>
       );
     };
@@ -72,20 +57,10 @@ export default function FilterScreen({ navigation }) {
         <View style={styles.filterItem}>
           <Text style={styles.filterLabel}>Distance</Text>
           <Text style={[styles.filterValue, !distanceEnabled && styles.disabledText]}>{distance} mi</Text>
-          <TouchableOpacity
-            style={[styles.circleButton, !distanceEnabled && styles.disabledButton]}
-            onPress={() => distanceEnabled && setDistanceModalVisible(true)}
-            disabled={!distanceEnabled}
-          >
-            <Ionicons name="chevron-down" size={24} color={distanceEnabled ? "black" : "#ccc"} />
+          <TouchableOpacity style={[styles.circleButton, !distanceEnabled && styles.disabledButton]} onPress={() => distanceEnabled && setDistanceModalVisible(true)} disabled={!distanceEnabled}>
+            <Ionicons name='chevron-down' size={24} color={distanceEnabled ? "black" : "#ccc"} />
           </TouchableOpacity>
-          <Switch
-            value={distanceEnabled}
-            onValueChange={setDistanceEnabled}
-            trackColor={{ false: "#eee", true: "#222" }}
-            thumbColor="#fff"
-            style={styles.switch}
-          />
+          <Switch value={distanceEnabled} onValueChange={setDistanceEnabled} trackColor={{ false: "#eee", true: "#222" }} thumbColor='#fff' style={styles.switch} />
         </View>
 
         {/* Network Filter */}
@@ -100,40 +75,20 @@ export default function FilterScreen({ navigation }) {
               </View>
             )}
           </View>
-          <TouchableOpacity
-            style={[styles.circleButton, !networkEnabled && styles.disabledButton]}
-            onPress={() => networkEnabled && setNetworkModalVisible(true)}
-            disabled={!networkEnabled}
-          >
-            <Ionicons name="chevron-down" size={24} color={networkEnabled ? "black" : "#ccc"} />
+          <TouchableOpacity style={[styles.circleButton, !networkEnabled && styles.disabledButton]} onPress={() => networkEnabled && setNetworkModalVisible(true)} disabled={!networkEnabled}>
+            <Ionicons name='chevron-down' size={24} color={networkEnabled ? "black" : "#ccc"} />
           </TouchableOpacity>
-          <Switch
-            value={networkEnabled}
-            onValueChange={setNetworkEnabled}
-            trackColor={{ false: "#eee", true: "#222" }}
-            thumbColor="#fff"
-            style={styles.switch}
-          />
+          <Switch value={networkEnabled} onValueChange={setNetworkEnabled} trackColor={{ false: "#eee", true: "#222" }} thumbColor='#fff' style={styles.switch} />
         </View>
 
         {/* Bounty Filter */}
         <View style={styles.filterItem}>
           <Text style={styles.filterLabel}>Bounty</Text>
           <Text style={[styles.filterValue, !bountyEnabled && styles.disabledText]}>{bounty}</Text>
-          <TouchableOpacity
-            style={[styles.circleButton, !bountyEnabled && styles.disabledButton]}
-            onPress={() => bountyEnabled && setBountyModalVisible(true)}
-            disabled={!bountyEnabled}
-          >
-            <Ionicons name="chevron-down" size={24} color={bountyEnabled ? "black" : "#ccc"} />
+          <TouchableOpacity style={[styles.circleButton, !bountyEnabled && styles.disabledButton]} onPress={() => bountyEnabled && setBountyModalVisible(true)} disabled={!bountyEnabled}>
+            <Ionicons name='chevron-down' size={24} color={bountyEnabled ? "black" : "#ccc"} />
           </TouchableOpacity>
-          <Switch
-            value={bountyEnabled}
-            onValueChange={setBountyEnabled}
-            trackColor={{ false: "#eee", true: "#222" }}
-            thumbColor="#fff"
-            style={styles.switch}
-          />
+          <Switch value={bountyEnabled} onValueChange={setBountyEnabled} trackColor={{ false: "#eee", true: "#222" }} thumbColor='#fff' style={styles.switch} />
         </View>
 
         {/* Rating Filter */}
@@ -143,20 +98,10 @@ export default function FilterScreen({ navigation }) {
             <Text style={[styles.filterValue, !ratingEnabled && styles.disabledText]}>{"> " + rating}</Text>
             {ratingEnabled && <View style={styles.ratingDot}></View>}
           </View>
-          <TouchableOpacity
-            style={[styles.circleButton, !ratingEnabled && styles.disabledButton]}
-            onPress={() => ratingEnabled && setRatingModalVisible(true)}
-            disabled={!ratingEnabled}
-          >
-            <Ionicons name="chevron-down" size={24} color={ratingEnabled ? "black" : "#ccc"} />
+          <TouchableOpacity style={[styles.circleButton, !ratingEnabled && styles.disabledButton]} onPress={() => ratingEnabled && setRatingModalVisible(true)} disabled={!ratingEnabled}>
+            <Ionicons name='chevron-down' size={24} color={ratingEnabled ? "black" : "#ccc"} />
           </TouchableOpacity>
-          <Switch
-            value={ratingEnabled}
-            onValueChange={setRatingEnabled}
-            trackColor={{ false: "#eee", true: "#222" }}
-            thumbColor="#fff"
-            style={styles.switch}
-          />
+          <Switch value={ratingEnabled} onValueChange={setRatingEnabled} trackColor={{ false: "#eee", true: "#222" }} thumbColor='#fff' style={styles.switch} />
         </View>
 
         {/* Banner Ad */}
@@ -166,25 +111,20 @@ export default function FilterScreen({ navigation }) {
       </ScrollView>
 
       {/* Distance Selection Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={distanceModalVisible}
-        onRequestClose={() => setDistanceModalVisible(false)}
-      >
+      <Modal animationType='slide' transparent={true} visible={distanceModalVisible} onRequestClose={() => setDistanceModalVisible(false)}>
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Distance</Text>
               <TouchableOpacity onPress={() => setDistanceModalVisible(false)}>
-                <Ionicons name="close" size={28} color="#333" />
+                <Ionicons name='close' size={28} color='#333' />
               </TouchableOpacity>
             </View>
             <FlatList
-              data={distanceOptions.map(d => `${d} mi`)}
+              data={distanceOptions.map((d) => `${d} mi`)}
               renderItem={renderOptionItem(
-                distanceOptions.map(d => `${d} mi`), 
-                `${distance} mi`, 
+                distanceOptions.map((d) => `${d} mi`),
+                `${distance} mi`,
                 (value) => {
                   setDistance(parseInt(value));
                   setDistanceModalVisible(false);
@@ -198,30 +138,21 @@ export default function FilterScreen({ navigation }) {
       </Modal>
 
       {/* Network Selection Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={networkModalVisible}
-        onRequestClose={() => setNetworkModalVisible(false)}
-      >
+      <Modal animationType='slide' transparent={true} visible={networkModalVisible} onRequestClose={() => setNetworkModalVisible(false)}>
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Network</Text>
               <TouchableOpacity onPress={() => setNetworkModalVisible(false)}>
-                <Ionicons name="close" size={28} color="#333" />
+                <Ionicons name='close' size={28} color='#333' />
               </TouchableOpacity>
             </View>
             <FlatList
               data={networkOptions}
-              renderItem={renderOptionItem(
-                networkOptions, 
-                network, 
-                (value) => {
-                  setNetwork(value);
-                  setNetworkModalVisible(false);
-                }
-              )}
+              renderItem={renderOptionItem(networkOptions, network, (value) => {
+                setNetwork(value);
+                setNetworkModalVisible(false);
+              })}
               keyExtractor={(item) => item.toString()}
               style={styles.optionsList}
             />
@@ -230,30 +161,21 @@ export default function FilterScreen({ navigation }) {
       </Modal>
 
       {/* Bounty Selection Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={bountyModalVisible}
-        onRequestClose={() => setBountyModalVisible(false)}
-      >
+      <Modal animationType='slide' transparent={true} visible={bountyModalVisible} onRequestClose={() => setBountyModalVisible(false)}>
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Bounty</Text>
               <TouchableOpacity onPress={() => setBountyModalVisible(false)}>
-                <Ionicons name="close" size={28} color="#333" />
+                <Ionicons name='close' size={28} color='#333' />
               </TouchableOpacity>
             </View>
             <FlatList
               data={bountyOptions}
-              renderItem={renderOptionItem(
-                bountyOptions, 
-                bounty, 
-                (value) => {
-                  setBounty(value);
-                  setBountyModalVisible(false);
-                }
-              )}
+              renderItem={renderOptionItem(bountyOptions, bounty, (value) => {
+                setBounty(value);
+                setBountyModalVisible(false);
+              })}
               keyExtractor={(item) => item.toString()}
               style={styles.optionsList}
             />
@@ -262,30 +184,21 @@ export default function FilterScreen({ navigation }) {
       </Modal>
 
       {/* Rating Selection Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={ratingModalVisible}
-        onRequestClose={() => setRatingModalVisible(false)}
-      >
+      <Modal animationType='slide' transparent={true} visible={ratingModalVisible} onRequestClose={() => setRatingModalVisible(false)}>
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Rating</Text>
               <TouchableOpacity onPress={() => setRatingModalVisible(false)}>
-                <Ionicons name="close" size={28} color="#333" />
+                <Ionicons name='close' size={28} color='#333' />
               </TouchableOpacity>
             </View>
             <FlatList
               data={ratingOptions}
-              renderItem={renderOptionItem(
-                ratingOptions, 
-                `> ${rating}`, 
-                (value) => {
-                  setRating(value);
-                  setRatingModalVisible(false);
-                }
-              )}
+              renderItem={renderOptionItem(ratingOptions, `> ${rating}`, (value) => {
+                setRating(value);
+                setRatingModalVisible(false);
+              })}
               keyExtractor={(item) => item.toString()}
               style={styles.optionsList}
             />
@@ -294,32 +207,7 @@ export default function FilterScreen({ navigation }) {
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-          <Ionicons name="person" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <Ionicons name="settings" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <Ionicons name="home" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <Ionicons name="share-social" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <Ionicons name="search" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar navigation={navigation} />
     </View>
   );
 }
@@ -418,7 +306,7 @@ const styles = StyleSheet.create({
     color: "#333",
     marginTop: 4,
   },
-  
+
   // Modal styles
   modalContainer: {
     flex: 1,

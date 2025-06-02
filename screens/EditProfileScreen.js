@@ -7,6 +7,7 @@ import WishesSection from "../components/WishesSection";
 import MiniCard from "../components/MiniCard";
 import ExpertiseSection from "../components/ExpertiseSection";
 import BusinessSection from "../components/BusinessSection";
+import BottomNavBar from "../components/BottomNavBar";
 import * as ImagePicker from "expo-image-picker";
 
 const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
@@ -499,32 +500,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
 
-        <View style={styles.navContainer}>
-          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile", { user, profile_uid: profileUID })}>
-            <Image source={require("../assets/profile.png")} style={styles.navIcon} />
-            <Text style={styles.navLabel}>Profile</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-            <Image source={require("../assets/setting.png")} style={styles.navIcon} />
-            <Text style={styles.navLabel}>Settings</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-            <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
-            <Text style={styles.navLabel}>Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-            <Image source={require("../assets/share.png")} style={styles.navIcon} />
-            <Text style={styles.navLabel}>Share</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-            <Image source={require("../assets/search.png")} style={styles.navIcon} />
-            <Text style={styles.navLabel}>Search</Text>
-          </TouchableOpacity>
-        </View>
+        <BottomNavBar navigation={navigation} />
       </ScrollView>
       {/* Business Approval Modal */}
       <Modal visible={showBusinessModal} transparent={true} animationType='fade' onRequestClose={() => setShowBusinessModal(false)}>
@@ -580,10 +556,6 @@ const styles = StyleSheet.create({
   },
 
   saveText: { color: "#fff", fontSize: 20, fontWeight: "bold" },
-  navContainer: { flexDirection: "row", justifyContent: "space-around", alignItems: "center", marginBottom: 20, paddingVertical: 10, borderTopWidth: 1, borderColor: "#ddd" },
-  navButton: { alignItems: "center" },
-  navIcon: { width: 25, height: 25 },
-  navLabel: { fontSize: 12, color: "#333", marginTop: 4 },
   imageSection: { alignItems: "center", marginBottom: 20 },
   profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10, backgroundColor: "#eee" },
   uploadLink: { color: "#007AFF", textDecorationLine: "underline", marginBottom: 10 },
