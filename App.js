@@ -97,15 +97,23 @@ export default function App() {
 
       const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userInfo.user.email}`);
       const result = await response.json();
+      console.log("App.js - Google Sign In result:", result);
 
       if (result.message === "Correct Email" && result.result?.[0]) {
         const user_uid = result.result[0];
+        console.log("App.js - User UID (from IO Login API):", user_uid);
         await AsyncStorage.setItem("user_uid", user_uid);
 
-        const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
+        // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
+        const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+        const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
+        const endpoint = baseURI + endpointPath;
+        console.log(`App.js - Full endpoint: ${endpoint}`);
+
+        const profileResponse = await fetch(endpoint);
         const fullUser = await profileResponse.json();
 
-        console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
+        console.log("App.js - Endpoint Response:", JSON.stringify(fullUser, null, 2));
 
         if (fullUser.message === "Profile not found for this user") {
           // Sign out from Google when profile is not found
@@ -326,7 +334,13 @@ export default function App() {
         // console.log("Success", userUid);
 
         // Get full user profile data
-        const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+        // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+        const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+        const endpointPath = `/api/v1/userprofileinfo/${userUid}`;
+        const endpoint = baseURI + endpointPath;
+        console.log(`App.js - Full endpoint: ${endpoint}`);
+
+        const profileResponse = await fetch(endpoint);
         const fullUser = await profileResponse.json();
         // console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
 

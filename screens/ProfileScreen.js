@@ -4,7 +4,11 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 
-const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+// const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+const endpointPath = `/api/v1/userprofileinfo`;
+const ProfileScreenAPI = baseURI + endpointPath;
+console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
 
 const ProfileScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
@@ -12,8 +16,10 @@ const ProfileScreen = ({ route, navigation }) => {
   const [profileUID, setProfileUID] = useState("");
 
   useEffect(() => {
+    console.log("ProfileScreen - useEffect");
     async function fetchUserData(profileUID) {
       try {
+        console.log("ProfileScreen - fetchUserData", profileUID);
         const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
         console.log("Profile Fetch Call:", `${ProfileScreenAPI}/${profileUID}`);
         // console.log("Profile Fetch Response:", response);
@@ -110,14 +116,14 @@ const ProfileScreen = ({ route, navigation }) => {
 
     if (route.params?.user) {
       const apiUser = route.params.user;
-      console.log(" Received API User Data:", JSON.stringify(apiUser, null, 2));
+      console.log(" ProfileScreen - Received API User Data:", JSON.stringify(apiUser, null, 2));
       // console.log(" profile_personal_image:", apiUser?.profile_personal_image);
 
       const extractedProfileUID = route.params.profile_uid || apiUser.personal_info?.profile_personal_uid || "";
-      console.log(" Extracted Profile UID in ProfileScreen:", extractedProfileUID);
+      // console.log(" Extracted Profile UID in ProfileScreen:", extractedProfileUID);
 
       const extractedEmail = apiUser?.user_email || route.params?.email || "";
-      console.log(" Extracted Email:", extractedEmail);
+      // console.log(" Extracted Email:", extractedEmail);
 
       if (!extractedProfileUID) {
         console.error(" No profile_uid found in ProfileScreen");
@@ -149,9 +155,9 @@ const ProfileScreen = ({ route, navigation }) => {
         profileImage: apiUser.personal_info?.profile_personal_image ? String(apiUser.personal_info.profile_personal_image) : "what",
         // profileImage: apiUser.personal_info?.profile_personal_image || "",
       };
-      console.log("Tag Line:", apiUser.personal_info?.profile_personal_tag_line);
-      console.log("Tag Line Is Public:", apiUser.personal_info?.profile_personal_tag_line_is_public);
-      console.log("Profile Image from API:", apiUser.personal_info?.profile_personal_image);
+      // console.log("Tag Line:", apiUser.personal_info?.profile_personal_tag_line);
+      // console.log("Tag Line Is Public:", apiUser.personal_info?.profile_personal_tag_line_is_public);
+      // console.log("Profile Image from API:", apiUser.personal_info?.profile_personal_image);
 
       try {
         userData.experience = apiUser.experience_info
@@ -164,7 +170,7 @@ const ProfileScreen = ({ route, navigation }) => {
               isPublic: exp.profile_experience_is_public === 1 || exp.isPublic === true,
             }))
           : [];
-        console.log("Mapped experience:", userData.experience);
+        // console.log("Mapped experience:", userData.experience);
 
         userData.education = apiUser.education_info
           ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
@@ -176,16 +182,16 @@ const ProfileScreen = ({ route, navigation }) => {
               isPublic: edu.profile_education_is_public === 1 || edu.isPublic === true,
             }))
           : [];
-        console.log("Mapped education:", userData.education);
+        // console.log("Mapped education:", userData.education);
 
         userData.businesses = apiUser.business_info
           ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
-              profile_business_uid: bus.profile_business_uid || "",
-              name: bus.profile_business_name || "",
-              role: bus.profile_business_role || "",
-              isPublic: bus.profile_business_is_visible === 1,
-              isApproved: bus.profile_business_approved === "1",
-              business_uid: bus.profile_business_business_id || "",
+              profile_business_uid: bus.business_uid || "",
+              name: bus.business_name || "",
+              // role: bus.profile_business_role || "",
+              // isPublic: bus.profile_business_is_visible === 1,
+              // isApproved: bus.profile_business_approved === "1",
+              // business_uid: bus.profile_business_business_id || "",
             }))
           : [];
         console.log("Mapped businesses:", userData.businesses);
@@ -200,7 +206,7 @@ const ProfileScreen = ({ route, navigation }) => {
               isPublic: exp.profile_expertise_is_public === 1 || exp.isPublic === true,
             }))
           : [];
-        console.log("Mapped expertise:", userData.expertise);
+        // console.log("Mapped expertise:", userData.expertise);
 
         userData.wishes = apiUser.wishes_info
           ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
@@ -211,7 +217,7 @@ const ProfileScreen = ({ route, navigation }) => {
               isPublic: wish.profile_wish_is_public === 1 || wish.isPublic === true,
             }))
           : [];
-        console.log("Mapped wishes:", userData.wishes);
+        // console.log("Mapped wishes:", userData.wishes);
 
         const socialLinks = apiUser.social_links && typeof apiUser.social_links === "string" ? JSON.parse(apiUser.social_links) : {};
         userData.facebook = socialLinks.facebook || "";
@@ -231,12 +237,12 @@ const ProfileScreen = ({ route, navigation }) => {
         userData.youtube = "";
       }
 
-      console.log(" Setting user data:", JSON.stringify(userData, null, 2));
-      console.log("1");
+      // console.log(" Setting user data:", JSON.stringify(userData, null, 2));
+      // console.log("1");
       setUser(userData);
-      console.log("2");
+      // console.log("2");
       setLoading(false);
-      console.log("3");
+      // console.log("3");
     } else if (route.params?.profile_uid) {
       fetchUserData(route.params.profile_uid);
     } else {
@@ -329,7 +335,7 @@ const ProfileScreen = ({ route, navigation }) => {
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Businesses:</Text>
           {user.businesses
-            ?.filter((bus) => bus.isPublic && bus.isApproved)
+            // ?.filter((bus) => bus.isPublic && bus.isApproved)
             .map((bus, index) => (
               <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
                 <Text style={styles.inputText}>{bus.name || ""}</Text>

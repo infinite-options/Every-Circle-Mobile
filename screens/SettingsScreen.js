@@ -30,6 +30,7 @@ export default function SettingsScreen() {
   const [termsModalVisible, setTermsModalVisible] = useState(false);
 
   const handleLogout = async () => {
+    console.log("SettingsScreen.js - Logout Button pressed ==> handleLogout called");
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
@@ -52,7 +53,7 @@ export default function SettingsScreen() {
             // Navigate to Login screen
             navigation.reset({
               index: 0,
-              routes: [{ name: "Login" }],
+              routes: [{ name: "Home" }],
             });
           } catch (error) {
             console.error("Logout error:", error);
