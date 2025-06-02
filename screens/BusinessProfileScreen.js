@@ -26,15 +26,54 @@ export default function BusinessProfileScreen({ route, navigation }) {
         console.log("Full API Response:", JSON.stringify(result, null, 2));
 
         const rawBusiness = result.business;
-        const socialLinks = rawBusiness.social_links ? JSON.parse(rawBusiness.social_links) : {};
+
+        // Handle social_links - now it's an array of objects
+        let socialLinksData = {};
+        if (rawBusiness.social_links) {
+          if (Array.isArray(rawBusiness.social_links)) {
+            // New format: array of objects with social_link_name and business_link_url
+            rawBusiness.social_links.forEach((link) => {
+              if (link.business_link_url && link.business_link_url.trim() !== "") {
+                socialLinksData[link.social_link_name] = link.business_link_url;
+              }
+            });
+          } else if (typeof rawBusiness.social_links === "string") {
+            // Old format: JSON string
+            try {
+              socialLinksData = JSON.parse(rawBusiness.social_links);
+            } catch (e) {
+              console.log("Failed to parse social_links as JSON");
+              socialLinksData = {};
+            }
+          }
+        }
+
+        console.log("Processed social links:", socialLinksData);
+
+        // Handle business_google_photos - it might be a string or array
+        let businessImages = [];
+        if (rawBusiness.business_google_photos) {
+          if (typeof rawBusiness.business_google_photos === "string") {
+            try {
+              businessImages = JSON.parse(rawBusiness.business_google_photos);
+            } catch (e) {
+              console.log("Failed to parse business_google_photos as JSON, treating as single URL");
+              businessImages = [rawBusiness.business_google_photos];
+            }
+          } else if (Array.isArray(rawBusiness.business_google_photos)) {
+            businessImages = rawBusiness.business_google_photos;
+          }
+        }
+
+        console.log("Processed business images:", businessImages);
 
         setBusiness({
           ...rawBusiness,
-          facebook: socialLinks.facebook || "",
-          instagram: socialLinks.instagram || "",
-          linkedin: socialLinks.linkedin || "",
-          youtube: socialLinks.youtube || "",
-          images: rawBusiness.business_google_photos || [],
+          facebook: socialLinksData.facebook || "",
+          instagram: socialLinksData.instagram || "",
+          linkedin: socialLinksData.linkedin || "",
+          youtube: socialLinksData.youtube || "",
+          images: businessImages,
           emailIsPublic: rawBusiness.email_is_public === "1",
           phoneIsPublic: rawBusiness.phone_is_public === "1",
           taglineIsPublic: rawBusiness.tagline_is_public === "1",
@@ -86,7 +125,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
         {business.taglineIsPublic && business.tagline ? <Text style={styles.tagline}>{business.tagline}</Text> : null}
 
         <Text style={styles.label}>Location:</Text>
-        <Text style={styles.value}>{business.business_address_line_1 || "N/A"}</Text>
+        <Text style={styles.value}>
+          {business.business_address_line_1 || "N/A"}
+          {business.business_zip_code && `, ${business.business_zip_code}`}
+        </Text>
 
         {business.phoneIsPublic && (
           <>
@@ -112,6 +154,13 @@ export default function BusinessProfileScreen({ route, navigation }) {
           </>
         )}
 
+        {business.business_website && (
+          <>
+            <Text style={styles.label}>Website:</Text>
+            <Text style={styles.link}>🌐 {business.business_website}</Text>
+          </>
+        )}
+
         <Text style={styles.label}>Social Links:</Text>
         {business.facebook ? <Text style={styles.link}>📘 Facebook: {business.facebook}</Text> : null}
         {business.instagram ? <Text style={styles.link}>📸 Instagram: {business.instagram}</Text> : null}
@@ -119,19 +168,33 @@ export default function BusinessProfileScreen({ route, navigation }) {
         {business.youtube ? <Text style={styles.link}>▶️ YouTube: {business.youtube}</Text> : null}
 
         <Text style={styles.label}>Business Images:</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-          {Array.isArray(business.images) && business.images.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-              {business.images.map((uri, index) => (
-                <Image key={index} source={{ uri }} style={styles.image} />
-              ))}
-            </ScrollView>
-          ) : (
-            <Text style={styles.value}>No images available</Text>
-          )}
-        </ScrollView>
+        {Array.isArray(business.images) && business.images.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+            {business.images.map((uri, index) => (
+              <Image
+                key={index}
+                source={{ uri: typeof uri === "string" ? uri : uri.url || uri.photo_url }}
+                style={styles.image}
+                onError={(error) => console.log(`Image ${index} failed to load:`, error.nativeEvent.error)}
+                onLoad={() => console.log(`Image ${index} loaded successfully`)}
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.value}>No images available</Text>
+        )}
 
-        <MiniCard business={business} />
+        <MiniCard
+          business={{
+            business_name: business.business_name,
+            business_address_line_1: business.business_address_line_1,
+            business_zip_code: business.business_zip_code,
+            business_phone_number: business.business_phone_number,
+            business_website: business.business_website,
+            first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+            phoneIsPublic: business.phoneIsPublic,
+          }}
+        />
 
         {/* <TouchableOpacity style={styles.saveButton} onPress={() => console.log('Save button pressed')}>
           <Text style={styles.saveButtonText}>Save</Text>

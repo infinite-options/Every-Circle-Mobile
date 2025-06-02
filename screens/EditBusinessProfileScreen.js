@@ -163,7 +163,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: "#fff" },
   container: { flex: 1 },
-  contentContainer: { padding: 20, paddingBottom: 100 },
+  contentContainer: { padding: 20, paddingBottom: 30 },
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 30,
-    marginBottom: 40,
+    marginBottom: 0,
   },
   saveButtonText: {
     color: "#fff",
