@@ -88,6 +88,14 @@ const EditProfileScreen = ({ route, navigation }) => {
   });
   console.log("EditProfileScreen business_info:", formData.businesses);
 
+  // Add state to track deleted items
+  const [deletedItems, setDeletedItems] = useState({
+    experiences: [],
+    educations: [],
+    expertises: [],
+    wishes: [],
+  });
+
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [pendingBusinessNames, setPendingBusinessNames] = useState([]);
 
@@ -157,6 +165,55 @@ const EditProfileScreen = ({ route, navigation }) => {
 
       Alert.alert("Error", errorMessage);
     }
+  };
+
+  // Update the delete handlers in each section to track deleted items
+  const handleDeleteExperience = (index) => {
+    const deletedExp = formData.experience[index];
+    if (deletedExp.profile_experience_uid) {
+      setDeletedItems((prev) => ({
+        ...prev,
+        experiences: [...prev.experiences, deletedExp.profile_experience_uid],
+      }));
+    }
+    const updated = formData.experience.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, experience: updated }));
+  };
+
+  const handleDeleteEducation = (index) => {
+    const deletedEdu = formData.education[index];
+    if (deletedEdu.profile_education_uid) {
+      setDeletedItems((prev) => ({
+        ...prev,
+        educations: [...prev.educations, deletedEdu.profile_education_uid],
+      }));
+    }
+    const updated = formData.education.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, education: updated }));
+  };
+
+  const handleDeleteExpertise = (index) => {
+    const deletedExp = formData.expertise[index];
+    if (deletedExp.profile_expertise_uid) {
+      setDeletedItems((prev) => ({
+        ...prev,
+        expertises: [...prev.expertises, deletedExp.profile_expertise_uid],
+      }));
+    }
+    const updated = formData.expertise.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, expertise: updated }));
+  };
+
+  const handleDeleteWish = (index) => {
+    const deletedWish = formData.wishes[index];
+    if (deletedWish.profile_wish_uid) {
+      setDeletedItems((prev) => ({
+        ...prev,
+        wishes: [...prev.wishes, deletedWish.profile_wish_uid],
+      }));
+    }
+    const updated = formData.wishes.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, wishes: updated }));
   };
 
   const handleSave = async () => {
@@ -261,8 +318,21 @@ const EditProfileScreen = ({ route, navigation }) => {
         payload.append("delete_profile_image", deleteProfileImage);
       }
 
-      // Add profile image public/private flag to payload
-      // payload.append("profile_personal_image_is_public", formData.imageIsPublic ? 1 : 0);
+      // Add deleted items to payload
+      if (deletedItems.experiences.length > 0) {
+        payload.append("delete_experiences", JSON.stringify(deletedItems.experiences));
+      }
+      if (deletedItems.educations.length > 0) {
+        payload.append("delete_educations", JSON.stringify(deletedItems.educations));
+      }
+      if (deletedItems.expertises.length > 0) {
+        payload.append("delete_expertises", JSON.stringify(deletedItems.expertises));
+      }
+      if (deletedItems.wishes.length > 0) {
+        payload.append("delete_wishes", JSON.stringify(deletedItems.wishes));
+      }
+
+      console.log("Deleted items being sent:", deletedItems);
 
       // Log all FormData entries before sending
       console.log("FormData being sent to API:");
@@ -394,12 +464,14 @@ const EditProfileScreen = ({ route, navigation }) => {
           setExperience={(e) => setFormData({ ...formData, experience: e })}
           toggleVisibility={() => toggleVisibility("experienceIsPublic")}
           isPublic={formData.experienceIsPublic}
+          handleDelete={handleDeleteExperience}
         />
         <EducationSection
           education={formData.education}
           setEducation={(e) => setFormData({ ...formData, education: e })}
           toggleVisibility={() => toggleVisibility("educationIsPublic")}
           isPublic={formData.educationIsPublic}
+          handleDelete={handleDeleteEducation}
         />
         <BusinessSection
           businesses={formData.businesses}
@@ -412,6 +484,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           setExpertise={(e) => setFormData({ ...formData, expertise: e })}
           toggleVisibility={() => toggleVisibility("expertiseIsPublic")}
           isPublic={formData.expertiseIsPublic}
+          handleDelete={handleDeleteExpertise}
         />
 
         <WishesSection
@@ -419,6 +492,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           setWishes={(e) => setFormData({ ...formData, wishes: e })}
           toggleVisibility={() => toggleVisibility("wishesIsPublic")}
           isPublic={formData.wishesIsPublic}
+          handleDelete={handleDeleteWish}
         />
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>

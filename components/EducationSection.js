@@ -1,15 +1,14 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 
-const EducationSection = ({ education, setEducation, toggleVisibility, isPublic }) => {
+const EducationSection = ({ education, setEducation, toggleVisibility, isPublic, handleDelete }) => {
   const addEducation = () => {
     const newEntry = { school: "", degree: "", startDate: "", endDate: "", isPublic: false };
     setEducation([...education, newEntry]);
   };
 
   const deleteEducation = (index) => {
-    const updated = education.filter((_, i) => i !== index);
-    setEducation(updated);
+    handleDelete(index);
   };
 
   const handleInputChange = (index, field, value) => {

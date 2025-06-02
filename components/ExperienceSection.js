@@ -1,15 +1,20 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 
-const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPublic }) => {
+const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPublic, handleDelete }) => {
   const addExperience = () => {
-    const newEntry = { company: "", title: "", startDate: "", endDate: "" };
+    const newEntry = {
+      company: "",
+      title: "",
+      startDate: "",
+      endDate: "",
+      isPublic: false,
+    };
     setExperience([...experience, newEntry]);
   };
 
   const deleteExperience = (index) => {
-    const updatedExperience = experience.filter((_, i) => i !== index);
-    setExperience(updatedExperience);
+    handleDelete(index);
   };
 
   const handleInputChange = (index, field, value) => {

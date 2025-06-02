@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 
-const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic }) => {
+const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic, handleDelete }) => {
   const addExpertise = () => {
     const newEntry = {
       name: "",
@@ -14,8 +14,7 @@ const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic 
   };
 
   const deleteExpertise = (index) => {
-    const updated = expertise.filter((_, i) => i !== index);
-    setExpertise(updated);
+    handleDelete(index);
   };
 
   const handleInputChange = (index, field, value) => {
