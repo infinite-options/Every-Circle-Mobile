@@ -1,9 +1,59 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 
-const MiniCard = ({ user }) => {
+const MiniCard = ({ user, business }) => {
   // console.log(" Received user data in MiniCard:", JSON.stringify(user, null, 2));
 
+  // Handle business data if provided
+  if (business) {
+    const businessName = business.business_name || "";
+    const location = business.business_address_line_1 || "";
+    const zipCode = business.business_zip_code || "";
+    const phone = business.business_phone_number || "";
+    const website = business.business_website || "";
+    const phoneIsPublic = business.phoneIsPublic;
+
+    // Get first image from business images
+    let businessImage = null;
+    if (business.first_image) {
+      if (typeof business.first_image === "string") {
+        businessImage = business.first_image;
+      } else if (business.first_image.url) {
+        businessImage = business.first_image.url;
+      } else if (business.first_image.photo_url) {
+        businessImage = business.first_image.photo_url;
+      }
+    }
+
+    return (
+      <View style={styles.cardContainer}>
+        {/* Business Image */}
+        <Image source={businessImage ? { uri: businessImage } : require("../assets/profile.png")} style={styles.profileImage} />
+
+        {/* Business Info */}
+        <View style={styles.textContainer}>
+          {/* Business name is always visible */}
+          <Text style={styles.name}>{businessName}</Text>
+
+          {/* Show location */}
+          {location && (
+            <Text style={styles.location}>
+              {location}
+              {zipCode && `, ${zipCode}`}
+            </Text>
+          )}
+
+          {/* Show phone if public */}
+          {phoneIsPublic && phone && <Text style={styles.phone}>{phone}</Text>}
+
+          {/* Show website */}
+          {website && <Text style={styles.website}>{website}</Text>}
+        </View>
+      </View>
+    );
+  }
+
+  // Handle user data (existing functionality)
   const firstName = user?.personal_info?.profile_personal_first_name || user?.firstName || "";
   const lastName = user?.personal_info?.profile_personal_last_name || user?.lastName || "";
   const tagLine = user?.personal_info?.profile_personal_tagline || user?.tagLine || "";
@@ -82,6 +132,16 @@ const styles = StyleSheet.create({
   phone: {
     fontSize: 14,
     color: "#666",
+  },
+  location: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  website: {
+    fontSize: 14,
+    color: "#1a73e8",
+    marginBottom: 2,
   },
 });
 
