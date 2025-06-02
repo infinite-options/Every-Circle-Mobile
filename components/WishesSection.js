@@ -1,15 +1,14 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 
-const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic }) => {
+const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDelete }) => {
   const addWish = () => {
     const newEntry = { helpNeeds: "", details: "", amount: "", isPublic: false };
     setWishes([...wishes, newEntry]);
   };
 
   const deleteWish = (index) => {
-    const updated = wishes.filter((_, i) => i !== index);
-    setWishes(updated);
+    handleDelete(index);
   };
 
   const handleInputChange = (index, field, value) => {
