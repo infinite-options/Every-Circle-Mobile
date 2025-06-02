@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal } from "react-native";
 import axios from "axios";
 import ExperienceSection from "../components/ExperienceSection";
 import EducationSection from "../components/EducationSection";
@@ -41,7 +41,15 @@ const EditProfileScreen = ({ route, navigation }) => {
     wishesIsPublic: user?.wishesIsPublic || false,
     businessIsPublic: user?.businessIsPublic || false,
     imageIsPublic: user?.imageIsPublic || false,
-    businesses: user?.businesses || [{ name: "", role: "", isPublic: true }],
+    businesses: user?.businesses?.map((biz) => ({
+      profile_business_uid: biz.profile_business_uid || "",
+      business_uid: biz.business_uid || biz.profile_business_business_id || "",
+      name: biz.name || biz.profile_business_name || "",
+      role: biz.role || biz.profile_business_role || "",
+      isPublic: biz.isPublic !== undefined ? biz.isPublic : biz.profile_business_is_visible === 1,
+      isApproved: biz.isApproved !== undefined ? biz.isApproved : biz.profile_business_approved === "1",
+      isNew: biz.isNew || false,
+    })) || [{ name: "", role: "", isPublic: 0, isApproved: 0, isNew: false }],
     experience: user?.experience?.map((e) => ({
       profile_experience_uid: e.profile_experience_uid || "",
       company: e.company || e.profile_experience_company_name || "",
@@ -78,6 +86,10 @@ const EditProfileScreen = ({ route, navigation }) => {
     linkedin: user?.linkedin || "",
     youtube: user?.youtube || "",
   });
+  console.log("EditProfileScreen business_info:", formData.businesses);
+
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [pendingBusinessNames, setPendingBusinessNames] = useState([]);
 
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => {
@@ -185,6 +197,38 @@ const EditProfileScreen = ({ route, navigation }) => {
       payload.append("expertise_info", JSON.stringify(formData.expertise || []));
       payload.append("wishes_info", JSON.stringify(formData.wishes || []));
       payload.append("business_info", JSON.stringify(formData.businesses || []));
+
+      // Add businesses to payload (for each business, add the correct fields)
+      const businessesPayload = (formData.businesses || [])
+        .map((biz) => {
+          // Only process if business name is present
+          if (!biz.name) return null;
+
+          // If it's an existing business (has profile_business_uid)
+          if (biz.profile_business_uid) {
+            return {
+              profile_business_uid: biz.profile_business_uid,
+              business_id: biz.business_uid || "",
+              profile_business_role: biz.role || "",
+              isPublic: biz.isPublic ? 1 : 0,
+              isApproved: biz.isApproved ? 1 : 0,
+            };
+          }
+
+          // If it's a new business, don't include profile_business_uid at all
+          return {
+            business_id: biz.business_uid || "",
+            profile_business_role: biz.role || "",
+            isPublic: biz.isPublic ? 1 : 0,
+            isApproved: 1, // Set to approved for new businesses
+            profile_business_approver_id: profileUID, // Use the current user's profile UID as approver
+          };
+        })
+        .filter(Boolean);
+
+      console.log("Businesses payload being sent:", businessesPayload);
+      payload.append("business_info", JSON.stringify(businessesPayload));
+
       payload.append(
         "social_links",
         JSON.stringify({
@@ -243,10 +287,16 @@ const EditProfileScreen = ({ route, navigation }) => {
         console.log("Profile update successful");
         Alert.alert("Success", "Profile updated successfully!");
 
-        // Only navigate with profile_uid, not user object
-        navigation.navigate("Profile", {
-          profile_uid: trimmedProfileUID,
-        });
+        // Only show modal for new businesses (those without profile_business_uid)
+        const newBusinesses = formData.businesses?.filter((biz) => biz.name && !biz.profile_business_uid) || [];
+        if (newBusinesses.length > 0) {
+          setPendingBusinessNames(newBusinesses.map((biz) => biz.name));
+          setShowBusinessModal(true);
+        } else {
+          navigation.navigate("Profile", {
+            profile_uid: trimmedProfileUID,
+          });
+        }
       } else {
         console.error("Profile update failed:", response);
         Alert.alert("Error", "Failed to update profile.");
@@ -306,102 +356,124 @@ const EditProfileScreen = ({ route, navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Edit Profile</Text>
+    <>
+      <ScrollView style={styles.container}>
+        <Text style={styles.header}>Edit Profile</Text>
 
-      {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
-      {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
-      {/* Profile Image Upload Section */}
-      <View style={styles.imageSection}>
-        <Text style={styles.label}>Profile Image</Text>
-        <Image source={profileImageUri ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} style={styles.profileImage} />
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-          <TouchableOpacity onPress={toggleProfileImageVisibility}>
-            <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>{formData.imageIsPublic ? "Public" : "Private"}</Text>
+        {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
+        {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
+        {/* Profile Image Upload Section */}
+        <View style={styles.imageSection}>
+          <Text style={styles.label}>Profile Image</Text>
+          <Image source={profileImageUri ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} style={styles.profileImage} />
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+            <TouchableOpacity onPress={toggleProfileImageVisibility}>
+              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>{formData.imageIsPublic ? "Public" : "Private"}</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={handlePickImage}>
+            <Text style={styles.uploadLink}>Upload Image</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={handlePickImage}>
-          <Text style={styles.uploadLink}>Upload Image</Text>
-        </TouchableOpacity>
-      </View>
-      {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
-      {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
-      {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
+        {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
+        {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
+        {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
 
-      {/* MiniCard Live Preview Section */}
-      <View style={styles.previewSection}>
-        <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
-        <View style={styles.previewCard}>
-          <MiniCard user={previewUser} />
+        {/* MiniCard Live Preview Section */}
+        <View style={styles.previewSection}>
+          <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
+          <View style={styles.previewCard}>
+            <MiniCard user={previewUser} />
+          </View>
         </View>
-      </View>
 
-      {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
+        {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
 
-      <ExperienceSection
-        experience={formData.experience}
-        setExperience={(e) => setFormData({ ...formData, experience: e })}
-        toggleVisibility={() => toggleVisibility("experienceIsPublic")}
-        isPublic={formData.experienceIsPublic}
-      />
-      <EducationSection
-        education={formData.education}
-        setEducation={(e) => setFormData({ ...formData, education: e })}
-        toggleVisibility={() => toggleVisibility("educationIsPublic")}
-        isPublic={formData.educationIsPublic}
-      />
-      <BusinessSection
-        businesses={formData.businesses}
-        setBusinesses={(e) => setFormData({ ...formData, businesses: e })}
-        toggleVisibility={() => toggleVisibility("businessIsPublic")}
-        isPublic={formData.businessIsPublic}
-        publicPrivateTextStyle={{ fontWeight: "bold" }}
-      />
-      <ExpertiseSection
-        expertise={formData.expertise}
-        setExpertise={(e) => setFormData({ ...formData, expertise: e })}
-        toggleVisibility={() => toggleVisibility("expertiseIsPublic")}
-        isPublic={formData.expertiseIsPublic}
-      />
+        <ExperienceSection
+          experience={formData.experience}
+          setExperience={(e) => setFormData({ ...formData, experience: e })}
+          toggleVisibility={() => toggleVisibility("experienceIsPublic")}
+          isPublic={formData.experienceIsPublic}
+        />
+        <EducationSection
+          education={formData.education}
+          setEducation={(e) => setFormData({ ...formData, education: e })}
+          toggleVisibility={() => toggleVisibility("educationIsPublic")}
+          isPublic={formData.educationIsPublic}
+        />
+        <BusinessSection
+          businesses={formData.businesses}
+          setBusinesses={(e) => setFormData({ ...formData, businesses: e })}
+          toggleVisibility={() => toggleVisibility("businessIsPublic")}
+          isPublic={formData.businessIsPublic}
+        />
+        <ExpertiseSection
+          expertise={formData.expertise}
+          setExpertise={(e) => setFormData({ ...formData, expertise: e })}
+          toggleVisibility={() => toggleVisibility("expertiseIsPublic")}
+          isPublic={formData.expertiseIsPublic}
+        />
 
-      <WishesSection
-        wishes={formData.wishes}
-        setWishes={(e) => setFormData({ ...formData, wishes: e })}
-        toggleVisibility={() => toggleVisibility("wishesIsPublic")}
-        isPublic={formData.wishesIsPublic}
-      />
+        <WishesSection
+          wishes={formData.wishes}
+          setWishes={(e) => setFormData({ ...formData, wishes: e })}
+          toggleVisibility={() => toggleVisibility("wishesIsPublic")}
+          isPublic={formData.wishesIsPublic}
+        />
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveText}>Save</Text>
-      </TouchableOpacity>
-
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile", { user, profile_uid: profileUID })}>
-          <Image source={require("../assets/profile.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Profile</Text>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <Image source={require("../assets/setting.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Settings</Text>
-        </TouchableOpacity>
+        <View style={styles.navContainer}>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile", { user, profile_uid: profileUID })}>
+            <Image source={require("../assets/profile.png")} style={styles.navIcon} />
+            <Text style={styles.navLabel}>Profile</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
+            <Image source={require("../assets/setting.png")} style={styles.navIcon} />
+            <Text style={styles.navLabel}>Settings</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <Image source={require("../assets/share.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Share</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+            <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
+            <Text style={styles.navLabel}>Home</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <Image source={require("../assets/search.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Search</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
+            <Image source={require("../assets/share.png")} style={styles.navIcon} />
+            <Text style={styles.navLabel}>Share</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
+            <Image source={require("../assets/search.png")} style={styles.navIcon} />
+            <Text style={styles.navLabel}>Search</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+      {/* Business Approval Modal */}
+      <Modal visible={showBusinessModal} transparent={true} animationType='fade' onRequestClose={() => setShowBusinessModal(false)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" }}>
+          <View style={{ backgroundColor: "#fff", borderRadius: 10, padding: 24, width: "85%", maxWidth: 400, alignItems: "center" }}>
+            {pendingBusinessNames.map((name, idx) => (
+              <Text key={idx} style={{ fontSize: 16, marginBottom: 16, textAlign: "center" }}>
+                {`We've sent an email to the Owner of ${name}.\nAs soon as they approve your request, we will add your business to your Profile.`}
+              </Text>
+            ))}
+            <TouchableOpacity
+              style={{ marginTop: 10, backgroundColor: "#007AFF", borderRadius: 6, paddingVertical: 10, paddingHorizontal: 24 }}
+              onPress={() => {
+                setShowBusinessModal(false);
+                navigation.navigate("Profile", { profile_uid: profileUID });
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
