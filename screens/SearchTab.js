@@ -1,13 +1,8 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import BottomNavBar from "../components/BottomNavBar";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -96,32 +91,7 @@ export default function SearchTab({ route }) {
       </View>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-          <MaterialIcons name="person" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <MaterialIcons name="settings" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <MaterialIcons name="home" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <MaterialIcons name="share" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <MaterialIcons name="search" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar navigation={navigation} />
     </View>
   );
 }
@@ -236,22 +206,5 @@ const styles = StyleSheet.create({
   bannerAdText: {
     fontSize: 16,
     fontWeight: "bold",
-  },
-  navContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
-  },
-  navButton: {
-    alignItems: "center",
-  },
-  navLabel: {
-    fontSize: 12,
-    color: "#333",
-    marginTop: 4,
   },
 });

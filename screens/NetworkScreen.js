@@ -1,5 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import BottomNavBar from "../components/BottomNavBar";
 
 const NetworkScreen = ({ navigation }) => {
   return (
@@ -8,86 +11,61 @@ const NetworkScreen = ({ navigation }) => {
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Network</Text>
         </View>
-        
+
         <View style={styles.content}>
           <Text>Fast Router</Text>
         </View>
       </ScrollView>
 
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Profile')}>
-          <Image source={require('../assets/profile.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Settings')}>
-          <Image source={require('../assets/setting.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Home')}>
-          <Image source={require('../assets/pillar.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Network')}>
-          <Image source={require('../assets/share.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('Search')}>
-          <Image source={require('../assets/search.png')} style={styles.navIcon} />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar navigation={navigation} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  pageContainer: { 
-    flex: 1, 
-    backgroundColor: '#fff', 
-    padding: 0
+  pageContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 0,
   },
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff', 
-    padding: 20 
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 20,
   },
-  headerContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 20 
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
-  header: { 
-    fontSize: 24, 
-    fontWeight: 'bold' 
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
   },
   content: {
     flex: 1,
   },
-  navContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-around', 
-    alignItems: 'center', 
-    marginBottom: 20, 
-    paddingVertical: 10, 
-    borderTopWidth: 1, 
-    borderColor: '#ddd' 
+  navContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: "#ddd",
   },
-  navButton: { 
-    alignItems: 'center' 
+  navButton: {
+    alignItems: "center",
   },
-  navIcon: { 
-    width: 25, 
-    height: 25 
+  navIcon: {
+    width: 25,
+    height: 25,
   },
-  navLabel: { 
-    fontSize: 12, 
-    color: '#333', 
-    marginTop: 4 
+  navLabel: {
+    fontSize: 12,
+    color: "#333",
+    marginTop: 4,
   },
 });
 

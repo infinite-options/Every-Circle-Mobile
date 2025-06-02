@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, ScrollView, Image } from "react-native";
 // import axios from 'axios';
 import MiniCard from "../components/MiniCard";
+import BottomNavBar from "../components/BottomNavBar";
 
 const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
 
@@ -14,6 +15,7 @@ const ProfileScreen = ({ route, navigation }) => {
     async function fetchUserData(profileUID) {
       try {
         const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
+        console.log("Profile Fetch Call:", `${ProfileScreenAPI}/${profileUID}`);
         // console.log("Profile Fetch Response:", response);
         const apiUser = await response.json();
         console.log("API User Profile:", apiUser);
@@ -66,12 +68,12 @@ const ProfileScreen = ({ route, navigation }) => {
           : [];
         userData.businesses = apiUser.business_info
           ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
-              profile_business_uid: bus.profile_business_uid || "",
-              name: bus.profile_business_name || "",
-              role: bus.profile_business_role || "",
-              isPublic: bus.profile_business_is_visible === 1,
-              isApproved: bus.profile_business_approved === "1",
-              business_uid: bus.profile_business_business_id || "",
+              profile_business_uid: bus.business_uid || "",
+              name: bus.business_name || "",
+              // role: bus.profile_business_role || "",
+              // isPublic: bus.profile_business_is_visible === 1,
+              // isApproved: bus.profile_business_approved === "1",
+              // business_uid: bus.profile_business_business_id || "",
             }))
           : [];
         userData.expertise = apiUser.expertise_info
@@ -370,32 +372,7 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
       </ScrollView>
 
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile", { user, profile_uid: profileUID })}>
-          <Image source={require("../assets/profile.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <Image source={require("../assets/setting.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <Image source={require("../assets/share.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Share</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <Image source={require("../assets/search.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Search</Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar navigation={navigation} />
     </View>
   );
 };
@@ -431,10 +408,6 @@ const styles = StyleSheet.create({
   editButton: { padding: 10, marginTop: 5, alignItems: "center", justifyContent: "center" },
   editIcon: { width: 30, height: 30 },
   errorText: { fontSize: 18, color: "red", textAlign: "center", marginTop: 20 },
-  navContainer: { flexDirection: "row", justifyContent: "space-around", alignItems: "center", marginBottom: 20, paddingVertical: 10, borderTopWidth: 1, borderColor: "#ddd" },
-  navButton: { alignItems: "center" },
-  navIcon: { width: 25, height: 25 },
-  navLabel: { fontSize: 12, color: "#333", marginTop: 4 },
 
   cardContainer: {
     padding: 10,

@@ -6,6 +6,7 @@ import { Modal } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import BottomNavBar from "../components/BottomNavBar";
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
@@ -125,18 +126,10 @@ export default function SettingsScreen() {
           </TouchableOpacity>
 
           {/* Edit User Information */}
-          <TouchableOpacity
-            style={[styles.settingItem, darkMode && styles.darkSettingItem]}
-            onPress={() =>
-              navigation.navigate("EditProfile", {
-                user,
-                profile_uid,
-              })
-            }
-          >
+          <TouchableOpacity style={[styles.settingItem, darkMode && styles.darkSettingItem]} onPress={() => navigation.navigate("BusinessSetup")}>
             <View style={styles.itemLabel}>
-              <MaterialIcons name='edit' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Edit User Information</Text>
+              <MaterialIcons name='business' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Add a Business</Text>
             </View>
           </TouchableOpacity>
 
@@ -201,32 +194,7 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={handleNavigateProfile}>
-          <MaterialIcons name='person' size={24} color='#333' />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <MaterialIcons name='settings' size={24} color='#333' />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <MaterialIcons name='home' size={24} color='#333' />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <MaterialIcons name='share' size={24} color='#333' />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <MaterialIcons name='search' size={24} color='#333' />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar navigation={navigation} />
     </View>
   );
 }
@@ -285,23 +253,6 @@ const styles = StyleSheet.create({
   },
   darkItemText: {
     color: "#fff",
-  },
-  navContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
-  },
-  navButton: {
-    alignItems: "center",
-  },
-  navLabel: {
-    fontSize: 12,
-    color: "#333",
-    marginTop: 4,
   },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
   modalBox: { backgroundColor: "#fff", padding: 20, borderRadius: 10, alignItems: "center" },
