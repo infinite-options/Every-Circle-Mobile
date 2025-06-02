@@ -14,7 +14,9 @@ const ProfileScreen = ({ route, navigation }) => {
     async function fetchUserData(profileUID) {
       try {
         const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
+        // console.log("Profile Fetch Response:", response);
         const apiUser = await response.json();
+        console.log("API User Profile:", apiUser);
         if (!apiUser || apiUser.message === "Profile not found for this user") {
           console.error("No user data received from API");
           Alert.alert("Error", "Failed to load profile data from server.");
@@ -67,7 +69,9 @@ const ProfileScreen = ({ route, navigation }) => {
               profile_business_uid: bus.profile_business_uid || "",
               name: bus.profile_business_name || "",
               role: bus.profile_business_role || "",
-              isPublic: bus.profile_business_is_public === 1 || bus.isPublic === true,
+              isPublic: bus.profile_business_is_visible === 1,
+              isApproved: bus.profile_business_approved === "1",
+              business_uid: bus.profile_business_business_id || "",
             }))
           : [];
         userData.expertise = apiUser.expertise_info
@@ -177,7 +181,9 @@ const ProfileScreen = ({ route, navigation }) => {
               profile_business_uid: bus.profile_business_uid || "",
               name: bus.profile_business_name || "",
               role: bus.profile_business_role || "",
-              isPublic: bus.profile_business_is_public === 1 || bus.isPublic === true,
+              isPublic: bus.profile_business_is_visible === 1,
+              isApproved: bus.profile_business_approved === "1",
+              business_uid: bus.profile_business_business_id || "",
             }))
           : [];
         console.log("Mapped businesses:", userData.businesses);
@@ -321,7 +327,7 @@ const ProfileScreen = ({ route, navigation }) => {
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Businesses:</Text>
           {user.businesses
-            ?.filter((bus) => bus.isPublic)
+            ?.filter((bus) => bus.isPublic && bus.isApproved)
             .map((bus, index) => (
               <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
                 <Text style={styles.inputText}>{bus.name || ""}</Text>
