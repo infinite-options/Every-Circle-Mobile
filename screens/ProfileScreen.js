@@ -337,10 +337,20 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.businesses
             // ?.filter((bus) => bus.isPublic && bus.isApproved)
             .map((bus, index) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+              <TouchableOpacity
+                key={index}
+                style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
+                onPress={() => {
+                  if (bus.profile_business_uid) {
+                    navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
+                  } else {
+                    Alert.alert("Error", "Business profile not found.");
+                  }
+                }}
+              >
                 <Text style={styles.inputText}>{bus.name || ""}</Text>
                 <Text style={styles.inputText}>{bus.role || ""}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
         </View>
 
