@@ -55,7 +55,7 @@ export default function App() {
     const initialize = async () => {
       try {
         // Check user first
-        console.log("App.js - Checking user...");
+        console.log("App.js - Checking if user in AsyncStorage...");
         const uid = await AsyncStorage.getItem("user_uid");
         console.log("App.js - User UID:", uid);
         if (uid) setInitialRoute("App");
@@ -70,7 +70,7 @@ export default function App() {
         });
         console.log("App.js - Google Sign-In configured successfully");
       } catch (err) {
-        console.error("App.js - Initialization error:", err);
+        console.error("App.js - Google Sign-In Initialization error:", err);
       } finally {
         setLoading(false);
       }
@@ -80,7 +80,7 @@ export default function App() {
   }, []);
 
   const signInHandler = useCallback(async (navigation) => {
-    console.log("App.js - signInHandler - Starting");
+    console.log("App.js - Google Sign In Pressed - signInHandler - Starting");
     try {
       // First check if user is already signed in
       const isSignedIn = await GoogleSignin.isSignedIn();
@@ -405,7 +405,10 @@ export default function App() {
               <Text style={styles.circleText}>How It Works</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.circleBox} onPress={() => navigation.navigate("Login")}>
+          <TouchableOpacity style={styles.circleBox} onPress={() => {
+            console.log("App.js - Login Button Pressed");
+            navigation.navigate("Login");
+          }}>
             <View style={[styles.circle, { backgroundColor: "#AF52DE" }]}>
               <Text style={styles.circleText}>Login</Text>
             </View>

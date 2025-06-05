@@ -10,9 +10,13 @@ import BusinessSection from "../components/BusinessSection";
 const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
 
 const EditProfileScreen = ({ route, navigation }) => {
-  console.log("In EditProfileScreen");
   const { user, profile_uid: routeProfileUID } = route.params || {};
   const [profileUID, setProfileUID] = useState(routeProfileUID || user?.profile_uid || "");
+
+  useEffect(() => {
+    // This useEffect is only used to log the screen being mounted
+    console.log("EditProfileScreen - Screen Mounted");
+  }, []);
 
   const [formData, setFormData] = useState({
     email: user?.email || "",

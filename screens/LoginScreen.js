@@ -54,7 +54,6 @@ const getFirstFourDigits = (clientId) => {
 
 // Accept navigation from props
 export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn, onError }) {
-  console.log("LoginScreen - Rendering");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isValid, setIsValid] = useState(false);
@@ -81,9 +80,11 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
   };
 
   const handleContinue = async () => {
+    console.log("LoginScreen - Continue Button Pressed");
     try {
+      // console.log("LoginScreen - handleContinue - try block");
       setShowSpinner(true);
-      // console.log("handleContinue", email, password);
+      // console.log("LoginScreen - handleContinue", email, password);
 
       // 1. Get salt
       const saltResponse = await fetch(SALT_ENDPOINT, {
@@ -108,7 +109,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, value, {
         encoding: Crypto.CryptoEncoding.HEX, // Ensures hex encoding like Python's hexdigest()
       });
-      console.log("hashedPassword", hashedPassword);
+      // console.log("LoginScreen - hashedPassword", hashedPassword);
 
       // 3. Login
       const loginResponse = await fetch(LOGIN_ENDPOINT, {
@@ -117,7 +118,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
         body: JSON.stringify({ email, password: hashedPassword }),
       });
       const loginObject = await loginResponse.json();
-      console.log("loginObject", loginObject);
+      console.log("LoginScreen - loginObject returned", loginObject);
 
       const user_uid = loginObject.result.user_uid;
       const user_email = loginObject.result.user_email_id;
@@ -125,13 +126,13 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       await AsyncStorage.setItem("user_uid", user_uid);
       await AsyncStorage.setItem("user_email_id", user_email);
 
-      console.log("user_uid", user_uid);
-      console.log("User Email", user_email);
+      console.log("LoginScreen - user_uid", user_uid);
+      // console.log("LoginScreen - User Email", user_email);
 
       // 4. Fetch user profile
       // console.log("user_uid", user_uid);
       // console.log("PROFILE_ENDPOINT", PROFILE_ENDPOINT);
-      console.log("Profile Endpoint call: ", `${PROFILE_ENDPOINT}/${user_uid}`);
+      console.log("LoginScreen - Profile Endpoint call: ", `${PROFILE_ENDPOINT}/${user_uid}`);
       // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`);
       // const response = await axios.get(
       //   `https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`
@@ -144,10 +145,10 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
         headers: { "Content-Type": "application/json" },
       });
 
-      console.log("profileResponse", profileResponse);
+      // console.log("profileResponse", profileResponse);
 
       const fullUser = await profileResponse.json();
-      console.log("fullUser", fullUser);
+      console.log("LoginScreen - user profile info", fullUser);
 
       if (!fullUser || fullUser.message === "Profile not found for this user") {
         Alert.alert("Error", "Profile not found.");
