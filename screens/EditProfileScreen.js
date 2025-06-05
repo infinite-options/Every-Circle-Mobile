@@ -14,7 +14,6 @@ const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userp
 const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
 
 const EditProfileScreen = ({ route, navigation }) => {
-  console.log("In EditProfileScreen");
   const { user, profile_uid: routeProfileUID } = route.params || {};
   const [profileUID, setProfileUID] = useState(routeProfileUID || user?.profile_uid || "");
 
@@ -24,6 +23,11 @@ const EditProfileScreen = ({ route, navigation }) => {
   const [profileImageUri, setProfileImageUri] = useState(initialProfileImage);
   const [deleteProfileImage, setDeleteProfileImage] = useState("");
   // const [pendingPicker, setPendingPicker] = useState(null);
+
+  useEffect(() => {
+    // This useEffect is only used to log the screen being mounted
+    console.log("EditProfileScreen - Screen Mounted");
+  }, []);
 
   const [formData, setFormData] = useState({
     email: user?.email || "",
