@@ -116,14 +116,13 @@ const ProfileScreen = ({ route, navigation }) => {
 
     if (route.params?.user) {
       const apiUser = route.params.user;
-      console.log(" ProfileScreen - Received API User Data:", JSON.stringify(apiUser, null, 2));
-      // console.log(" profile_personal_image:", apiUser?.profile_personal_image);
+      console.log(" ProfileScreen - User Data Received:", JSON.stringify(apiUser, null, 2));
 
       const extractedProfileUID = route.params.profile_uid || apiUser.personal_info?.profile_personal_uid || "";
-      // console.log(" Extracted Profile UID in ProfileScreen:", extractedProfileUID);
+      console.log(" ProfileScreen - Extracted Profile UID in ProfileScreen:", extractedProfileUID);
 
       const extractedEmail = apiUser?.user_email || route.params?.email || "";
-      // console.log(" Extracted Email:", extractedEmail);
+      console.log(" ProfileScreen - Extracted Email:", extractedEmail);
 
       if (!extractedProfileUID) {
         console.error(" No profile_uid found in ProfileScreen");
@@ -155,9 +154,8 @@ const ProfileScreen = ({ route, navigation }) => {
         profileImage: apiUser.personal_info?.profile_personal_image ? String(apiUser.personal_info.profile_personal_image) : "what",
         // profileImage: apiUser.personal_info?.profile_personal_image || "",
       };
-      // console.log("Tag Line:", apiUser.personal_info?.profile_personal_tag_line);
-      // console.log("Tag Line Is Public:", apiUser.personal_info?.profile_personal_tag_line_is_public);
-      // console.log("Profile Image from API:", apiUser.personal_info?.profile_personal_image);
+      console.log(" ProfileScreen - Tag Line:", apiUser.personal_info?.profile_personal_tag_line);
+      console.log(" ProfileScreen - Tag Line Is Public:", apiUser.personal_info?.profile_personal_tag_line_is_public);
 
       try {
         userData.experience = apiUser.experience_info
@@ -240,6 +238,7 @@ const ProfileScreen = ({ route, navigation }) => {
       // console.log(" Setting user data:", JSON.stringify(userData, null, 2));
       // console.log("1");
       setUser(userData);
+      console.log(" ProfileScreen - User Data Set");
       // console.log("2");
       setLoading(false);
       // console.log("3");
