@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import config from "../config";
@@ -7,23 +7,24 @@ import { Dropdown } from 'react-native-element-dropdown';
 
 const { width } = Dimensions.get('window');
 
-export default function BusinessStep1({ formData, setFormData }) {
+export default function BusinessStep1({ formData, setFormData, navigation }) {
   const [loading, setLoading] = useState(false);
   const googlePlacesRef = useRef();
 
   useEffect(() => {
-    const loadSavedForm = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('businessFormData');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setFormData(prev => ({ ...prev, ...parsed }));
-        }
-      } catch (err) {
-        console.error('Error loading saved form data:', err);
-      }
-    };
-    loadSavedForm();
+    // Don't load saved form data - start fresh for new business
+    // const loadSavedForm = async () => {
+    //   try {
+    //     const stored = await AsyncStorage.getItem('businessFormData');
+    //     if (stored) {
+    //       const parsed = JSON.parse(stored);
+    //       setFormData(prev => ({ ...prev, ...parsed }));
+    //     }
+    //   } catch (err) {
+    //     console.error('Error loading saved form data:', err);
+    //   }
+    // };
+    // loadSavedForm();
   }, []);
 
   const updateFormData = (field, value) => {
@@ -115,91 +116,115 @@ export default function BusinessStep1({ formData, setFormData }) {
   
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Every Circle!</Text>
-      <Text style={styles.subtitle}>Let's Build Your Business Page!</Text>
+    <View style={{ flex: 1, backgroundColor: '#00C721' }}>
+      <View style={{ flex: 1, marginBottom: 220 }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={90}
+        >
+          <View style={{ 
+            flex: 1,
+            paddingTop: 60, 
+            paddingHorizontal: 20, 
+            paddingBottom: 40,
+            alignItems: 'center' 
+          }}>
+            <View style={styles.formCard}>
+              <Text style={styles.title}>Welcome to Every Circle!</Text>
+              <Text style={styles.subtitle}>Let's Build Your Business Page!</Text>
 
-      <Text style={styles.label}>Search Business</Text>
-      <View style={{ width: '100%', marginBottom: 20 }}>
-        <GooglePlacesAutocomplete
-        ref={googlePlacesRef}
-          placeholder="Search for a business"
-          fetchDetails={true}
-          onPress={handleGooglePlaceSelect}
-          query={{
-            key: config.googleMapsApiKey,
-            language: "en",
-            types: "establishment",
-          }}
-          styles={{
-            textInput: {
-              backgroundColor: "#fff",
-              borderRadius: 10,
-              padding: 12,
-              fontSize: 16,
-            },
-            listView: {
-              backgroundColor: "#fff",
-              zIndex: 9999,
-              position: "absolute",
-              top: 60,
-            },
-          }}
-          enablePoweredByContainer={false}
-        />
+              <Text style={styles.label}>Search Business</Text>
+              <View style={{ width: '100%', marginBottom: 20, zIndex: 1000 }}>
+                <GooglePlacesAutocomplete
+                  ref={googlePlacesRef}
+                  placeholder="Search for a business"
+                  fetchDetails={true}
+                  onPress={handleGooglePlaceSelect}
+                  query={{
+                    key: config.googleMapsApiKey,
+                    language: "en",
+                    types: "establishment",
+                  }}
+                  styles={{
+                    textInput: {
+                      backgroundColor: "#fff",
+                      borderRadius: 10,
+                      padding: 12,
+                      fontSize: 16,
+                      borderWidth: 1,
+                      borderColor: '#ddd',
+                    },
+                    listView: {
+                      backgroundColor: "#fff",
+                      zIndex: 9999,
+                      position: "absolute",
+                      top: 60,
+                      borderRadius: 10,
+                      elevation: 3,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                    },
+                  }}
+                  enablePoweredByContainer={false}
+                />
+              </View>
+
+              <Text style={styles.label}>Business Name</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.businessName || ''}
+                placeholder="Enter business name"
+                onChangeText={(text) => updateFormData("businessName", text)}
+              />
+
+              <Text style={styles.label}>Location</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.addressLine1 || ''}
+                placeholder="Enter business address"
+                onChangeText={(text) => updateFormData("addressLine1", text)}
+              />
+
+              <Text style={styles.label}>Phone Number</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="phone-pad"
+                value={formData.phoneNumber || ''}
+                placeholder="(000) 000-0000"
+                onChangeText={(text) => updateFormData("phoneNumber", text)}
+              />
+
+              <Text style={styles.label}>Business Role</Text>
+              <Dropdown
+                style={styles.input}
+                data={businessRoles}
+                labelField="label"
+                valueField="value"
+                placeholder="Select your role"
+                value={formData.businessRole || ''}
+                onChange={item => updateFormData('businessRole', item.value)}
+                containerStyle={{ borderRadius: 10 }}
+              />
+
+              <Text style={styles.label}>EIN Number (Optional)</Text>
+              <Text style={styles.helperText}>For verification purposes</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.einNumber || ''}
+                placeholder="Enter EIN number"
+                onChangeText={text => updateFormData('einNumber', text)}
+              />
+
+              {loading && (
+                <ActivityIndicator size="large" color="#00C721" style={styles.loadingIndicator} />
+              )}
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </View>
-
-      <Text style={styles.label}>Business Name</Text>
-      <TextInput
-        style={styles.input}
-        value={formData.businessName}
-        placeholder="Business Name"
-        onChangeText={(text) => updateFormData("businessName", text)}
-      />
-
-      <Text style={styles.label}>Location</Text>
-      <TextInput
-        style={styles.input}
-        value={formData.addressLine1}
-        placeholder="Business Address"
-        onChangeText={(text) => updateFormData("addressLine1", text)}
-      />
-
-      <Text style={styles.label}>Phone Number</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="phone-pad"
-        value={formData.phoneNumber}
-        placeholder="(000) 000-0000"
-        onChangeText={(text) => updateFormData("phoneNumber", text)}
-      />
-{/* Business_role (owner, employee, partner, admin, other) */}
-
-<Text style={styles.label}>Business Role</Text>
-<Dropdown
-  style={styles.input}
-  data={businessRoles}
-  labelField="label"
-  valueField="value"
-  placeholder="Select Role"
-  value={formData.businessRole}
-  onChange={item => updateFormData('businessRole', item.value)}
-  containerStyle={{ borderRadius: 10 }}
-/>
-
-
-{/* business_is_visible = 1 */}
-      <Text style={styles.label}>EIN Number - For verification purposes (Optional)</Text>
-      <TextInput
-        style={styles.input}
-        value={formData.einNumber}
-        placeholder="Enter EIN"
-        onChangeText={text => updateFormData('einNumber', text)}
-      />
-
-      {loading && (
-        <ActivityIndicator size="large" color="#00C721" style={styles.loadingIndicator} />
-      )}
     </View>
   );
 }
@@ -209,7 +234,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: width * 1.3,
     flex: 1,
-    backgroundColor: '#00C721',
     // borderRadius: width,
     borderTopLeftRadius: width,
     borderTopRightRadius: width,
@@ -220,19 +244,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#333',
     textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#fff',
+    color: '#666',
     textAlign: 'center',
     marginBottom: 30,
   },
   label: {
     alignSelf: 'flex-start',
-    color: '#fff',
+    color: '#333',
     fontWeight: 'bold',
     marginBottom: 4,
     marginTop: 10,
@@ -246,6 +270,25 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     marginTop: 20,
+  },
+  formCard: {
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    padding: 24,
+    width: '90%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 10,
+    alignSelf: 'flex-start',
   },
 });
 

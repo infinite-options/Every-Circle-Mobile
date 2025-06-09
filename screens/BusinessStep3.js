@@ -1,14 +1,12 @@
-
-
-
 // BusinessStep3.js (Social Media Links with AsyncStorage)
 import React, { useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BottomNavBar from "../components/BottomNavBar";
 
 const { width } = Dimensions.get('window');
 
-export default function BusinessStep3({ formData, setFormData }) {
+export default function BusinessStep3({ formData, setFormData, navigation }) {
   useEffect(() => {
     const loadSavedForm = async () => {
       try {
@@ -57,29 +55,36 @@ export default function BusinessStep3({ formData, setFormData }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Social Media Links</Text>
+    <View style={{ flex: 1, backgroundColor: '#00C721' }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingBottom: 120 }}
+      >
+        <View style={styles.formCard}>
+          <Text style={styles.title}>Social Media Links</Text>
 
-      {['facebook', 'twitter', 'linkedin', 'youtube'].map((platform) => (
-        <View key={platform} style={{ width: '100%' }}>
-          <Text style={styles.label}>{platform.charAt(0).toUpperCase() + platform.slice(1)}</Text>
+          {['facebook', 'twitter', 'linkedin', 'youtube'].map((platform) => (
+            <View key={platform} style={{ width: '100%' }}>
+              <Text style={styles.label}>{platform.charAt(0).toUpperCase() + platform.slice(1)}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={`https://${platform}.com/yourpage`}
+                value={getLink(platform)}
+                onChangeText={(text) => handleChange(platform, text)}
+              />
+            </View>
+          ))}
+
+          <Text style={styles.label}>Website</Text>
           <TextInput
             style={styles.input}
-            placeholder={`https://${platform}.com/yourpage`}
-            value={getLink(platform)}
-            onChangeText={(text) => handleChange(platform, text)}
+            placeholder="https://yourwebsite.com"
+            value={formData.website || ''}
+            onChangeText={handleWebsiteChange}
           />
         </View>
-      ))}
-
-      <Text style={styles.label}>Website</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="https://yourwebsite.com"
-        value={formData.website || ''}
-        onChangeText={handleWebsiteChange}
-      />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -121,5 +126,18 @@ const styles = StyleSheet.create({
         padding: 12,
         marginBottom: 20,
         width: '100%',
+      },
+      formCard: {
+        backgroundColor: '#fff',
+        borderRadius: 30,
+        padding: 24,
+        width: '90%',
+        maxWidth: 420,
+        alignSelf: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 4,
       },
 });
