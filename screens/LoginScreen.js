@@ -155,6 +155,14 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
         return;
       }
 
+      // Store both user_uid and profile_uid in AsyncStorage
+      await AsyncStorage.setItem("user_uid", user_uid);
+      await AsyncStorage.setItem("user_email_id", user_email);
+      await AsyncStorage.setItem("profile_uid", fullUser.personal_info?.profile_personal_uid || "");
+
+      console.log("LoginScreen - user_uid", user_uid);
+      // console.log("LoginScreen - User Email", user_email);
+
       // 5. Navigate to Profile screen
       navigation.navigate("Profile", {
         user: {

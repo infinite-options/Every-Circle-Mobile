@@ -9,6 +9,7 @@ import ExpertiseSection from "../components/ExpertiseSection";
 import BusinessSection from "../components/BusinessSection";
 import BottomNavBar from "../components/BottomNavBar";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from 'expo-file-system';
 
 const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
 const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
@@ -19,9 +20,11 @@ const EditProfileScreen = ({ route, navigation }) => {
 
   // Always initialize profileImageUri with the current profile image from the user object
   const initialProfileImage = user?.profile_personal_image || user?.profileImage || "";
+  const [originalProfileImage, setOriginalProfileImage] = useState(initialProfileImage);
   const [profileImage, setProfileImage] = useState(initialProfileImage);
   const [profileImageUri, setProfileImageUri] = useState(initialProfileImage);
   const [deleteProfileImage, setDeleteProfileImage] = useState("");
+  const [imageError, setImageError] = useState(false);
   // const [pendingPicker, setPendingPicker] = useState(null);
 
   useEffect(() => {
@@ -91,7 +94,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     linkedin: user?.linkedin || "",
     youtube: user?.youtube || "",
   });
-  console.log("EditProfileScreen business_info:", formData.businesses);
+  // console.log("EditProfileScreen business_info:", formData.businesses);
 
   // Add state to track deleted items
   const [deletedItems, setDeletedItems] = useState({
@@ -141,12 +144,14 @@ const EditProfileScreen = ({ route, navigation }) => {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         console.log("Image selected successfully");
-        if (profileImageUri && profileImageUri !== result.assets[0].uri) {
-          console.log("Setting deleteProfileImage to:", profileImageUri);
-          setDeleteProfileImage(profileImageUri);
+        if (originalProfileImage && originalProfileImage !== result.assets[0].uri) {
+          console.log("Setting deleteProfileImage to:", originalProfileImage);
+          setDeleteProfileImage(originalProfileImage);
         }
         console.log("Setting new profile image URI:", result.assets[0].uri);
         setProfileImageUri(result.assets[0].uri);
+        setProfileImage(result.assets[0].uri);
+        setImageError(false); // Reset error state when new image is selected
       } else {
         console.log("No image selected or picker was canceled");
       }
@@ -174,6 +179,7 @@ const EditProfileScreen = ({ route, navigation }) => {
 
   // Update the delete handlers in each section to track deleted items
   const handleDeleteExperience = (index) => {
+    console.log("EditProfileScreen - handleDeleteExperience called");
     const deletedExp = formData.experience[index];
     if (deletedExp.profile_experience_uid) {
       setDeletedItems((prev) => ({
@@ -186,6 +192,7 @@ const EditProfileScreen = ({ route, navigation }) => {
   };
 
   const handleDeleteEducation = (index) => {
+    console.log("EditProfileScreen - handleDeleteEducation called");
     const deletedEdu = formData.education[index];
     if (deletedEdu.profile_education_uid) {
       setDeletedItems((prev) => ({
@@ -221,6 +228,14 @@ const EditProfileScreen = ({ route, navigation }) => {
     setFormData((prev) => ({ ...prev, wishes: updated }));
   };
 
+  // Add image error handler
+  const handleImageError = () => {
+    console.log("EditProfileScreen - Image failed to load, using default image");
+    setImageError(true);
+    setProfileImageUri("");
+    setProfileImage("");
+  };
+
   const handleSave = async () => {
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
       Alert.alert("Error", "First Name and Last Name are required.");
@@ -236,7 +251,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     try {
       const payload = new FormData();
       payload.append("profile_uid", trimmedProfileUID);
-      payload.append("user_email", formData.email);
+      // payload.append("user_email", formData.email);
       payload.append("profile_personal_first_name", formData.firstName);
       payload.append("profile_personal_last_name", formData.lastName);
       payload.append("profile_personal_phone_number", formData.phoneNumber);
@@ -301,13 +316,15 @@ const EditProfileScreen = ({ route, navigation }) => {
         })
       );
 
-      // Add profile image to payload if it exists and is different from the current one
-      if (profileImageUri && profileImageUri !== profileImage) {
-        console.log("Adding new profile image to payload:", profileImageUri);
+      let imageFileSize = 0;
+      if (profileImageUri && !imageError && profileImageUri !== originalProfileImage) {
+        const fileInfo = await FileSystem.getInfoAsync(profileImageUri);
+        imageFileSize = fileInfo.size || 0;
+        console.log('Image file size (bytes):', imageFileSize);
+
         const uriParts = profileImageUri.split(".");
         const fileType = uriParts[uriParts.length - 1];
 
-        // Create the file object for the image
         const imageFile = {
           uri: profileImageUri,
           name: `profile.${fileType}`,
@@ -317,8 +334,8 @@ const EditProfileScreen = ({ route, navigation }) => {
         payload.append("profile_image", imageFile);
       }
 
-      // If there's an image to delete, add it to the payload
-      if (deleteProfileImage) {
+      // Only add delete_profile_image if there's an image to delete and it hasn't errored
+      if (deleteProfileImage && !imageError) {
         console.log("Adding delete_profile_image to payload:", deleteProfileImage);
         payload.append("delete_profile_image", deleteProfileImage);
       }
@@ -361,6 +378,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       if (response.status === 200) {
         console.log("Profile update successful");
         Alert.alert("Success", "Profile updated successfully!");
+        setOriginalProfileImage(profileImageUri); // Update the original image after successful save
 
         // Only show modal for new businesses (those without profile_business_uid)
         const newBusinesses = formData.businesses?.filter((biz) => biz.name && !biz.profile_business_uid) || [];
@@ -368,9 +386,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           setPendingBusinessNames(newBusinesses.map((biz) => biz.name));
           setShowBusinessModal(true);
         } else {
-          navigation.navigate("Profile", {
-            profile_uid: trimmedProfileUID,
-          });
+          navigation.replace("Profile");
         }
       } else {
         console.error("Profile update failed:", response);
@@ -378,7 +394,11 @@ const EditProfileScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error("Update Error:", error);
-      Alert.alert("Error", "Update failed. Please try again.");
+      let errorMsg = "Update failed. Please try again.";
+      if (imageFileSize > 0) {
+        errorMsg += ` (Image file size: ${(imageFileSize / 1024).toFixed(1)} KB)`;
+      }
+      Alert.alert("Error", errorMsg);
     }
   };
 
@@ -418,8 +438,8 @@ const EditProfileScreen = ({ route, navigation }) => {
     expertiseIsPublic: formData.expertiseIsPublic,
     wishesIsPublic: formData.wishesIsPublic,
     businessIsPublic: formData.businessIsPublic,
-    // Only show the image if imageIsPublic is true and there is an uploaded image
-    profileImage: formData.imageIsPublic && profileImageUri ? profileImageUri : "",
+    // Only show the image in MiniCard if imageIsPublic is true
+    profileImage: formData.imageIsPublic ? (profileImageUri || "") : "",
   };
 
   // Profile Image Public/Private Toggle Handler
@@ -440,10 +460,16 @@ const EditProfileScreen = ({ route, navigation }) => {
         {/* Profile Image Upload Section */}
         <View style={styles.imageSection}>
           <Text style={styles.label}>Profile Image</Text>
-          <Image source={profileImageUri ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} style={styles.profileImage} />
+          <Image 
+            source={profileImageUri && !imageError ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} 
+            style={styles.profileImage}
+            onError={handleImageError}
+          />
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
             <TouchableOpacity onPress={toggleProfileImageVisibility}>
-              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>{formData.imageIsPublic ? "Public" : "Private"}</Text>
+              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>
+                {formData.imageIsPublic ? "Public" : "Private"}
+              </Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={handlePickImage}>
@@ -478,12 +504,15 @@ const EditProfileScreen = ({ route, navigation }) => {
           isPublic={formData.educationIsPublic}
           handleDelete={handleDeleteEducation}
         />
+        {/* Temporarily hiding Business Section
         <BusinessSection
           businesses={formData.businesses}
           setBusinesses={(e) => setFormData({ ...formData, businesses: e })}
           toggleVisibility={() => toggleVisibility("businessIsPublic")}
           isPublic={formData.businessIsPublic}
+          handleDelete={handleDeleteBusiness}
         />
+        */}
         <ExpertiseSection
           expertise={formData.expertise}
           setExpertise={(e) => setFormData({ ...formData, expertise: e })}
@@ -519,7 +548,7 @@ const EditProfileScreen = ({ route, navigation }) => {
               style={{ marginTop: 10, backgroundColor: "#007AFF", borderRadius: 6, paddingVertical: 10, paddingHorizontal: 24 }}
               onPress={() => {
                 setShowBusinessModal(false);
-                navigation.navigate("Profile", { profile_uid: profileUID });
+                navigation.replace("Profile");
               }}
             >
               <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>Continue</Text>
@@ -533,7 +562,7 @@ const EditProfileScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  header: { fontSize: 24, fontWeight: "bold", marginTop: 20, marginBottom: 20 },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
   input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5 },

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 // import axios from 'axios';
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
 const baseURI = "https://ioec2testsspm.infiniteoptions.com";
@@ -16,126 +17,52 @@ const ProfileScreen = ({ route, navigation }) => {
   const [profileUID, setProfileUID] = useState("");
 
   useEffect(() => {
-    console.log("ProfileScreen - useEffect");
-    async function fetchUserData(profileUID) {
-      try {
-        console.log("ProfileScreen - fetchUserData", profileUID);
-        const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
-        console.log("Profile Fetch Call:", `${ProfileScreenAPI}/${profileUID}`);
-        // console.log("Profile Fetch Response:", response);
-        const apiUser = await response.json();
-        console.log("API User Profile:", apiUser);
-        if (!apiUser || apiUser.message === "Profile not found for this user") {
-          console.error("No user data received from API");
-          Alert.alert("Error", "Failed to load profile data from server.");
-          setLoading(false);
-          return;
-        }
-        // Map API data to display fields (same as in main logic)
-        const userData = {
-          profile_uid: profileUID,
-          email: apiUser?.user_email || "",
-          firstName: apiUser.personal_info?.profile_personal_first_name || "",
-          lastName: apiUser.personal_info?.profile_personal_last_name || "",
-          phoneNumber: apiUser.personal_info?.profile_personal_phone_number || "",
-          tagLine: apiUser.personal_info?.profile_personal_tag_line || "",
-          shortBio: apiUser.personal_info?.profile_personal_short_bio || "",
-          emailIsPublic: apiUser.personal_info?.profile_personal_email_is_public === 1,
-          phoneIsPublic: apiUser.personal_info?.profile_personal_phone_number_is_public === 1,
-          imageIsPublic: apiUser.personal_info?.profile_personal_image_is_public === 1,
-          tagLineIsPublic: apiUser.personal_info?.profile_personal_tag_line_is_public === 1,
-          shortBioIsPublic: apiUser.personal_info?.profile_personal_short_bio_is_public === 1,
-          experienceIsPublic: apiUser.personal_info?.profile_personal_experience_is_public === 1,
-          educationIsPublic: apiUser.personal_info?.profile_personal_education_is_public === 1,
-          expertiseIsPublic: apiUser.personal_info?.profile_personal_expertise_is_public === 1,
-          wishesIsPublic: apiUser.personal_info?.profile_personal_wishes_is_public === 1,
-          businessIsPublic: apiUser.personal_info?.profile_personal_business_is_public === 1,
-          profileImage: apiUser.personal_info?.profile_personal_image ? String(apiUser.personal_info.profile_personal_image) : "",
-        };
-        userData.experience = apiUser.experience_info
-          ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
-              profile_experience_uid: exp.profile_experience_uid || "",
-              company: exp.profile_experience_company_name || "",
-              title: exp.profile_experience_position || "",
-              startDate: exp.profile_experience_start_date || "",
-              endDate: exp.profile_experience_end_date || "",
-              isPublic: exp.profile_experience_is_public === 1 || exp.isPublic === true,
-            }))
-          : [];
-        userData.education = apiUser.education_info
-          ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
-              profile_education_uid: edu.profile_education_uid || "",
-              school: edu.profile_education_school_name || "",
-              degree: edu.profile_education_degree || "",
-              startDate: edu.profile_education_start_date || "",
-              endDate: edu.profile_education_end_date || "",
-              isPublic: edu.profile_education_is_public === 1 || edu.isPublic === true,
-            }))
-          : [];
-        userData.businesses = apiUser.business_info
-          ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
-              profile_business_uid: bus.business_uid || "",
-              name: bus.business_name || "",
-              // role: bus.profile_business_role || "",
-              // isPublic: bus.profile_business_is_visible === 1,
-              // isApproved: bus.profile_business_approved === "1",
-              // business_uid: bus.profile_business_business_id || "",
-            }))
-          : [];
-        userData.expertise = apiUser.expertise_info
-          ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
-              profile_expertise_uid: exp.profile_expertise_uid || "",
-              name: exp.profile_expertise_title || "",
-              description: exp.profile_expertise_description || "",
-              cost: exp.profile_expertise_cost || "",
-              bounty: exp.profile_expertise_bounty || "",
-              isPublic: exp.profile_expertise_is_public === 1 || exp.isPublic === true,
-            }))
-          : [];
-        userData.wishes = apiUser.wishes_info
-          ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
-              profile_wish_uid: wish.profile_wish_uid || "",
-              helpNeeds: wish.profile_wish_title || "",
-              details: wish.profile_wish_description || "",
-              amount: wish.profile_wish_bounty || "",
-              isPublic: wish.profile_wish_is_public === 1 || wish.isPublic === true,
-            }))
-          : [];
-        const socialLinks = apiUser.social_links && typeof apiUser.social_links === "string" ? JSON.parse(apiUser.social_links) : {};
-        userData.facebook = socialLinks.facebook || "";
-        userData.twitter = socialLinks.twitter || "";
-        userData.linkedin = socialLinks.linkedin || "";
-        userData.youtube = socialLinks.youtube || "";
-        setUser(userData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setLoading(false);
+    async function loadProfile() {
+      setLoading(true);
+      let profileId = await AsyncStorage.getItem("profile_uid");
+      if (profileId) {
+        setProfileUID(profileId);
+        await fetchUserData(profileId);
+        return;
       }
+      // If no profile_uid, try to get user_uid and fetch profile
+      const userId = await AsyncStorage.getItem("user_uid");
+      if (userId) {
+        try {
+          const response = await fetch(`${ProfileScreenAPI}/${userId}`);
+          const apiUser = await response.json();
+          if (apiUser && apiUser.personal_info?.profile_personal_uid) {
+            profileId = apiUser.personal_info.profile_personal_uid;
+            setProfileUID(profileId);
+            await AsyncStorage.setItem("profile_uid", profileId);
+            await fetchUserData(profileId);
+            return;
+          }
+        } catch (err) {
+          console.error("Error fetching profile by user_uid:", err);
+        }
+      }
+      // If still not found, show error
+      setLoading(false);
+      Alert.alert("Error", "Failed to load profile data. Please log in again.");
     }
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    if (route.params?.user) {
-      const apiUser = route.params.user;
-      console.log(" ProfileScreen - User Data Received:", JSON.stringify(apiUser, null, 2));
-
-      const extractedProfileUID = route.params.profile_uid || apiUser.personal_info?.profile_personal_uid || "";
-      console.log(" ProfileScreen - Extracted Profile UID in ProfileScreen:", extractedProfileUID);
-
-      const extractedEmail = apiUser?.user_email || route.params?.email || "";
-      console.log(" ProfileScreen - Extracted Email:", extractedEmail);
-
-      if (!extractedProfileUID) {
-        console.error(" No profile_uid found in ProfileScreen");
-        Alert.alert("Error", "Profile ID is missing.");
+  async function fetchUserData(profileUID) {
+    try {
+      const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
+      const apiUser = await response.json();
+      if (!apiUser || apiUser.message === "Profile not found for this user") {
+        setUser(null);
         setLoading(false);
         return;
       }
-
-      setProfileUID(extractedProfileUID);
-
+      // Map API data to display fields (same as in main logic)
       const userData = {
-        profile_uid: extractedProfileUID,
-        email: apiUser?.user_email || extractedEmail,
+        profile_uid: profileUID,
+        email: apiUser?.user_email || "",
         firstName: apiUser.personal_info?.profile_personal_first_name || "",
         lastName: apiUser.personal_info?.profile_personal_last_name || "",
         phoneNumber: apiUser.personal_info?.profile_personal_phone_number || "",
@@ -151,105 +78,65 @@ const ProfileScreen = ({ route, navigation }) => {
         expertiseIsPublic: apiUser.personal_info?.profile_personal_expertise_is_public === 1,
         wishesIsPublic: apiUser.personal_info?.profile_personal_wishes_is_public === 1,
         businessIsPublic: apiUser.personal_info?.profile_personal_business_is_public === 1,
-        profileImage: apiUser.personal_info?.profile_personal_image ? String(apiUser.personal_info.profile_personal_image) : "what",
-        // profileImage: apiUser.personal_info?.profile_personal_image || "",
+        profileImage: apiUser.personal_info?.profile_personal_image ? String(apiUser.personal_info.profile_personal_image) : "",
       };
-      console.log(" ProfileScreen - Tag Line:", apiUser.personal_info?.profile_personal_tag_line);
-      console.log(" ProfileScreen - Tag Line Is Public:", apiUser.personal_info?.profile_personal_tag_line_is_public);
-
-      try {
-        userData.experience = apiUser.experience_info
-          ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
-              profile_experience_uid: exp.profile_experience_uid || "",
-              company: exp.profile_experience_company_name || "",
-              title: exp.profile_experience_position || "",
-              startDate: exp.profile_experience_start_date || "",
-              endDate: exp.profile_experience_end_date || "",
-              isPublic: exp.profile_experience_is_public === 1 || exp.isPublic === true,
-            }))
-          : [];
-        // console.log("Mapped experience:", userData.experience);
-
-        userData.education = apiUser.education_info
-          ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
-              profile_education_uid: edu.profile_education_uid || "",
-              school: edu.profile_education_school_name || "",
-              degree: edu.profile_education_degree || "",
-              startDate: edu.profile_education_start_date || "",
-              endDate: edu.profile_education_end_date || "",
-              isPublic: edu.profile_education_is_public === 1 || edu.isPublic === true,
-            }))
-          : [];
-        // console.log("Mapped education:", userData.education);
-
-        userData.businesses = apiUser.business_info
-          ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
-              profile_business_uid: bus.business_uid || "",
-              name: bus.business_name || "",
-              // role: bus.profile_business_role || "",
-              // isPublic: bus.profile_business_is_visible === 1,
-              // isApproved: bus.profile_business_approved === "1",
-              // business_uid: bus.profile_business_business_id || "",
-            }))
-          : [];
-        console.log("Mapped businesses:", userData.businesses);
-
-        userData.expertise = apiUser.expertise_info
-          ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
-              profile_expertise_uid: exp.profile_expertise_uid || "",
-              name: exp.profile_expertise_title || "",
-              description: exp.profile_expertise_description || "",
-              cost: exp.profile_expertise_cost || "",
-              bounty: exp.profile_expertise_bounty || "",
-              isPublic: exp.profile_expertise_is_public === 1 || exp.isPublic === true,
-            }))
-          : [];
-        // console.log("Mapped expertise:", userData.expertise);
-
-        userData.wishes = apiUser.wishes_info
-          ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
-              profile_wish_uid: wish.profile_wish_uid || "",
-              helpNeeds: wish.profile_wish_title || "",
-              details: wish.profile_wish_description || "",
-              amount: wish.profile_wish_bounty || "",
-              isPublic: wish.profile_wish_is_public === 1 || wish.isPublic === true,
-            }))
-          : [];
-        // console.log("Mapped wishes:", userData.wishes);
-
-        const socialLinks = apiUser.social_links && typeof apiUser.social_links === "string" ? JSON.parse(apiUser.social_links) : {};
-        userData.facebook = socialLinks.facebook || "";
-        userData.twitter = socialLinks.twitter || "";
-        userData.linkedin = socialLinks.linkedin || "";
-        userData.youtube = socialLinks.youtube || "";
-      } catch (error) {
-        console.error(" Error parsing JSON data:", error);
-        userData.experience = [];
-        userData.education = [];
-        userData.expertise = [];
-        userData.wishes = [];
-        userData.businesses = [];
-        userData.facebook = "";
-        userData.twitter = "";
-        userData.linkedin = "";
-        userData.youtube = "";
-      }
-
-      // console.log(" Setting user data:", JSON.stringify(userData, null, 2));
-      // console.log("1");
+      userData.experience = apiUser.experience_info
+        ? (typeof apiUser.experience_info === "string" ? JSON.parse(apiUser.experience_info) : apiUser.experience_info).map((exp) => ({
+            profile_experience_uid: exp.profile_experience_uid || "",
+            company: exp.profile_experience_company_name || "",
+            title: exp.profile_experience_position || "",
+            startDate: exp.profile_experience_start_date || "",
+            endDate: exp.profile_experience_end_date || "",
+            isPublic: exp.profile_experience_is_public === 1 || exp.isPublic === true,
+          }))
+        : [];
+      userData.education = apiUser.education_info
+        ? (typeof apiUser.education_info === "string" ? JSON.parse(apiUser.education_info) : apiUser.education_info).map((edu) => ({
+            profile_education_uid: edu.profile_education_uid || "",
+            school: edu.profile_education_school_name || "",
+            degree: edu.profile_education_degree || "",
+            startDate: edu.profile_education_start_date || "",
+            endDate: edu.profile_education_end_date || "",
+            isPublic: edu.profile_education_is_public === 1 || edu.isPublic === true,
+          }))
+        : [];
+      userData.businesses = apiUser.business_info
+        ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
+            profile_business_uid: bus.business_uid || "",
+            name: bus.business_name || "",
+          }))
+        : [];
+      userData.expertise = apiUser.expertise_info
+        ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
+            profile_expertise_uid: exp.profile_expertise_uid || "",
+            name: exp.profile_expertise_title || "",
+            description: exp.profile_expertise_description || "",
+            cost: exp.profile_expertise_cost || "",
+            bounty: exp.profile_expertise_bounty || "",
+            isPublic: exp.profile_expertise_is_public === 1 || exp.isPublic === true,
+          }))
+        : [];
+      userData.wishes = apiUser.wishes_info
+        ? (typeof apiUser.wishes_info === "string" ? JSON.parse(apiUser.wishes_info) : apiUser.wishes_info).map((wish) => ({
+            profile_wish_uid: wish.profile_wish_uid || "",
+            helpNeeds: wish.profile_wish_title || "",
+            details: wish.profile_wish_description || "",
+            amount: wish.profile_wish_bounty || "",
+            isPublic: wish.profile_wish_is_public === 1 || wish.isPublic === true,
+          }))
+        : [];
+      const socialLinks = apiUser.social_links && typeof apiUser.social_links === "string" ? JSON.parse(apiUser.social_links) : {};
+      userData.facebook = socialLinks.facebook || "";
+      userData.twitter = socialLinks.twitter || "";
+      userData.linkedin = socialLinks.linkedin || "";
+      userData.youtube = socialLinks.youtube || "";
       setUser(userData);
-      console.log(" ProfileScreen - User Data Set");
-      // console.log("2");
       setLoading(false);
-      // console.log("3");
-    } else if (route.params?.profile_uid) {
-      fetchUserData(route.params.profile_uid);
-    } else {
-      console.error(" No user data received in ProfileScreen");
-      Alert.alert("Error", "Failed to load profile data.");
+    } catch (error) {
+      setUser(null);
       setLoading(false);
     }
-  }, [route.params]);
+  }
 
   const renderField = (label, value, isPublic) => {
     if (isPublic && value && value.trim() !== "") {
@@ -269,8 +156,12 @@ const ProfileScreen = ({ route, navigation }) => {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>No user data available.</Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ fontSize: 18, color: "red", textAlign: "center", marginBottom: 20 }}>No user data available. Please try again.</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")}
+          style={{ backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}>
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Go Home</Text>
+        </TouchableOpacity>
       </View>
     );
   }
