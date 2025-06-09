@@ -108,97 +108,121 @@ export default function BusinessProfileScreen({ route, navigation }) {
   return (
     <View style={styles.pageContainer}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() =>
-            navigation.navigate("EditBusinessProfile", {
-              business: business,
-              business_uid: business_uid,
-            })
-          }
-        >
-          <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
-        </TouchableOpacity>
+        {/* Header Section with Edit Button */}
+        <View style={styles.headerSection}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.header}>{business.business_name}</Text>
+            {business.taglineIsPublic && business.tagline ? (
+              <Text style={styles.tagline}>{business.tagline}</Text>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() =>
+              navigation.navigate("EditBusinessProfile", {
+                business: business,
+                business_uid: business_uid,
+              })
+            }
+          >
+            <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
+          </TouchableOpacity>
+        </View>
 
-        <Text style={styles.header}>{business.business_name}</Text>
+        {/* Contact Information Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Contact Information</Text>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Location:</Text>
+            <Text style={styles.value}>
+              {business.business_address_line_1 || "N/A"}
+              {business.business_city && `, ${business.business_city}`}
+              {business.business_zip_code && `, ${business.business_zip_code}`}
+            </Text>
+          </View>
 
-        {business.taglineIsPublic && business.tagline ? <Text style={styles.tagline}>{business.tagline}</Text> : null}
+          {business.phoneIsPublic && business.business_phone_number && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Phone:</Text>
+              <Text style={styles.value}>{business.business_phone_number}</Text>
+            </View>
+          )}
 
-        <Text style={styles.label}>Location:</Text>
-        <Text style={styles.value}>
-          {business.business_address_line_1 || "N/A"}
-          {business.business_zip_code && `, ${business.business_zip_code}`}
-        </Text>
+          {business.emailIsPublic && business.business_email && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Email:</Text>
+              <Text style={styles.value}>{business.business_email}</Text>
+            </View>
+          )}
 
-        {business.phoneIsPublic && (
-          <>
-            <Text style={styles.label}>Phone:</Text>
-            <Text style={styles.value}>{business.business_phone_number || "N/A"}</Text>
-          </>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Business Category:</Text>
+            <Text style={styles.value}>{business.business_category || "N/A"}</Text>
+          </View>
+
+          {business.business_website && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Website:</Text>
+              <Text style={styles.link}>🌐 {business.business_website}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* About Section */}
+        {business.shortBioIsPublic && business.business_short_bio && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>About</Text>
+            <Text style={styles.bioText}>{business.business_short_bio}</Text>
+          </View>
         )}
 
-        {business.emailIsPublic && (
-          <>
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{business.business_email || "N/A"}</Text>
-          </>
+        {/* Social Links Card */}
+        {(business.facebook || business.instagram || business.linkedin || business.youtube) && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Social Links</Text>
+            {business.facebook && <Text style={styles.socialLink}>📘 Facebook: {business.facebook}</Text>}
+            {business.instagram && <Text style={styles.socialLink}>📸 Instagram: {business.instagram}</Text>}
+            {business.linkedin && <Text style={styles.socialLink}>🔗 LinkedIn: {business.linkedin}</Text>}
+            {business.youtube && <Text style={styles.socialLink}>▶️ YouTube: {business.youtube}</Text>}
+          </View>
         )}
 
-        <Text style={styles.label}>Business Category:</Text>
-        <Text style={styles.value}>{business.business_category || "N/A"}</Text>
+        {/* Business Images Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Business Images</Text>
+          {Array.isArray(business.images) && business.images.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+              {business.images.map((uri, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: typeof uri === "string" ? uri : uri.url || uri.photo_url }}
+                  style={styles.image}
+                  onError={(error) => console.log(`Image ${index} failed to load:`, error.nativeEvent.error)}
+                  onLoad={() => console.log(`Image ${index} loaded successfully`)}
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={styles.noDataText}>No images available</Text>
+          )}
+        </View>
 
-        {business.shortBioIsPublic && (
-          <>
-            <Text style={styles.label}>Short Bio:</Text>
-            <Text style={styles.value}>{business.business_short_bio || "N/A"}</Text>
-          </>
-        )}
-
-        {business.business_website && (
-          <>
-            <Text style={styles.label}>Website:</Text>
-            <Text style={styles.link}>🌐 {business.business_website}</Text>
-          </>
-        )}
-
-        <Text style={styles.label}>Social Links:</Text>
-        {business.facebook ? <Text style={styles.link}>📘 Facebook: {business.facebook}</Text> : null}
-        {business.instagram ? <Text style={styles.link}>📸 Instagram: {business.instagram}</Text> : null}
-        {business.linkedin ? <Text style={styles.link}>🔗 LinkedIn: {business.linkedin}</Text> : null}
-        {business.youtube ? <Text style={styles.link}>▶️ YouTube: {business.youtube}</Text> : null}
-
-        <Text style={styles.label}>Business Images:</Text>
-        {Array.isArray(business.images) && business.images.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-            {business.images.map((uri, index) => (
-              <Image
-                key={index}
-                source={{ uri: typeof uri === "string" ? uri : uri.url || uri.photo_url }}
-                style={styles.image}
-                onError={(error) => console.log(`Image ${index} failed to load:`, error.nativeEvent.error)}
-                onLoad={() => console.log(`Image ${index} loaded successfully`)}
-              />
-            ))}
-          </ScrollView>
-        ) : (
-          <Text style={styles.value}>No images available</Text>
-        )}
-
-        <MiniCard
-          business={{
-            business_name: business.business_name,
-            business_address_line_1: business.business_address_line_1,
-            business_zip_code: business.business_zip_code,
-            business_phone_number: business.business_phone_number,
-            business_website: business.business_website,
-            first_image: business.images && business.images.length > 0 ? business.images[0] : null,
-            phoneIsPublic: business.phoneIsPublic,
-          }}
-        />
-
-        {/* <TouchableOpacity style={styles.saveButton} onPress={() => console.log('Save button pressed')}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity> */}
+        {/* Business Card Preview */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Business Card Preview</Text>
+          <MiniCard
+            business={{
+              business_name: business.business_name,
+              business_address_line_1: business.business_address_line_1,
+              business_zip_code: business.business_zip_code,
+              business_phone_number: business.business_phone_number,
+              business_website: business.business_website,
+              first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+              phoneIsPublic: business.phoneIsPublic,
+            }}
+          />
+        </View>
       </ScrollView>
 
       <BottomNavBar navigation={navigation} />
@@ -217,38 +241,88 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
+  headerSection: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+  },
+  titleContainer: {
+    flex: 1,
+    paddingRight: 10,
+  },
   header: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 8,
+    color: "#333",
   },
   tagline: {
     fontSize: 16,
     fontStyle: "italic",
     color: "#777",
+  },
+  card: {
+    backgroundColor: "#fff",
+    padding: 20,
     marginBottom: 15,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    color: "#333",
+  },
+  infoRow: {
+    marginBottom: 10,
   },
   label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 2,
   },
   value: {
     fontSize: 16,
     color: "#333",
-    marginBottom: 5,
   },
   link: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#1a73e8",
-    marginBottom: 4,
+    textDecorationLine: "underline",
+  },
+  bioText: {
+    fontSize: 16,
+    color: "#333",
+    lineHeight: 22,
+  },
+  socialLink: {
+    fontSize: 16,
+    color: "#1a73e8",
+    marginBottom: 8,
+  },
+  noDataText: {
+    fontSize: 16,
+    color: "#777",
+    textAlign: "center",
+    fontStyle: "italic",
+    paddingVertical: 20,
   },
   errorText: {
     fontSize: 16,
@@ -262,27 +336,19 @@ const styles = StyleSheet.create({
     height: 120,
     marginRight: 10,
     borderRadius: 10,
-  },
-  saveButton: {
-    marginTop: 25,
-    backgroundColor: "#00C721",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    backgroundColor: "#f0f0f0",
   },
   editButton: {
-    position: "absolute",
-    top: 20,
-    right: 20,
-    zIndex: 10,
+    backgroundColor: "#f0f0f0",
+    padding: 8,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
   editIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
 });

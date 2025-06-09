@@ -4,10 +4,12 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ScrollView,
 import * as ImagePicker from "expo-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import BottomNavBar from "../components/BottomNavBar";
+import ContinueButton from '../components/ContinueButton';
 
 const { width } = Dimensions.get("window");
 
-export default function BusinessStep2({ formData, setFormData }) {
+export default function BusinessStep2({ formData, setFormData, navigation }) {
   const [allCategories, setAllCategories] = useState([]);
   const [mainCategories, setMainCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -109,125 +111,132 @@ export default function BusinessStep2({ formData, setFormData }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.title}>Select Category</Text>
-      <Text style={styles.subtitle}>Select Tags for your business</Text>
+    <View style={{ flex: 1, backgroundColor: '#00C721' }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingBottom: 120 }}
+      >
+        <View style={styles.formCard}>
+          <Text style={styles.title}>Select Category</Text>
+          <Text style={styles.subtitle}>Select Tags for your business</Text>
 
-      <Text style={styles.label}>Main Categories</Text>
-      <Dropdown
-        style={styles.dropdown}
-        data={mainCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
-        labelField='label'
-        valueField='value'
-        placeholder='Select Main Category'
-        value={selectedMain}
-        onChange={(item) => setSelectedMain(item.value)}
-      />
-
-      {subCategories.length > 0 && (
-        <>
-          <Text style={styles.label}>Sub Categories (Optional)</Text>
+          <Text style={styles.label}>Main Categories</Text>
           <Dropdown
             style={styles.dropdown}
-            data={subCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
+            data={mainCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
             labelField='label'
             valueField='value'
-            placeholder='Select Sub Category'
-            value={selectedSub}
-            onChange={(item) => setSelectedSub(item.value)}
+            placeholder='Select Main Category'
+            value={selectedMain}
+            onChange={(item) => setSelectedMain(item.value)}
           />
-        </>
-      )}
 
-      {subSubCategories.length > 0 && (
-        <>
-          <Text style={styles.label}>Sub-Sub Categories (Optional)</Text>
-          <Dropdown
-            style={styles.dropdown}
-            data={subSubCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
-            labelField='label'
-            valueField='value'
-            placeholder='Select Sub-Sub Category'
-            value={selectedSubSub}
-            onChange={(item) => setSelectedSubSub(item.value)}
+          {subCategories.length > 0 && (
+            <>
+              <Text style={styles.label}>Sub Categories (Optional)</Text>
+              <Dropdown
+                style={styles.dropdown}
+                data={subCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
+                labelField='label'
+                valueField='value'
+                placeholder='Select Sub Category'
+                value={selectedSub}
+                onChange={(item) => setSelectedSub(item.value)}
+              />
+            </>
+          )}
+
+          {subSubCategories.length > 0 && (
+            <>
+              <Text style={styles.label}>Sub-Sub Categories (Optional)</Text>
+              <Dropdown
+                style={styles.dropdown}
+                data={subSubCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
+                labelField='label'
+                valueField='value'
+                placeholder='Select Sub-Sub Category'
+                value={selectedSubSub}
+                onChange={(item) => setSelectedSubSub(item.value)}
+              />
+            </>
+          )}
+
+          <Text style={styles.label}>Brief Description</Text>
+          <TextInput
+            style={styles.textarea}
+            placeholder='Describe your business...'
+            value={formData.shortBio}
+            multiline
+            numberOfLines={4}
+            onChangeText={(text) => {
+              const updated = { ...formData, shortBio: text };
+              setFormData(updated);
+              AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
+            }}
           />
-        </>
-      )}
 
-      <Text style={styles.label}>Brief Description</Text>
-      <TextInput
-        style={styles.textarea}
-        placeholder='Describe your business...'
-        value={formData.shortBio}
-        multiline
-        numberOfLines={4}
-        onChangeText={(text) => {
-          const updated = { ...formData, shortBio: text };
-          setFormData(updated);
-          AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
-        }}
-      />
+          <Text style={styles.label}>Images</Text>
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={true} style={styles.carousel}>
+            <View style={styles.imageRow}>
+              {combinedImages.map((img, index) => (
+                <View key={index} style={styles.imageWrapper}>
+                  <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
+                  <TouchableOpacity
+                    style={styles.deleteIcon}
+                    onPress={() => {
+                      const isGoogle = index < googlePhotos.length;
+                      const updated = isGoogle
+                        ? [...googlePhotos.slice(0, index), ...googlePhotos.slice(index + 1)]
+                        : [...userUploadedImages.slice(0, index - googlePhotos.length), ...userUploadedImages.slice(index - googlePhotos.length + 1)];
 
-      <Text style={styles.label}>Images</Text>
-      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={true} style={styles.carousel}>
-        <View style={styles.imageRow}>
-          {combinedImages.map((img, index) => (
-            <View key={index} style={styles.imageWrapper}>
-              <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
-              <TouchableOpacity
-                style={styles.deleteIcon}
-                onPress={() => {
-                  const isGoogle = index < googlePhotos.length;
-                  const updated = isGoogle
-                    ? [...googlePhotos.slice(0, index), ...googlePhotos.slice(index + 1)]
-                    : [...userUploadedImages.slice(0, index - googlePhotos.length), ...userUploadedImages.slice(index - googlePhotos.length + 1)];
+                      const newFormData = {
+                        ...formData,
+                        businessGooglePhotos: isGoogle ? updated : googlePhotos,
+                        images: !isGoogle ? updated : userUploadedImages,
+                      };
+                      setFormData(newFormData);
+                      AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
+                    }}
+                  >
+                    <Text style={styles.deleteText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
 
-                  const newFormData = {
-                    ...formData,
-                    businessGooglePhotos: isGoogle ? updated : googlePhotos,
-                    images: !isGoogle ? updated : userUploadedImages,
-                  };
-                  setFormData(newFormData);
-                  AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
-                }}
-              >
-                <Text style={styles.deleteText}>✕</Text>
+              {/* {userUploadedImages.length < 3 && ( */}
+              <TouchableOpacity style={styles.uploadBox} onPress={() => handleImagePick(userUploadedImages.length)}>
+                <Text style={styles.uploadText}>Upload Image</Text>
               </TouchableOpacity>
+              {/* )} */}
             </View>
-          ))}
+          </ScrollView>
 
-          {/* {userUploadedImages.length < 3 && ( */}
-          <TouchableOpacity style={styles.uploadBox} onPress={() => handleImagePick(userUploadedImages.length)}>
-            <Text style={styles.uploadText}>Upload Image</Text>
-          </TouchableOpacity>
-          {/* )} */}
+          {/*  custom tags */}
+
+          <Text style={styles.label}>Custom Tags</Text>
+          <View style={styles.tagRow}>
+            <TextInput
+              style={styles.tagInput}
+              placeholder='Add tag'
+              // value={customTag}
+              // onChangeText={setCustomTag}
+              // onSubmitEditing={addTag}
+            />
+            <TouchableOpacity onPress={addTag} style={styles.tagButton}>
+              <Text style={styles.tagButtonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.tagList}>
+            {customTags.map((tag, i) => (
+              <TouchableOpacity key={i} onPress={() => removeTag(tag)} style={styles.tagItem}>
+                <Text>{tag} ✕</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
-
-      {/*  custom tags */}
-
-      <Text style={styles.label}>Custom Tags</Text>
-      <View style={styles.tagRow}>
-        <TextInput
-          style={styles.tagInput}
-          placeholder='Add tag'
-          // value={customTag}
-          // onChangeText={setCustomTag}
-          // onSubmitEditing={addTag}
-        />
-        <TouchableOpacity onPress={addTag} style={styles.tagButton}>
-          <Text style={styles.tagButtonText}>Add</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.tagList}>
-        {customTags.map((tag, i) => (
-          <TouchableOpacity key={i} onPress={() => removeTag(tag)} style={styles.tagItem}>
-            <Text>{tag} ✕</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -383,5 +392,18 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 10,
+  },
+  formCard: {
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    padding: 24,
+    width: '90%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

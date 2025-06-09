@@ -7,11 +7,11 @@ export default function ContinueButton({ onNext, onBack, showBack = true }) {
     <View style={styles.buttonRow}>
       {showBack && (
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
       )}
       <TouchableOpacity style={styles.continueButton} onPress={onNext}>
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueButtonText}>Continue</Text>
       </TouchableOpacity>
     </View>
   );
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  continueText: {
+  continueButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backText: {
+  backButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,

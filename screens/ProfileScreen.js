@@ -201,8 +201,10 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.experience
             ?.filter((exp) => exp.isPublic)
             .map((exp, index, arr) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}> 
+                {(exp.startDate || exp.endDate) ? (
+                  <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
+                ) : null}
                 <Text style={styles.inputText}>{exp.title || ""}</Text>
                 <Text style={styles.inputText}>{exp.company || ""}</Text>
               </View>
@@ -214,35 +216,39 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.education
             ?.filter((edu) => edu.isPublic)
             .map((edu, index) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}> 
+                {(edu.startDate || edu.endDate) ? (
+                  <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
+                ) : null}
                 <Text style={styles.inputText}>{edu.degree || ""}</Text>
                 <Text style={styles.inputText}>{edu.school || ""}</Text>
               </View>
             ))}
         </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Businesses:</Text>
-          {user.businesses
-            // ?.filter((bus) => bus.isPublic && bus.isApproved)
-            .map((bus, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
-                onPress={() => {
-                  if (bus.profile_business_uid) {
-                    navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
-                  } else {
-                    Alert.alert("Error", "Business profile not found.");
-                  }
-                }}
-              >
-                <Text style={styles.inputText}>{bus.name || ""}</Text>
-                <Text style={styles.inputText}>{bus.role || ""}</Text>
-              </TouchableOpacity>
-            ))}
-        </View>
+        {/* Only show Businesses section if there are businesses */}
+        {user.businesses && user.businesses.length > 0 && (
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Businesses:</Text>
+            {user.businesses
+              .map((bus, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
+                  onPress={() => {
+                    if (bus.profile_business_uid) {
+                      navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
+                    } else {
+                      Alert.alert("Error", "Business profile not found.");
+                    }
+                  }}
+                >
+                  <Text style={styles.inputText}>{bus.name || ""}</Text>
+                  <Text style={styles.inputText}>{bus.role || ""}</Text>
+                </TouchableOpacity>
+              ))}
+          </View>
+        )}
 
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Expertise:</Text>

@@ -1,59 +1,78 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image, Platform, Dimensions } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+const { width, height } = Dimensions.get('window');
 
 const BottomNavBar = ({ navigation }) => {
   return (
-    <View style={styles.navContainer}>
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-        <Image source={require("../assets/profile.png")} style={styles.navIcon} />
-        <Text style={styles.navLabel}>Profile</Text>
-      </TouchableOpacity>
+    <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
+          <Image source={require("../assets/profile.png")} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Profile</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-        <Image source={require("../assets/setting.png")} style={styles.navIcon} />
-        <Text style={styles.navLabel}>Settings</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
+          <Image source={require("../assets/setting.png")} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Settings</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-        <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
-        <Text style={styles.navLabel}>Home</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+          <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Home</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-        <Image source={require("../assets/share.png")} style={styles.navIcon} />
-        <Text style={styles.navLabel}>Share</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
+          <Image source={require("../assets/share.png")} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Share</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-        <Image source={require("../assets/search.png")} style={styles.navIcon} />
-        <Text style={styles.navLabel}>Search</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
+          <Image source={require("../assets/search.png")} style={styles.navIcon} />
+          <Text style={styles.navLabel}>Search</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: "#fff",
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    width: width,
+  },
   navContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: "#ddd",
     backgroundColor: "#fff",
+    paddingTop: 6,
   },
   navButton: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
   },
   navIcon: {
-    width: 25,
-    height: 25,
+    width: 28,
+    height: 28,
+    marginBottom: 2,
   },
   navLabel: {
-    fontSize: 12,
-    color: "#333",
-    marginTop: 4,
+    fontSize: 13,
+    color: "#222",
+    marginTop: 2,
+    fontWeight: "400",
+    letterSpacing: 0.2,
   },
 });
 

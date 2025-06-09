@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { Dropdown } from "react-native-element-dropdown";
 import axios from "axios";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
@@ -13,12 +15,21 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   const [formData, setFormData] = useState({
     name: business?.business_name || "",
     location: business?.business_address_line_1 || "",
+    addressLine2: business?.business_address_line_2 || "",
+    city: business?.business_city || "",
+    state: business?.business_state || "",
+    country: business?.business_country || "",
+    zip: business?.business_zip_code || "",
     phone: business?.business_phone_number || "",
     email: business?.business_email || "",
     category: business?.business_category || "",
     tagline: business?.tagline || "",
     shortBio: business?.business_short_bio || "",
-    images: business?.business_google_photos || [],
+    businessRole: business?.business_role || "",
+    einNumber: business?.business_ein_number || "",
+    website: business?.business_website || "",
+    customTags: Array.isArray(business?.custom_tags) ? business.custom_tags : [],
+    images: Array.isArray(business?.business_google_photos) ? business.business_google_photos : [],
     socialLinks: {
       facebook: business?.facebook || "",
       instagram: business?.instagram || "",
@@ -30,6 +41,16 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     taglineIsPublic: business?.tagline_is_public === "1",
     shortBioIsPublic: business?.short_bio_is_public === "1",
   });
+
+  const [customTagInput, setCustomTagInput] = useState("");
+
+  const businessRoles = [
+    { label: 'Owner', value: 'owner' },
+    { label: 'Employee', value: 'employee' },
+    { label: 'Partner', value: 'partner' },
+    { label: 'Admin', value: 'admin' },
+    { label: 'Other', value: 'other' },
+  ];
 
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => ({ ...prev, [fieldName]: !prev[fieldName] }));
@@ -46,11 +67,35 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       payload.append("business_uid", businessUID);
       payload.append("business_name", formData.name);
       payload.append("business_address_line_1", formData.location);
+      payload.append("business_address_line_2", formData.addressLine2);
+      payload.append("business_city", formData.city);
+      payload.append("business_state", formData.state);
+      payload.append("business_country", formData.country);
+      payload.append("business_zip_code", formData.zip);
       payload.append("business_phone_number", formData.phone);
       payload.append("business_email_id", formData.email);
       payload.append("business_category_id", formData.category);
       payload.append("business_short_bio", formData.shortBio);
       payload.append("business_tag_line", formData.tagline);
+      payload.append("business_role", formData.businessRole);
+      payload.append("business_ein_number", formData.einNumber);
+      payload.append("business_website", formData.website);
+      payload.append("custom_tags", JSON.stringify(formData.customTags));
+      
+      // Handle images
+      const imagesArray = formData.images || [];
+      imagesArray.forEach((imageUri, index) => {
+        if (imageUri && (imageUri.startsWith('file://') || imageUri.startsWith('content://'))) {
+          // This is a local file that needs to be uploaded
+          payload.append(`image_${index}`, {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: `business_image_${index}.jpg`,
+          });
+        }
+      });
+      payload.append("business_google_photos", JSON.stringify(imagesArray));
+      
       payload.append("social_links", JSON.stringify(formData.socialLinks));
       payload.append("business_email_id_is_public", formData.emailIsPublic ? "1" : "0");
       payload.append("business_phone_number_is_public", formData.phoneIsPublic ? "1" : "0");
@@ -63,14 +108,15 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
           cleanLinks[platform] = formData.socialLinks[platform];
         }
       });
+      
       console.log("FormData to be submitted:");
       for (let pair of payload.entries()) {
         console.log(`${pair[0]}: ${pair[1]}`);
       }
 
       console.log("Before API Call:", payload);
-      console.log("Business Endpoint:", `${BusinessProfileAPI}/${businessUID}`);
-      // const response = await axios.put(`${BusinessProfileAPI}/${businessUID}`, payload, {
+      console.log("Business Endpoint:", `${BusinessProfileAPI}`);
+      
       const response = await axios.put(`${BusinessProfileAPI}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -85,6 +131,38 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       console.error("Save error:", error);
       Alert.alert("Error", "Something went wrong.");
     }
+  };
+
+  const addCustomTag = () => {
+    if (customTagInput.trim() && !(formData.customTags || []).includes(customTagInput.trim())) {
+      const updatedTags = [...(formData.customTags || []), customTagInput.trim()];
+      setFormData({ ...formData, customTags: updatedTags });
+      setCustomTagInput("");
+    }
+  };
+
+  const removeCustomTag = (tagToRemove) => {
+    const updatedTags = (formData.customTags || []).filter(tag => tag !== tagToRemove);
+    setFormData({ ...formData, customTags: updatedTags });
+  };
+
+  const handleImagePick = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsMultipleSelection: true,
+    });
+    
+    if (!result.canceled) {
+      const newImages = result.assets.map(asset => asset.uri);
+      const currentImages = formData.images || [];
+      setFormData({ ...formData, images: [...currentImages, ...newImages] });
+    }
+  };
+
+  const removeImage = (indexToRemove) => {
+    const updatedImages = (formData.images || []).filter((_, index) => index !== indexToRemove);
+    setFormData({ ...formData, images: updatedImages });
   };
 
   const renderField = (label, value, key, placeholder, visibilityKey = null) => (
@@ -126,6 +204,71 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     business_email: formData.email,
   };
 
+  const renderCustomTagsSection = () => (
+    <View style={styles.fieldContainer}>
+      <Text style={styles.label}>Custom Tags</Text>
+      <View style={styles.tagInputContainer}>
+        <TextInput
+          style={[styles.input, { flex: 1, marginRight: 10, marginBottom: 0 }]}
+          value={customTagInput}
+          placeholder="Add a custom tag"
+          onChangeText={setCustomTagInput}
+        />
+        <TouchableOpacity style={styles.addTagButton} onPress={addCustomTag}>
+          <Text style={styles.addTagButtonText}>Add</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.tagsContainer}>
+        {(formData.customTags || []).map((tag, index) => (
+          <View key={index} style={styles.tagChip}>
+            <Text style={styles.tagText}>{tag}</Text>
+            <TouchableOpacity onPress={() => removeCustomTag(tag)}>
+              <Text style={styles.removeTagText}>×</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderImagesSection = () => (
+    <View style={styles.fieldContainer}>
+      <Text style={styles.label}>Business Images</Text>
+      <TouchableOpacity style={styles.addImageButton} onPress={handleImagePick}>
+        <Text style={styles.addImageButtonText}>+ Add Images</Text>
+      </TouchableOpacity>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+        {(formData.images || []).map((imageUri, index) => (
+          <View key={index} style={styles.imageContainer}>
+            <Image source={{ uri: imageUri }} style={styles.businessImage} />
+            <TouchableOpacity 
+              style={styles.removeImageButton} 
+              onPress={() => removeImage(index)}
+            >
+              <Text style={styles.removeImageText}>×</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
+  const renderBusinessRoleField = () => (
+    <View style={styles.fieldContainer}>
+      <Text style={styles.label}>Business Role</Text>
+      <Dropdown
+        style={styles.input}
+        data={businessRoles}
+        labelField="label"
+        valueField="value"
+        placeholder="Select your role"
+        value={formData.businessRole}
+        onChange={item => setFormData({ ...formData, businessRole: item.value })}
+        containerStyle={{ borderRadius: 10 }}
+      />
+    </View>
+  );
+
   return (
     <View style={styles.pageContainer}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -133,11 +276,20 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 
         {renderField("Business Name", formData.name, "name")}
         {renderField("Location", formData.location, "location")}
+        {renderField("Address Line 2", formData.addressLine2, "addressLine2")}
+        {renderField("City", formData.city, "city")}
+        {renderField("State", formData.state, "state")}
+        {renderField("Country", formData.country, "country")}
+        {renderField("Zip Code", formData.zip, "zip")}
         {renderField("Phone Number", formData.phone, "phone", "", "phoneIsPublic")}
         {renderField("Email", formData.email, "email", "", "emailIsPublic")}
         {renderField("Business Category", formData.category, "category")}
         {renderField("Tag Line", formData.tagline, "tagline", "", "taglineIsPublic")}
         {renderField("Short Bio", formData.shortBio, "shortBio", "", "shortBioIsPublic")}
+        {renderBusinessRoleField()}
+        {renderField("EIN Number", formData.einNumber, "einNumber")}
+        {renderField("Website", formData.website, "website")}
+        {renderCustomTagsSection()}
 
         <View style={styles.previewSection}>
           <Text style={styles.label}>MiniCard Preview:</Text>
@@ -149,6 +301,8 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         {renderSocialField("Instagram", "instagram")}
         {renderSocialField("LinkedIn", "linkedin")}
         {renderSocialField("YouTube", "youtube")}
+
+        {renderImagesSection()}
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Save</Text>
@@ -187,5 +341,73 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     padding: 10,
     borderRadius: 8,
+  },
+  tagInputContainer: { flexDirection: "row", alignItems: "center" },
+  addTagButton: {
+    backgroundColor: "#00C721",
+    padding: 10,
+    borderRadius: 5,
+  },
+  addTagButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 5,
+  },
+  tagChip: {
+    backgroundColor: "#f0f0f0",
+    padding: 8,
+    borderRadius: 15,
+    marginRight: 8,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  tagText: {
+    fontSize: 14,
+    marginRight: 5,
+  },
+  removeTagText: {
+    color: "red",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  imageScroll: {
+    marginTop: 10,
+  },
+  imageContainer: {
+    width: 100,
+    height: 100,
+    marginRight: 10,
+  },
+  businessImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 5,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    padding: 5,
+  },
+  removeImageText: {
+    color: "red",
+    fontSize: 16,
+  },
+  addImageButton: {
+    backgroundColor: "#00C721",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  addImageButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

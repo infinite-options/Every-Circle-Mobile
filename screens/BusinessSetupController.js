@@ -6,6 +6,7 @@ import BusinessStep1 from './BusinessStep1';
 import BusinessStep2 from './BusinessStep2';
 import BusinessStep3 from './BusinessStep3';
 import ContinueButton from '../components/ContinueButton';
+import BottomNavBar from '../components/BottomNavBar';
 
 const BusinessProfileApi = 'https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo';
 
@@ -80,6 +81,8 @@ export default function BusinessSetupController({ navigation }) {
         return;
       }
       setUserUid(uid);
+      // Clear any existing business form data for fresh start
+      await AsyncStorage.removeItem('businessFormData');
       setLoading(false);
     };
     fetchUid();
@@ -169,6 +172,9 @@ console.log('Formatted Output:', formatted);
 
       const result = await response.json();
       if (response.ok) {
+        // Clear any cached profile data to force refresh
+        await AsyncStorage.removeItem('cachedProfileData');
+        
         navigation.navigate('BusinessProfile', { business_uid: result.business_uid });
         // navigation.navigate('BusinessProfile');
 
@@ -191,11 +197,11 @@ console.log('Formatted Output:', formatted);
   const renderStep = () => {
     switch (activeStep) {
       case 0:
-        return <BusinessStep1 formData={formData} setFormData={setFormData} />;
+        return <BusinessStep1 formData={formData} setFormData={setFormData} navigation={navigation} />;
       case 1:
-        return <BusinessStep2 formData={formData} setFormData={setFormData} />;
+        return <BusinessStep2 formData={formData} setFormData={setFormData} navigation={navigation} />;
       case 2:
-        return <BusinessStep3 formData={formData} setFormData={setFormData} />;
+        return <BusinessStep3 formData={formData} setFormData={setFormData} navigation={navigation} />;
       default:
         return null;
     }
@@ -205,12 +211,11 @@ console.log('Formatted Output:', formatted);
 
   return (
     <View style={styles.container}>
-    {renderStep()}
-      <ContinueButton 
-      onNext={handleNext} 
-      onBack={handleBack} 
-      showBack={activeStep > 0} 
-      />
+      {renderStep()}
+      <View style={styles.bottomButtonContainer}>
+        <ContinueButton onNext={handleNext} onBack={handleBack} showBack={activeStep > 0} />
+        <BottomNavBar navigation={navigation} />
+      </View>
     </View>
   );
 }
@@ -219,5 +224,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  bottomButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#00C721',
+    paddingTop: 15,
+    paddingBottom: 80,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
