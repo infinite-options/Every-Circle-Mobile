@@ -1,7 +1,7 @@
 // BusinessProfileScreen.js
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 
@@ -65,7 +65,50 @@ export default function BusinessProfileScreen({ route, navigation }) {
           }
         }
 
-        console.log("Processed business images:", businessImages);
+        // Filter out problematic URLs that won't work in React Native
+        businessImages = businessImages.filter(uri => {
+          // Check if URI is valid
+          if (!uri || typeof uri !== "string" || uri.trim() === "" || uri === "null" || uri === "undefined") {
+            return false;
+          }
+          
+          // Filter out Google Maps API URLs that don't work in React Native
+          if (uri.includes('maps.googleapis.com/maps/api/place/js/PhotoService') || 
+              uri.includes('PhotoService.GetPhoto') ||
+              uri.includes('callback=none')) {
+            console.log("Filtering out Google API URL that won't work in React Native:", uri.substring(0, 100) + "...");
+            return false;
+          }
+          
+          // Only allow direct image URLs or valid http/https URLs
+          const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || 
+                                 uri.startsWith('http://') || 
+                                 uri.startsWith('https://');
+          
+          if (!isValidImageUrl) {
+            console.log("Filtering out invalid image URL:", uri.substring(0, 100));
+            return false;
+          }
+          
+          return true;
+        });
+
+        console.log("Processed business images after filtering:", businessImages);
+
+        // Handle custom tags if available
+        let customTags = [];
+        if (rawBusiness.custom_tags) {
+          if (typeof rawBusiness.custom_tags === "string") {
+            try {
+              customTags = JSON.parse(rawBusiness.custom_tags);
+            } catch (e) {
+              console.log("Failed to parse custom_tags as JSON");
+              customTags = [];
+            }
+          } else if (Array.isArray(rawBusiness.custom_tags)) {
+            customTags = rawBusiness.custom_tags;
+          }
+        }
 
         setBusiness({
           ...rawBusiness,
@@ -74,6 +117,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
           linkedin: socialLinksData.linkedin || "",
           youtube: socialLinksData.youtube || "",
           images: businessImages,
+          customTags: customTags,
           emailIsPublic: rawBusiness.email_is_public === "1",
           phoneIsPublic: rawBusiness.phone_is_public === "1",
           taglineIsPublic: rawBusiness.tagline_is_public === "1",
@@ -107,15 +151,21 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
   return (
     <View style={styles.pageContainer}>
+      {/* Header with Back Button */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Business Profile</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Header Section with Edit Button */}
-        <View style={styles.headerSection}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.header}>{business.business_name}</Text>
-            {business.taglineIsPublic && business.tagline ? (
-              <Text style={styles.tagline}>{business.tagline}</Text>
-            ) : null}
-          </View>
+        {/* Edit Button */}
+        <View style={styles.editButtonContainer}>
           <TouchableOpacity
             style={styles.editButton}
             onPress={() =>
@@ -129,6 +179,21 @@ export default function BusinessProfileScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Business Card (MiniCard at top) */}
+        <View style={styles.card}>
+          <MiniCard
+            business={{
+              business_name: business.business_name,
+              business_address_line_1: business.business_address_line_1,
+              business_zip_code: business.business_zip_code,
+              business_phone_number: business.business_phone_number,
+              business_website: business.business_website,
+              first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+              phoneIsPublic: business.phoneIsPublic,
+            }}
+          />
+        </View>
+
         {/* Contact Information Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
@@ -137,8 +202,11 @@ export default function BusinessProfileScreen({ route, navigation }) {
             <Text style={styles.label}>Location:</Text>
             <Text style={styles.value}>
               {business.business_address_line_1 || "N/A"}
+              {business.business_address_line_2 && `, ${business.business_address_line_2}`}
               {business.business_city && `, ${business.business_city}`}
+              {business.business_state && `, ${business.business_state}`}
               {business.business_zip_code && `, ${business.business_zip_code}`}
+              {business.business_country && `, ${business.business_country}`}
             </Text>
           </View>
 
@@ -167,13 +235,76 @@ export default function BusinessProfileScreen({ route, navigation }) {
               <Text style={styles.link}>🌐 {business.business_website}</Text>
             </View>
           )}
+
+          {business.business_role && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Business Role:</Text>
+              <Text style={styles.value}>{business.business_role}</Text>
+            </View>
+          )}
+
+          {business.ein_number && (
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>EIN Number:</Text>
+              <Text style={styles.value}>{business.ein_number}</Text>
+            </View>
+          )}
         </View>
+
+        {/* Business Details Card */}
+        {(business.taglineIsPublic && business.tagline) && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Tagline</Text>
+            <Text style={styles.bioText}>{business.tagline}</Text>
+          </View>
+        )}
 
         {/* About Section */}
         {business.shortBioIsPublic && business.business_short_bio && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>About</Text>
             <Text style={styles.bioText}>{business.business_short_bio}</Text>
+          </View>
+        )}
+
+        {/* Business Hours */}
+        {business.business_hours && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Business Hours</Text>
+            <Text style={styles.bioText}>{business.business_hours}</Text>
+          </View>
+        )}
+
+        {/* Rating and Price Level */}
+        {(business.google_rating || business.price_level) && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Rating & Pricing</Text>
+            {business.google_rating && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Google Rating:</Text>
+                <Text style={styles.value}>⭐ {business.google_rating}</Text>
+              </View>
+            )}
+            {business.price_level && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Price Level:</Text>
+                <Text style={styles.value}>{'$'.repeat(parseInt(business.price_level) || 1)}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Custom Tags */}
+        {business.customTags && business.customTags.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Tags</Text>
+            <View style={styles.tagsContainer}>
+              {business.customTags.map((tag, index) => (
+                <View key={index} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
@@ -188,41 +319,32 @@ export default function BusinessProfileScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Business Images Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Business Images</Text>
-          {Array.isArray(business.images) && business.images.length > 0 ? (
+        {/* Business Images Card - Only show if there are images */}
+        {Array.isArray(business.images) && business.images.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Business Images</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
               {business.images.map((uri, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: typeof uri === "string" ? uri : uri.url || uri.photo_url }}
-                  style={styles.image}
-                  onError={(error) => console.log(`Image ${index} failed to load:`, error.nativeEvent.error)}
-                  onLoad={() => console.log(`Image ${index} loaded successfully`)}
-                />
+                <View key={index} style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: uri }}
+                    style={styles.image}
+                    onError={(error) => {
+                      console.log(`Business image ${index} failed to load:`, error.nativeEvent.error);
+                      console.log(`Problematic URI:`, uri);
+                    }}
+                    onLoad={() => console.log(`Business image ${index} loaded successfully`)}
+                    defaultSource={require("../assets/profile.png")}
+                    resizeMode="cover"
+                  />
+                </View>
               ))}
             </ScrollView>
-          ) : (
-            <Text style={styles.noDataText}>No images available</Text>
-          )}
-        </View>
-
-        {/* Business Card Preview */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Business Card Preview</Text>
-          <MiniCard
-            business={{
-              business_name: business.business_name,
-              business_address_line_1: business.business_address_line_1,
-              business_zip_code: business.business_zip_code,
-              business_phone_number: business.business_phone_number,
-              business_website: business.business_website,
-              first_image: business.images && business.images.length > 0 ? business.images[0] : null,
-              phoneIsPublic: business.phoneIsPublic,
-            }}
-          />
-        </View>
+            {business.images.length === 0 && (
+              <Text style={styles.noDataText}>No compatible images available</Text>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       <BottomNavBar navigation={navigation} />
@@ -234,6 +356,30 @@ const styles = StyleSheet.create({
   pageContainer: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+  },
+  header: {
+    backgroundColor: "#9C45F7",
+    paddingTop: 50,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    flex: 1,
+    textAlign: "center",
+  },
+  headerSpacer: {
+    width: 40, // Same width as back button to center the title
   },
   container: {
     flex: 1,
@@ -248,29 +394,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerSection: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-  },
-  titleContainer: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#333",
-  },
-  tagline: {
-    fontSize: 16,
-    fontStyle: "italic",
-    color: "#777",
+  editButtonContainer: {
+    alignItems: "flex-end",
+    marginBottom: 10,
   },
   card: {
     backgroundColor: "#fff",
@@ -317,6 +443,24 @@ const styles = StyleSheet.create({
     color: "#1a73e8",
     marginBottom: 8,
   },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 5,
+  },
+  tag: {
+    backgroundColor: "#E8F4FD",
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagText: {
+    color: "#1a73e8",
+    fontSize: 14,
+    fontWeight: "500",
+  },
   noDataText: {
     fontSize: 16,
     color: "#777",
@@ -331,12 +475,17 @@ const styles = StyleSheet.create({
   imageScroll: {
     marginVertical: 10,
   },
-  image: {
+  imageContainer: {
     width: 120,
     height: 120,
     marginRight: 10,
     borderRadius: 10,
     backgroundColor: "#f0f0f0",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 10,
   },
   editButton: {
     backgroundColor: "#f0f0f0",
