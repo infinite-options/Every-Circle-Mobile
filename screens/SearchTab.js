@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
 
@@ -27,7 +27,14 @@ export default function SearchTab({ route }) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <Text style={styles.title}>Search</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       {/* Content */}
@@ -106,6 +113,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#9C45F7",
     paddingTop: 50,
     paddingBottom: 80,
+    paddingHorizontal: 20,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     borderBottomLeftRadius: 300,
@@ -115,6 +124,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#fff",
+    flex: 1,
+    textAlign: "center",
   },
   contentContainer: {
     flex: 1,
@@ -206,5 +217,13 @@ const styles = StyleSheet.create({
   bannerAdText: {
     fontSize: 16,
     fontWeight: "bold",
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
+  headerSpacer: {
+    width: 40, // Same width as back button to center the title
   },
 });

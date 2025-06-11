@@ -28,7 +28,15 @@ const MiniCard = ({ user, business }) => {
     return (
       <View style={styles.cardContainer}>
         {/* Business Image */}
-        <Image source={businessImage ? { uri: businessImage } : require("../assets/profile.png")} style={styles.profileImage} />
+        <Image 
+          source={businessImage && businessImage.trim() !== "" ? { uri: businessImage } : require("../assets/profile.png")} 
+          style={styles.profileImage}
+          onError={(error) => {
+            console.log("MiniCard business image failed to load:", error.nativeEvent.error);
+            console.log("Problematic business image URI:", businessImage);
+          }}
+          defaultSource={require("../assets/profile.png")}
+        />
 
         {/* Business Info */}
         <View style={styles.textContainer}>
@@ -70,7 +78,15 @@ const MiniCard = ({ user, business }) => {
   return (
     <View style={styles.cardContainer}>
       {/* Profile Image */}
-      <Image source={profileImage && profileImage !== "" ? { uri: String(profileImage) } : require("../assets/profile.png")} style={styles.profileImage} />
+      <Image 
+        source={profileImage && profileImage !== "" && String(profileImage).trim() !== "" ? { uri: String(profileImage) } : require("../assets/profile.png")} 
+        style={styles.profileImage}
+        onError={(error) => {
+          console.log("MiniCard user image failed to load:", error.nativeEvent.error);
+          console.log("Problematic user image URI:", profileImage);
+        }}
+        defaultSource={require("../assets/profile.png")}
+      />
 
       {/* User Info */}
       <View style={styles.textContainer}>

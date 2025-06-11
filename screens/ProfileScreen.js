@@ -177,7 +177,18 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.cardContainer}>
-          <Image source={user.profileImage && user.profileImage !== "" && user.imageIsPublic ? { uri: String(user.profileImage) } : require("../assets/profile.png")} style={styles.profileImage} />
+          <Image 
+            source={user.profileImage && user.profileImage !== "" && user.imageIsPublic && String(user.profileImage).trim() !== "" 
+              ? { uri: String(user.profileImage) } 
+              : require("../assets/profile.png")
+            } 
+            style={styles.profileImage}
+            onError={(error) => {
+              console.log("ProfileScreen image failed to load:", error.nativeEvent.error);
+              console.log("Problematic profile image URI:", user.profileImage);
+            }}
+            defaultSource={require("../assets/profile.png")}
+          />
           <Text style={styles.nameText}>
             {user.firstName} {user.lastName}
           </Text>
