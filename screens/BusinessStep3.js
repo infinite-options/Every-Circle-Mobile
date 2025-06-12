@@ -8,6 +8,7 @@ const { width } = Dimensions.get('window');
 
 export default function BusinessStep3({ formData, setFormData, navigation }) {
   useEffect(() => {
+    console.log('In BusinessStep3');
     const loadSavedForm = async () => {
       try {
         const stored = await AsyncStorage.getItem('businessFormData');

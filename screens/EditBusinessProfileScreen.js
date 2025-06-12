@@ -82,19 +82,33 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       payload.append("business_website", formData.website);
       payload.append("custom_tags", JSON.stringify(formData.customTags));
       
-      // Handle images
-      const imagesArray = formData.images || [];
-      imagesArray.forEach((imageUri, index) => {
+      // Separate Google and user-uploaded images
+      const googleImages = formData.images || [];
+      const userImages = formData.images || [];
+
+      // Append Google images as URLs
+      payload.append('business_google_photos', JSON.stringify(googleImages));
+
+      // Append user-uploaded images as files and collect their filenames
+      const userImageFilenames = [];
+      userImages.forEach((imageUri, index) => {
         if (imageUri && (imageUri.startsWith('file://') || imageUri.startsWith('content://'))) {
-          // This is a local file that needs to be uploaded
-          payload.append(`image_${index}`, {
-            uri: imageUri,
-            type: 'image/jpeg',
-            name: `business_image_${index}.jpg`,
-          });
+          const uriParts = imageUri.split('.');
+          const fileType = uriParts[uriParts.length - 1];
+          const fileName = `business_image_${index}.${fileType}`;
+          userImageFilenames.push(fileName);
+          payload.append(
+            `image_${index}`,
+            {
+              uri: imageUri,
+              type: `image/${fileType}`,
+              name: fileName,
+            }
+          );
         }
       });
-      payload.append("business_google_photos", JSON.stringify(imagesArray));
+      // Send the filenames as business_images_url
+      payload.append('business_images_url', JSON.stringify(userImageFilenames));
       
       payload.append("social_links", JSON.stringify(formData.socialLinks));
       payload.append("business_email_id_is_public", formData.emailIsPublic ? "1" : "0");
@@ -128,6 +142,11 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         Alert.alert("Error", "Update failed. Try again.");
       }
     } catch (error) {
+      // Handle 413 Payload Too Large
+      if (error.response && error.response.status === 413) {
+        Alert.alert("File Too Large", `One or more images were too large to upload (total size: ${(newTotal / 1024).toFixed(1)} KB). Please select images under 2MB.`);
+        return;
+      }
       console.error("Save error:", error);
       Alert.alert("Error", "Something went wrong.");
     }
@@ -147,14 +166,34 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   };
 
   const handleImagePick = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsMultipleSelection: true,
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
     });
     
     if (!result.canceled) {
-      const newImages = result.assets.map(asset => asset.uri);
+      // Calculate total size of current images (if any have fileSize info)
+      let currentTotal = 0;
+      // If images are local files, we can't get their size here, so we only check new ones
+      // If you want to enforce stricter checks, you could store fileSize in state for each image
+
+      // Calculate total size of new images
+      let newTotal = 0;
+      let newImages = [];
+      for (const asset of result.assets) {
+        if (asset.fileSize) {
+          newTotal += asset.fileSize;
+        }
+        newImages.push(asset.uri);
+      }
+      // 2MB = 2 * 1024 * 1024 = 2,097,152 bytes
+      const MAX_SIZE = 2 * 1024 * 1024;
+      if (newTotal > MAX_SIZE) {
+        Alert.alert('File not selectable', `Total image size (${(newTotal / 1024).toFixed(1)} KB) will exceed the 2MB upload limit.`);
+        return;
+      }
       const currentImages = formData.images || [];
       setFormData({ ...formData, images: [...currentImages, ...newImages] });
     }
@@ -317,7 +356,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: "#fff" },
   container: { flex: 1 },
-  contentContainer: { padding: 20, paddingBottom: 30 },
+  contentContainer: { padding: 20, paddingBottom: 120 },
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
@@ -325,16 +364,25 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5 },
   saveButton: {
     backgroundColor: "#00C721",
-    paddingVertical: 12,
-    borderRadius: 8,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
     marginTop: 30,
-    marginBottom: 0,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   saveButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
   previewSection: {
     marginVertical: 20,

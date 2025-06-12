@@ -18,8 +18,11 @@ export default function SettingsScreen() {
   const [displayEmail, setDisplayEmail] = useState(true);
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState(false);
 
+  console.log('In SettingsScreen');
+
   // on mount, pull saved values
   useEffect(() => {
+    // console.log('In SettingsScreen');
     (async () => {
       const e = await AsyncStorage.getItem("displayEmail");
       const p = await AsyncStorage.getItem("displayPhone");

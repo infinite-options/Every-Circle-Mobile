@@ -143,6 +143,22 @@ const EditProfileScreen = ({ route, navigation }) => {
       console.log("Image picker result:", JSON.stringify(result, null, 2));
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
+        // File size check (2MB = 2 * 1024 * 1024 = 2,097,152 bytes)
+        const asset = result.assets[0];
+        let fileSize = asset.fileSize;
+        if (!fileSize && asset.uri) {
+          // Try to get file size using FileSystem
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+            fileSize = fileInfo.size;
+          } catch (e) {
+            console.log("Could not get file size from FileSystem", e);
+          }
+        }
+        if (fileSize && fileSize > 2 * 1024 * 1024) {
+          Alert.alert("File not selectable", `Image size (${(fileSize / 1024).toFixed(1)} KB) exceeds the 2MB upload limit.`);
+          return;
+        }
         console.log("Image selected successfully");
         if (originalProfileImage && originalProfileImage !== result.assets[0].uri) {
           console.log("Setting deleteProfileImage to:", originalProfileImage);
@@ -393,6 +409,11 @@ const EditProfileScreen = ({ route, navigation }) => {
         Alert.alert("Error", "Failed to update profile.");
       }
     } catch (error) {
+      // Handle 413 Payload Too Large
+      if (error.response && error.response.status === 413) {
+        Alert.alert("File Too Large", `The selected image (${(imageFileSize / 1024).toFixed(1)} KB) was too large to upload. Please select an image under 2MB.`);
+        return;
+      }
       console.error("Update Error:", error);
       let errorMsg = "Update failed. Please try again.";
       if (imageFileSize > 0) {
@@ -451,8 +472,8 @@ const EditProfileScreen = ({ route, navigation }) => {
   };
 
   return (
-    <>
-      <ScrollView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: "#fff", position: "relative" }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         <Text style={styles.header}>Edit Profile</Text>
 
         {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
@@ -532,9 +553,10 @@ const EditProfileScreen = ({ route, navigation }) => {
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
-
-        <BottomNavBar navigation={navigation} />
       </ScrollView>
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+        <BottomNavBar navigation={navigation} />
+      </View>
       {/* Business Approval Modal */}
       <Modal visible={showBusinessModal} transparent={true} animationType='fade' onRequestClose={() => setShowBusinessModal(false)}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" }}>
@@ -556,7 +578,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 };
 

@@ -1,7 +1,8 @@
 // BusinessStep2.js
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import { Dropdown } from "react-native-element-dropdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavBar from "../components/BottomNavBar";
@@ -26,6 +27,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
   const combinedImages = [...googlePhotos, ...userUploadedImages];
 
   useEffect(() => {
+    console.log('In BusinessStep2');
     const fetchCategories = async () => {
       try {
         const res = await fetch("https://ioec2testsspm.infiniteoptions.com/category_list/all");
@@ -78,17 +80,54 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
   }, [selectedMain, selectedSub, selectedSubSub, customTags]);
 
   const handleImagePick = async (index) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-    });
-    if (!result.canceled) {
-      const newImageUri = result.assets[0].uri;
-      const updated = [...userUploadedImages];
-      updated[index] = newImageUri;
-      const newFormData = { ...formData, images: updated };
-      setFormData(newFormData);
-      AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission required", "Permission to access media library is required!");
+        return;
+      }
+      // Launch picker with new API
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        let fileSize = asset.fileSize;
+        if (!fileSize && asset.uri) {
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+            fileSize = fileInfo.size;
+          } catch (e) {
+            console.log("Could not get file size from FileSystem", e);
+          }
+        }
+        if (fileSize && fileSize > 2 * 1024 * 1024) {
+          Alert.alert("File not selectable", "Image size exceeds the 2MB upload limit.");
+          return;
+        }
+        const newImageUri = asset.uri;
+        const updated = [...userUploadedImages];
+        updated[index] = newImageUri;
+        const newFormData = { ...formData, images: updated };
+        setFormData(newFormData);
+        AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
+      }
+    } catch (error) {
+      let errorMessage = "Failed to pick image. ";
+      if (error.name === "PermissionDenied") {
+        errorMessage += "Permission was denied.";
+      } else if (error.name === "ImagePickerError") {
+        errorMessage += "There was an error with the image picker.";
+      } else if (error.message && error.message.includes("permission")) {
+        errorMessage += "Permission issue detected.";
+      } else if (error.message && error.message.includes("canceled")) {
+        errorMessage += "Operation was canceled.";
+      }
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -112,146 +151,165 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#00C721' }}>
-      <ScrollView
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingBottom: 120 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={90}
       >
-        <View style={styles.formCard}>
-          <Text style={styles.title}>Select Category</Text>
-          <Text style={styles.subtitle}>Select Tags for your business</Text>
+        <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 20, alignItems: 'center' }}>
+          <ScrollView
+            style={{ flex: 1, width: '100%' }}
+            contentContainerStyle={{  justifyContent: 'center', alignItems: 'center', paddingBottom: 120 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.formCard}>
+              <Text style={styles.title}>Select Category</Text>
+              <Text style={styles.subtitle}>Select Tags for your business</Text>
 
-          <Text style={styles.label}>Main Categories</Text>
-          <Dropdown
-            style={styles.dropdown}
-            data={mainCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
-            labelField='label'
-            valueField='value'
-            placeholder='Select Main Category'
-            value={selectedMain}
-            onChange={(item) => setSelectedMain(item.value)}
-          />
-
-          {subCategories.length > 0 && (
-            <>
-              <Text style={styles.label}>Sub Categories (Optional)</Text>
+              <Text style={styles.label}>Main Categories</Text>
               <Dropdown
-                style={styles.dropdown}
-                data={subCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
+                style={styles.input}
+                data={mainCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
                 labelField='label'
                 valueField='value'
-                placeholder='Select Sub Category'
-                value={selectedSub}
-                onChange={(item) => setSelectedSub(item.value)}
+                placeholder='Select Main Category'
+                value={selectedMain}
+                onChange={(item) => setSelectedMain(item.value)}
               />
-            </>
-          )}
 
-          {subSubCategories.length > 0 && (
-            <>
-              <Text style={styles.label}>Sub-Sub Categories (Optional)</Text>
-              <Dropdown
-                style={styles.dropdown}
-                data={subSubCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
-                labelField='label'
-                valueField='value'
-                placeholder='Select Sub-Sub Category'
-                value={selectedSubSub}
-                onChange={(item) => setSelectedSubSub(item.value)}
+              {subCategories.length > 0 && (
+                <>
+                  <Text style={styles.label}>Sub Categories (Optional)</Text>
+                  <Dropdown
+                    style={styles.input}
+                    data={subCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
+                    labelField='label'
+                    valueField='value'
+                    placeholder='Select Sub Category'
+                    value={selectedSub}
+                    onChange={(item) => setSelectedSub(item.value)}
+                  />
+                </>
+              )}
+
+              {subSubCategories.length > 0 && (
+                <>
+                  <Text style={styles.label}>Sub-Sub Categories (Optional)</Text>
+                  <Dropdown
+                    style={styles.input}
+                    data={subSubCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
+                    labelField='label'
+                    valueField='value'
+                    placeholder='Select Sub-Sub Category'
+                    value={selectedSubSub}
+                    onChange={(item) => setSelectedSubSub(item.value)}
+                  />
+                </>
+              )}
+
+              <Text style={styles.label}>Brief Description</Text>
+              <TextInput
+                style={styles.textarea}
+                placeholder='Describe your business...'
+                value={formData.shortBio}
+                multiline
+                numberOfLines={4}
+                onChangeText={(text) => {
+                  const updated = { ...formData, shortBio: text };
+                  setFormData(updated);
+                  AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
+                }}
               />
-            </>
-          )}
 
-          <Text style={styles.label}>Brief Description</Text>
-          <TextInput
-            style={styles.textarea}
-            placeholder='Describe your business...'
-            value={formData.shortBio}
-            multiline
-            numberOfLines={4}
-            onChangeText={(text) => {
-              const updated = { ...formData, shortBio: text };
-              setFormData(updated);
-              AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
-            }}
-          />
+              <Text style={styles.label}>Images</Text>
+              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={true} style={styles.carousel}>
+                <View style={styles.imageRow}>
+                  {combinedImages.map((img, index) => {
+                    console.log("BS2 Image URI at index", index, ":", img);
+                    return (
+                      <View key={index} style={styles.imageWrapper}>
+                        <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
+                        <TouchableOpacity
+                          style={styles.deleteIcon}
+                          onPress={() => {
+                            const isGoogle = index < googlePhotos.length;
+                            const updated = isGoogle
+                              ? [...googlePhotos.slice(0, index), ...googlePhotos.slice(index + 1)]
+                              : [...userUploadedImages.slice(0, index - googlePhotos.length), ...userUploadedImages.slice(index - googlePhotos.length + 1)];
 
-          <Text style={styles.label}>Images</Text>
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={true} style={styles.carousel}>
-            <View style={styles.imageRow}>
-              {combinedImages.map((img, index) => (
-                <View key={index} style={styles.imageWrapper}>
-                  <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
-                  <TouchableOpacity
-                    style={styles.deleteIcon}
-                    onPress={() => {
-                      const isGoogle = index < googlePhotos.length;
-                      const updated = isGoogle
-                        ? [...googlePhotos.slice(0, index), ...googlePhotos.slice(index + 1)]
-                        : [...userUploadedImages.slice(0, index - googlePhotos.length), ...userUploadedImages.slice(index - googlePhotos.length + 1)];
+                            const newFormData = {
+                              ...formData,
+                              businessGooglePhotos: isGoogle ? updated : googlePhotos,
+                              images: !isGoogle ? updated : userUploadedImages,
+                            };
+                            setFormData(newFormData);
+                            AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
+                          }}
+                        >
+                          <Text style={styles.deleteText}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
 
-                      const newFormData = {
-                        ...formData,
-                        businessGooglePhotos: isGoogle ? updated : googlePhotos,
-                        images: !isGoogle ? updated : userUploadedImages,
-                      };
-                      setFormData(newFormData);
-                      AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
-                    }}
-                  >
-                    <Text style={styles.deleteText}>✕</Text>
+                  <TouchableOpacity style={styles.uploadBox} onPress={() => handleImagePick(userUploadedImages.length)}>
+                    <Text style={styles.uploadText}>Upload Image</Text>
                   </TouchableOpacity>
                 </View>
-              ))}
+              </ScrollView>
 
-              {/* {userUploadedImages.length < 3 && ( */}
-              <TouchableOpacity style={styles.uploadBox} onPress={() => handleImagePick(userUploadedImages.length)}>
-                <Text style={styles.uploadText}>Upload Image</Text>
-              </TouchableOpacity>
-              {/* )} */}
+              <Text style={styles.label}>Custom Tags</Text>
+              <View style={styles.tagRow}>
+                <TextInput
+                  style={styles.tagInput}
+                  placeholder='Add tag'
+                  value={customTag}
+                  onChangeText={setCustomTag}
+                  onSubmitEditing={addTag}
+                />
+                <TouchableOpacity onPress={addTag} style={styles.tagButton}>
+                  <Text style={styles.tagButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.tagList}>
+                {customTags.map((tag, i) => (
+                  <TouchableOpacity key={i} onPress={() => removeTag(tag)} style={styles.tagItem}>
+                    <Text>{tag} ✕</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </ScrollView>
-
-          {/*  custom tags */}
-
-          <Text style={styles.label}>Custom Tags</Text>
-          <View style={styles.tagRow}>
-            <TextInput
-              style={styles.tagInput}
-              placeholder='Add tag'
-              // value={customTag}
-              // onChangeText={setCustomTag}
-              // onSubmitEditing={addTag}
-            />
-            <TouchableOpacity onPress={addTag} style={styles.tagButton}>
-              <Text style={styles.tagButtonText}>Add</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.tagList}>
-            {customTags.map((tag, i) => (
-              <TouchableOpacity key={i} onPress={() => removeTag(tag)} style={styles.tagItem}>
-                <Text>{tag} ✕</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </View>
-      </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // container: {
+  //   width: width * 1.3,
+  //   flex: 1,
+  //   backgroundColor: "#00C721",
+  //   borderTopLeftRadius: width,
+  //   borderTopRightRadius: width,
+  //   // borderBottomLeftRadius: width,
+  //   // borderBottomRightRadius: width,
+  //   alignSelf: "center",
+  //   paddingLeft: 80,
+  //   paddingRight: 80,
+  // },
   container: {
+    alignSelf: 'center',
     width: width * 1.3,
     flex: 1,
-    backgroundColor: "#00C721",
+    // borderRadius: width,
     borderTopLeftRadius: width,
     borderTopRightRadius: width,
-    // borderBottomLeftRadius: width,
-    // borderBottomRightRadius: width,
-    alignSelf: "center",
-    paddingLeft: 80,
-    paddingRight: 80,
+    padding: 90,
+    paddingTop: 80,
+    alignItems: 'center',
   },
   scrollContent: {
     borderBottomLeftRadius: width,
@@ -261,75 +319,47 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-    marginBottom: 5,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 10,
   },
   subtitle: {
-    color: "#fff",
-    textAlign: "center",
-    marginBottom: 20,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
   },
   label: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    color: '#333',
+    fontWeight: 'bold',
+    marginBottom: 4,
+    marginTop: 10,
   },
-  dropdown: {
-    backgroundColor: "#fff",
+  input: {
+    backgroundColor: '#fff',
     borderRadius: 10,
-    paddingHorizontal: 12,
-    marginBottom: 20,
-    height: 50,
-  },
-  subCategoryContainer: {
-    marginTop: -10,
-  },
-  subSubCategoryContainer: {
-    marginTop: -10,
+    padding: 12,
+    width: '100%',
+    marginBottom: 15,
   },
   textarea: {
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 12,
     height: 100,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
     marginBottom: 20,
-  },
-  imageRow: {
-    flexDirection: "row",
-    // justifyContent: 'space-between',
-    marginBottom: 20,
-    gap: 0,
-  },
-  uploadBox: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    width: 80,
-    height: 80,
-    // aspectRatio: 1.5,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  uploadedImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 10,
-    // aspectRatio: 1.5,
-  },
-  uploadText: {
-    color: "#888",
-    fontSize: 12,
-    textAlign: "center",
+    width: '100%',
   },
   tagRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
   tagInput: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 10,
+    marginRight: 10,
   },
   tagButton: {
     backgroundColor: "#FFA500",
@@ -400,10 +430,11 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 420,
     alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: 16,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 8,
+    // elevation: 4,
   },
 });
