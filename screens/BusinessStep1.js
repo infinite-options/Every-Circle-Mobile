@@ -12,6 +12,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
   const googlePlacesRef = useRef();
 
   useEffect(() => {
+    console.log('In BusinessStep1');
     // Don't load saved form data - start fresh for new business
     // const loadSavedForm = async () => {
     //   try {
@@ -90,8 +91,11 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
       console.log("Fetching business for Place ID:", googlePlaceId);
       setLoading(true);
       const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo/${googlePlaceId}`);
+      console.log("Business Fetch Response:", response);
       if (response.ok) {
         const result = await response.json();
+        console.log("here 3")
+        console.log("Business Fetch Result:", result);
         const business = result?.result?.[0];
         if (business) {
           console.log("Business claimed:", business);
@@ -117,7 +121,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#00C721' }}>
-      <View style={{ flex: 1, marginBottom: 220 }}>
+      <View style={{ flex: 1 }}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -127,7 +131,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
             flex: 1,
             paddingTop: 60, 
             paddingHorizontal: 20, 
-            paddingBottom: 40,
+            paddingBottom: 0,
             alignItems: 'center' 
           }}>
             <View style={styles.formCard}>
@@ -278,11 +282,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 420,
     alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: 16,
   },
   helperText: {
     fontSize: 12,

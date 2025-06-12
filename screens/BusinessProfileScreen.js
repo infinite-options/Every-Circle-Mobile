@@ -166,32 +166,32 @@ export default function BusinessProfileScreen({ route, navigation }) {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Edit Button */}
         <View style={styles.editButtonContainer}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() =>
-              navigation.navigate("EditBusinessProfile", {
-                business: business,
-                business_uid: business_uid,
-              })
-            }
-          >
-            <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() =>
+            navigation.navigate("EditBusinessProfile", {
+              business: business,
+              business_uid: business_uid,
+            })
+          }
+        >
+          <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
+        </TouchableOpacity>
         </View>
 
         {/* Business Card (MiniCard at top) */}
         <View style={styles.card}>
-          <MiniCard
-            business={{
-              business_name: business.business_name,
-              business_address_line_1: business.business_address_line_1,
-              business_zip_code: business.business_zip_code,
-              business_phone_number: business.business_phone_number,
-              business_website: business.business_website,
-              first_image: business.images && business.images.length > 0 ? business.images[0] : null,
-              phoneIsPublic: business.phoneIsPublic,
-            }}
-          />
+        <MiniCard
+          business={{
+            business_name: business.business_name,
+            business_address_line_1: business.business_address_line_1,
+            business_zip_code: business.business_zip_code,
+            business_phone_number: business.business_phone_number,
+            business_website: business.business_website,
+            first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+            phoneIsPublic: business.phoneIsPublic,
+          }}
+        />
         </View>
 
         {/* Contact Information Card */}

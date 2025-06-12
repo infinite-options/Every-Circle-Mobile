@@ -223,7 +223,7 @@ console.log('Formatted Output:', formatted);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#00C721',
   },
   bottomButtonContainer: {
     position: 'absolute',
@@ -231,15 +231,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#00C721',
-    paddingTop: 15,
+    paddingTop: 0,
     paddingBottom: 80,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: -2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 5,
   },
 });

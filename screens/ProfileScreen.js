@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from '@react-navigation/native';
 
 // const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
 const baseURI = "https://ioec2testsspm.infiniteoptions.com";
@@ -16,39 +17,40 @@ const ProfileScreen = ({ route, navigation }) => {
   const [user, setUser] = useState(null);
   const [profileUID, setProfileUID] = useState("");
 
-  useEffect(() => {
-    async function loadProfile() {
-      setLoading(true);
-      let profileId = await AsyncStorage.getItem("profile_uid");
-      if (profileId) {
-        setProfileUID(profileId);
-        await fetchUserData(profileId);
-        return;
-      }
-      // If no profile_uid, try to get user_uid and fetch profile
-      const userId = await AsyncStorage.getItem("user_uid");
-      if (userId) {
-        try {
-          const response = await fetch(`${ProfileScreenAPI}/${userId}`);
-          const apiUser = await response.json();
-          if (apiUser && apiUser.personal_info?.profile_personal_uid) {
-            profileId = apiUser.personal_info.profile_personal_uid;
-            setProfileUID(profileId);
-            await AsyncStorage.setItem("profile_uid", profileId);
-            await fetchUserData(profileId);
-            return;
-          }
-        } catch (err) {
-          console.error("Error fetching profile by user_uid:", err);
+  useFocusEffect(
+    React.useCallback(() => {
+      async function loadProfile() {
+        setLoading(true);
+        let profileId = await AsyncStorage.getItem("profile_uid");
+        if (profileId) {
+          setProfileUID(profileId);
+          await fetchUserData(profileId);
+          return;
         }
+        // If no profile_uid, try to get user_uid and fetch profile
+        const userId = await AsyncStorage.getItem("user_uid");
+        if (userId) {
+          try {
+            const response = await fetch(`${ProfileScreenAPI}/${userId}`);
+            const apiUser = await response.json();
+            if (apiUser && apiUser.personal_info?.profile_personal_uid) {
+              profileId = apiUser.personal_info.profile_personal_uid;
+              setProfileUID(profileId);
+              await AsyncStorage.setItem("profile_uid", profileId);
+              await fetchUserData(profileId);
+              return;
+            }
+          } catch (err) {
+            console.error("Error fetching profile by user_uid:", err);
+          }
+        }
+        // If still not found, show error
+        setLoading(false);
+        Alert.alert("Error", "Failed to load profile data. Please log in again.");
       }
-      // If still not found, show error
-      setLoading(false);
-      Alert.alert("Error", "Failed to load profile data. Please log in again.");
-    }
-    loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      loadProfile();
+    }, [])
+  );
 
   async function fetchUserData(profileUID) {
     try {
@@ -306,7 +308,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  headerContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20, paddingTop: 10 },
+  headerContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10, paddingTop: 40 },
   header: { fontSize: 24, fontWeight: "bold" },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
