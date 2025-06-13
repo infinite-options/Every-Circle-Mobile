@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import config from "../config";
@@ -36,6 +36,9 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
 
   const handleGooglePlaceSelect = async (data, details = null) => {
     if (!details) return;
+
+    console.log("handleGooglePlaceSelect Data: ", data);
+    // console.log("handleGooglePlaceSelect Details: ", details);
 
     const addressComponents = details.address_components || [];
     const getComponent = (type) =>
@@ -127,13 +130,11 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={90}
         >
-          <View style={{ 
-            flex: 1,
-            paddingTop: 60, 
-            paddingHorizontal: 20, 
-            paddingBottom: 0,
-            alignItems: 'center' 
-          }}>
+          <ScrollView
+            style={{ flex: 1, width: '100%' }}
+            contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 20, alignItems: 'center', paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+          >
             <View style={styles.formCard}>
               <Text style={styles.title}>Welcome to Every Circle!</Text>
               <Text style={styles.subtitle}>Let's Build Your Business Page!</Text>
@@ -226,7 +227,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 <ActivityIndicator size="large" color="#00C721" style={styles.loadingIndicator} />
               )}
             </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </View>
     </View>

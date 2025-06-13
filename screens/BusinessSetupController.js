@@ -128,7 +128,7 @@ export default function BusinessSetupController({ navigation }) {
       data.append('business_google_photos', JSON.stringify(formData.businessGooglePhotos));
       // data.append('business_fav_image', formData.favImage);
       data.append('business_price_level', formData.priceLevel);
-      // data.append('business_google_id', formData.googleId);
+      data.append('business_google_id', formData.googleId);
       data.append('business_yelp', formData.yelp);
       data.append('business_website', formData.website);
       // Facebook, Twitter, LinkedIn, Youtube
