@@ -11,6 +11,9 @@ import ContinueButton from '../components/ContinueButton';
 const { width } = Dimensions.get("window");
 
 export default function BusinessStep2({ formData, setFormData, navigation }) {
+  useEffect(() => {
+    console.log('\nIn BusinessStep2', formData);
+  }, []);
   const [allCategories, setAllCategories] = useState([]);
   const [mainCategories, setMainCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -27,7 +30,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
   const combinedImages = [...googlePhotos, ...userUploadedImages];
 
   useEffect(() => {
-    console.log('In BusinessStep2');
+    // console.log('In BusinessStep2');
     const fetchCategories = async () => {
       try {
         const res = await fetch("https://ioec2testsspm.infiniteoptions.com/category_list/all");
@@ -225,7 +228,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
               <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={true} style={styles.carousel}>
                 <View style={styles.imageRow}>
                   {combinedImages.map((img, index) => {
-                    console.log("BS2 Image URI at index", index, ":", img);
+                    // console.log("BS2 Image URI at index", index, ":", img);
                     return (
                       <View key={index} style={styles.imageWrapper}>
                         <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
