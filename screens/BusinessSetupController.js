@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BusinessStep1 from './BusinessStep1';
 import BusinessStep2 from './BusinessStep2';
 import BusinessStep3 from './BusinessStep3';
+import BusinessStep4 from './BusinessStep4';
 import ContinueButton from '../components/ContinueButton';
 import BottomNavBar from '../components/BottomNavBar';
 
@@ -90,10 +91,9 @@ export default function BusinessSetupController({ navigation }) {
 
   const handleNext = () => {
     console.log('activeStep', activeStep);
-    if (activeStep < 2) {
+    if (activeStep < 3) {
       setActiveStep(prev => prev + 1);
     } else {
-      
       submitBusinessData();
     }
   };
@@ -139,31 +139,28 @@ export default function BusinessSetupController({ navigation }) {
 
       data.append('business_is_active', formData.business_is_active);
 
+      data.append('business_email_id_is_public', formData.business_email_id_is_public);
+      data.append('business_phone_number_is_public', formData.business_phone_number_is_public);
+      data.append('business_tag_line_is_public', formData.business_tag_line_is_public);
+      data.append('business_short_bio_is_public', formData.business_short_bio_is_public);
+      data.append('business_images_is_public', formData.business_images_is_public);
+      data.append('business_banner_ads_is_public', formData.business_banner_ad_is_public);
+      data.append('business_short_bio_is_public', formData.business_short_bio_is_public);
+      data.append('business_services_is_public', formData.business_services_is_public);
+      data.append('business_owners_is_public', formData.business_owners_is_public);
 
-data.append('business_email_id_is_public', formData.business_email_id_is_public);
-data.append('business_phone_number_is_public', formData.business_phone_number_is_public);
-data.append('business_tag_line_is_public', formData.business_tag_line_is_public);
-data.append('business_short_bio_is_public', formData.business_short_bio_is_public);
-data.append('business_images_is_public', formData.business_images_is_public);
-data.append('business_banner_ads_is_public', formData.business_banner_ad_is_public);
-data.append('business_short_bio_is_public', formData.business_short_bio_is_public);
-data.append('business_services_is_public', formData.business_services_is_public);
-data.append('business_owners_is_public', formData.business_owners_is_public);
+      // Add business_services array as JSON string
+      data.append('business_services', JSON.stringify(formData.business_services || []));
 
+      // Print the endpoint and the entire payload
+      console.log('BusinessProfileApi endpoint:', BusinessProfileApi);
+      console.log('Full FormData payload:');
+      if (data && data._parts) {
+        data._parts.forEach(([key, value]) => {
+          console.log(`${key}:`, value);
+        });
+      }
 
-      // console.log('formData', formData);
-      // console.log('data', data);
-
-console.log('Formated Data -----------------------------');
-
-      const formatted = data._parts
-  .map(([key, value]) => `[${key}:${value}]`)
-  .join('');
-
-console.log('Formatted Output:', formatted);
-
-
-      
       console.log('BusinessProfileApi', BusinessProfileApi);
       const response = await fetch(BusinessProfileApi, {
         method: 'POST',
@@ -189,10 +186,7 @@ console.log('Formatted Output:', formatted);
     }
   };
 
-
-
   if (loading) return <ActivityIndicator style={{ marginTop: 100 }} size="large" color="#00C721" />;
-
 
   const renderStep = () => {
     switch (activeStep) {
@@ -202,12 +196,12 @@ console.log('Formatted Output:', formatted);
         return <BusinessStep2 formData={formData} setFormData={setFormData} navigation={navigation} />;
       case 2:
         return <BusinessStep3 formData={formData} setFormData={setFormData} navigation={navigation} />;
+      case 3:
+        return <BusinessStep4 formData={formData} setFormData={setFormData} navigation={navigation} />;
       default:
         return null;
     }
   };
-
-
 
   return (
     <View style={styles.container}>

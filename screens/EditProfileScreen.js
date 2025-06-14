@@ -474,10 +474,10 @@ const EditProfileScreen = ({ route, navigation }) => {
   return (
     <View style={{ flex: 1, backgroundColor: "#fff", position: "relative" }}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-        <Text style={styles.header}>Edit Profile</Text>
+      <Text style={styles.header}>Edit Profile</Text>
 
-        {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
-        {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
+      {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
+      {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
         {/* Profile Image Upload Section */}
         <View style={styles.imageSection}>
           <Text style={styles.label}>Profile Image</Text>
@@ -497,62 +497,62 @@ const EditProfileScreen = ({ route, navigation }) => {
             <Text style={styles.uploadLink}>Upload Image</Text>
           </TouchableOpacity>
         </View>
-        {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
-        {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
-        {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
+      {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
+      {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
+      {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
 
-        {/* MiniCard Live Preview Section */}
-        <View style={styles.previewSection}>
-          <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
-          <View style={styles.previewCard}>
-            <MiniCard user={previewUser} />
-          </View>
+      {/* MiniCard Live Preview Section */}
+      <View style={styles.previewSection}>
+        <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
+        <View style={styles.previewCard}>
+          <MiniCard user={previewUser} />
         </View>
+      </View>
 
-        {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
+      {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
 
-        <ExperienceSection
-          experience={formData.experience}
-          setExperience={(e) => setFormData({ ...formData, experience: e })}
-          toggleVisibility={() => toggleVisibility("experienceIsPublic")}
-          isPublic={formData.experienceIsPublic}
+      <ExperienceSection
+        experience={formData.experience}
+        setExperience={(e) => setFormData({ ...formData, experience: e })}
+        toggleVisibility={() => toggleVisibility("experienceIsPublic")}
+        isPublic={formData.experienceIsPublic}
           handleDelete={handleDeleteExperience}
-        />
-        <EducationSection
-          education={formData.education}
-          setEducation={(e) => setFormData({ ...formData, education: e })}
-          toggleVisibility={() => toggleVisibility("educationIsPublic")}
-          isPublic={formData.educationIsPublic}
+      />
+      <EducationSection
+        education={formData.education}
+        setEducation={(e) => setFormData({ ...formData, education: e })}
+        toggleVisibility={() => toggleVisibility("educationIsPublic")}
+        isPublic={formData.educationIsPublic}
           handleDelete={handleDeleteEducation}
-        />
+      />
         {/* Temporarily hiding Business Section
-        <BusinessSection
-          businesses={formData.businesses}
-          setBusinesses={(e) => setFormData({ ...formData, businesses: e })}
-          toggleVisibility={() => toggleVisibility("businessIsPublic")}
-          isPublic={formData.businessIsPublic}
+      <BusinessSection
+        businesses={formData.businesses}
+        setBusinesses={(e) => setFormData({ ...formData, businesses: e })}
+        toggleVisibility={() => toggleVisibility("businessIsPublic")}
+        isPublic={formData.businessIsPublic}
           handleDelete={handleDeleteBusiness}
-        />
+      />
         */}
-        <ExpertiseSection
-          expertise={formData.expertise}
-          setExpertise={(e) => setFormData({ ...formData, expertise: e })}
-          toggleVisibility={() => toggleVisibility("expertiseIsPublic")}
-          isPublic={formData.expertiseIsPublic}
+      <ExpertiseSection
+        expertise={formData.expertise}
+        setExpertise={(e) => setFormData({ ...formData, expertise: e })}
+        toggleVisibility={() => toggleVisibility("expertiseIsPublic")}
+        isPublic={formData.expertiseIsPublic}
           handleDelete={handleDeleteExpertise}
-        />
+      />
 
-        <WishesSection
-          wishes={formData.wishes}
-          setWishes={(e) => setFormData({ ...formData, wishes: e })}
-          toggleVisibility={() => toggleVisibility("wishesIsPublic")}
-          isPublic={formData.wishesIsPublic}
+      <WishesSection
+        wishes={formData.wishes}
+        setWishes={(e) => setFormData({ ...formData, wishes: e })}
+        toggleVisibility={() => toggleVisibility("wishesIsPublic")}
+        isPublic={formData.wishesIsPublic}
           handleDelete={handleDeleteWish}
-        />
+      />
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveText}>Save</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <Text style={styles.saveText}>Save</Text>
+      </TouchableOpacity>
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 10 }}>
         <BottomNavBar navigation={navigation} />

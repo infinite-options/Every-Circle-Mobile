@@ -7,32 +7,32 @@ const { width, height } = Dimensions.get('window');
 const BottomNavBar = ({ navigation }) => {
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-          <Image source={require("../assets/profile.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
+    <View style={styles.navContainer}>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
+        <Image source={require("../assets/profile.png")} style={styles.navIcon} />
+        <Text style={styles.navLabel}>Profile</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <Image source={require("../assets/setting.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Settings</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
+        <Image source={require("../assets/setting.png")} style={styles.navIcon} />
+        <Text style={styles.navLabel}>Settings</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+        <Image source={require("../assets/pillar.png")} style={styles.navIcon} />
+        <Text style={styles.navLabel}>Home</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <Image source={require("../assets/share.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Share</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
+        <Image source={require("../assets/share.png")} style={styles.navIcon} />
+        <Text style={styles.navLabel}>Share</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <Image source={require("../assets/search.png")} style={styles.navIcon} />
-          <Text style={styles.navLabel}>Search</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
+        <Image source={require("../assets/search.png")} style={styles.navIcon} />
+        <Text style={styles.navLabel}>Search</Text>
+      </TouchableOpacity>
+    </View>
     </SafeAreaView>
   );
 };
