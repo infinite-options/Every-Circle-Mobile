@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
+import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
 
 const BusinessProfileApi = "https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo/";
@@ -15,8 +16,11 @@ export default function BusinessProfileScreen({ route, navigation }) {
   useEffect(() => {
     const fetchBusinessInfo = async () => {
       try {
-        const response = await fetch(`${BusinessProfileApi}${business_uid}`);
+        const endpoint = `${BusinessProfileApi}${business_uid}`;
+        console.log('BusinessProfileScreen fetching endpoint:', endpoint);
+        const response = await fetch(endpoint);
         const result = await response.json();
+        console.log('BusinessProfileScreen received data:', result);
         console.log("Business API response:", result);
 
         if (!result || !result.business) {
@@ -122,6 +126,25 @@ export default function BusinessProfileScreen({ route, navigation }) {
           phoneIsPublic: rawBusiness.phone_is_public === "1",
           taglineIsPublic: rawBusiness.tagline_is_public === "1",
           shortBioIsPublic: rawBusiness.short_bio_is_public === "1",
+          business_services: (() => {
+            if (rawBusiness.business_services) {
+              if (typeof rawBusiness.business_services === 'string') {
+                try {
+                  return JSON.parse(rawBusiness.business_services);
+                } catch (e) {
+                  console.log('Failed to parse business_services as JSON');
+                  return [];
+                }
+              } else if (Array.isArray(rawBusiness.business_services)) {
+                return rawBusiness.business_services;
+              }
+            }
+            // Fallback: use result.services if present
+            if (Array.isArray(result.services)) {
+              return result.services;
+            }
+            return [];
+          })(),
         });
       } catch (err) {
         console.error("Error fetching business data:", err);
@@ -343,6 +366,16 @@ export default function BusinessProfileScreen({ route, navigation }) {
             {business.images.length === 0 && (
               <Text style={styles.noDataText}>No compatible images available</Text>
             )}
+          </View>
+        )}
+
+        {/* Business Services Section */}
+        {Array.isArray(business.business_services) && business.business_services.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Products & Services</Text>
+            {business.business_services.map((service, idx) => (
+              <ProductCard key={idx} service={service} />
+            ))}
           </View>
         )}
       </ScrollView>

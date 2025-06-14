@@ -170,7 +170,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.pageContainer}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Your Profile</Text>
           <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate("EditProfile", { user: user, profile_uid: profileUID })}>

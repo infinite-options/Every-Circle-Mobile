@@ -32,7 +32,7 @@ export default function SearchScreen() {
     if (!q) return;
 
     console.log("🔍 User searched for:", q);
-    
+
     setLoading(true);
     try {
       // Try the v1 API endpoint to match other endpoints in the app
@@ -92,7 +92,7 @@ export default function SearchScreen() {
         console.log("🔄 Trying alternative endpoints...");
         await tryAlternativeEndpoints(q);
       } else {
-        setResults([]);
+      setResults([]);
       }
     }
     setLoading(false);
