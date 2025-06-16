@@ -1,160 +1,236 @@
 // BusinessProfileScreen.js
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BusinessProfileApi = "https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo/";
+const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
 
 export default function BusinessProfileScreen({ route, navigation }) {
   const { business_uid } = route.params;
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isOwner, setIsOwner] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
+
+  const fetchBusinessInfo = async () => {
+    try {
+      setLoading(true);
+      const endpoint = `${BusinessProfileApi}${business_uid}`;
+      console.log('BusinessProfileScreen GET endpoint:', endpoint);
+      const response = await fetch(endpoint);
+      const result = await response.json();
+
+      if (!result || !result.business) {
+        throw new Error("Business not found or malformed response");
+      }
+
+      console.log("BusinessProfileScreen received data:", JSON.stringify(result, null, 2));
+
+      const rawBusiness = result.business;
+
+      // Handle social_links - now it's an array of objects
+      let socialLinksData = {};
+      if (rawBusiness.social_links) {
+        if (Array.isArray(rawBusiness.social_links)) {
+          // New format: array of objects with social_link_name and business_link_url
+          rawBusiness.social_links.forEach((link) => {
+            if (link.business_link_url && link.business_link_url.trim() !== "") {
+              socialLinksData[link.social_link_name] = link.business_link_url;
+            }
+          });
+        } else if (typeof rawBusiness.social_links === "string") {
+          // Old format: JSON string
+          try {
+            socialLinksData = JSON.parse(rawBusiness.social_links);
+          } catch (e) {
+            console.log("Failed to parse social_links as JSON");
+            socialLinksData = {};
+          }
+        }
+      }
+
+      console.log("Processed social links:", socialLinksData);
+
+      // Handle business_google_photos - it might be a string or array
+      let businessImages = [];
+      if (rawBusiness.business_google_photos) {
+        if (typeof rawBusiness.business_google_photos === "string") {
+          try {
+            businessImages = JSON.parse(rawBusiness.business_google_photos);
+          } catch (e) {
+            console.log("Failed to parse business_google_photos as JSON, treating as single URL");
+            businessImages = [rawBusiness.business_google_photos];
+          }
+        } else if (Array.isArray(rawBusiness.business_google_photos)) {
+          businessImages = rawBusiness.business_google_photos;
+        }
+      }
+
+      // Filter out problematic URLs that won't work in React Native
+      businessImages = businessImages.filter(uri => {
+        // Check if URI is valid
+        if (!uri || typeof uri !== "string" || uri.trim() === "" || uri === "null" || uri === "undefined") {
+          return false;
+        }
+        
+        // Filter out Google Maps API URLs that don't work in React Native
+        if (uri.includes('maps.googleapis.com/maps/api/place/js/PhotoService') || 
+            uri.includes('PhotoService.GetPhoto') ||
+            uri.includes('callback=none')) {
+          console.log("Filtering out Google API URL that won't work in React Native:", uri.substring(0, 100) + "...");
+          return false;
+        }
+        
+        // Only allow direct image URLs or valid http/https URLs
+        const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || 
+                               uri.startsWith('http://') || 
+                               uri.startsWith('https://');
+        
+        if (!isValidImageUrl) {
+          console.log("Filtering out invalid image URL:", uri.substring(0, 100));
+          return false;
+        }
+        
+        return true;
+      });
+
+      console.log("Processed business images after filtering:", businessImages);
+
+      // Handle custom tags if available
+      let customTags = [];
+      if (rawBusiness.custom_tags) {
+        if (typeof rawBusiness.custom_tags === "string") {
+          try {
+            customTags = JSON.parse(rawBusiness.custom_tags);
+          } catch (e) {
+            console.log("Failed to parse custom_tags as JSON");
+            customTags = [];
+          }
+        } else if (Array.isArray(rawBusiness.custom_tags)) {
+          customTags = rawBusiness.custom_tags;
+        }
+      }
+
+      setBusiness({
+        ...rawBusiness,
+        facebook: socialLinksData.facebook || "",
+        instagram: socialLinksData.instagram || "",
+        linkedin: socialLinksData.linkedin || "",
+        youtube: socialLinksData.youtube || "",
+        images: businessImages,
+        customTags: customTags,
+        emailIsPublic: rawBusiness.email_is_public === "1",
+        phoneIsPublic: rawBusiness.phone_is_public === "1",
+        taglineIsPublic: rawBusiness.tagline_is_public === "1",
+        shortBioIsPublic: rawBusiness.short_bio_is_public === "1",
+        business_services: (() => {
+          if (rawBusiness.business_services) {
+            if (typeof rawBusiness.business_services === 'string') {
+              try {
+                return JSON.parse(rawBusiness.business_services);
+              } catch (e) {
+                console.log('Failed to parse business_services as JSON');
+                return [];
+              }
+            } else if (Array.isArray(rawBusiness.business_services)) {
+              return rawBusiness.business_services;
+            }
+          }
+          // Fallback: use result.services if present
+          if (Array.isArray(result.services)) {
+            return result.services;
+          }
+          return [];
+        })(),
+      });
+    } catch (err) {
+      console.error("Error fetching business data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBusinessInfo = async () => {
+    const checkBusinessOwnership = async () => {
       try {
-        const endpoint = `${BusinessProfileApi}${business_uid}`;
-        console.log('BusinessProfileScreen fetching endpoint:', endpoint);
-        const response = await fetch(endpoint);
-        const result = await response.json();
-        console.log('BusinessProfileScreen received data:', result);
-        console.log("Business API response:", result);
-
-        if (!result || !result.business) {
-          throw new Error("Business not found or malformed response");
+        const profileUID = await AsyncStorage.getItem('user_uid');
+        if (!profileUID) {
+          console.log('No user profile found');
+          return;
         }
 
-        console.log("Full API Response:", JSON.stringify(result, null, 2));
-
-        const rawBusiness = result.business;
-
-        // Handle social_links - now it's an array of objects
-        let socialLinksData = {};
-        if (rawBusiness.social_links) {
-          if (Array.isArray(rawBusiness.social_links)) {
-            // New format: array of objects with social_link_name and business_link_url
-            rawBusiness.social_links.forEach((link) => {
-              if (link.business_link_url && link.business_link_url.trim() !== "") {
-                socialLinksData[link.social_link_name] = link.business_link_url;
-              }
-            });
-          } else if (typeof rawBusiness.social_links === "string") {
-            // Old format: JSON string
-            try {
-              socialLinksData = JSON.parse(rawBusiness.social_links);
-            } catch (e) {
-              console.log("Failed to parse social_links as JSON");
-              socialLinksData = {};
-            }
-          }
+        const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
+        const userData = await response.json();
+        
+        if (userData && userData.business_info) {
+          const businessInfo = typeof userData.business_info === 'string' 
+            ? JSON.parse(userData.business_info) 
+            : userData.business_info;
+            
+          const isBusinessOwner = businessInfo.some(biz => 
+            biz.business_uid === business_uid || 
+            biz.profile_business_business_id === business_uid
+          );
+          
+          setIsOwner(isBusinessOwner);
         }
-
-        console.log("Processed social links:", socialLinksData);
-
-        // Handle business_google_photos - it might be a string or array
-        let businessImages = [];
-        if (rawBusiness.business_google_photos) {
-          if (typeof rawBusiness.business_google_photos === "string") {
-            try {
-              businessImages = JSON.parse(rawBusiness.business_google_photos);
-            } catch (e) {
-              console.log("Failed to parse business_google_photos as JSON, treating as single URL");
-              businessImages = [rawBusiness.business_google_photos];
-            }
-          } else if (Array.isArray(rawBusiness.business_google_photos)) {
-            businessImages = rawBusiness.business_google_photos;
-          }
-        }
-
-        // Filter out problematic URLs that won't work in React Native
-        businessImages = businessImages.filter(uri => {
-          // Check if URI is valid
-          if (!uri || typeof uri !== "string" || uri.trim() === "" || uri === "null" || uri === "undefined") {
-            return false;
-          }
-          
-          // Filter out Google Maps API URLs that don't work in React Native
-          if (uri.includes('maps.googleapis.com/maps/api/place/js/PhotoService') || 
-              uri.includes('PhotoService.GetPhoto') ||
-              uri.includes('callback=none')) {
-            console.log("Filtering out Google API URL that won't work in React Native:", uri.substring(0, 100) + "...");
-            return false;
-          }
-          
-          // Only allow direct image URLs or valid http/https URLs
-          const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || 
-                                 uri.startsWith('http://') || 
-                                 uri.startsWith('https://');
-          
-          if (!isValidImageUrl) {
-            console.log("Filtering out invalid image URL:", uri.substring(0, 100));
-            return false;
-          }
-          
-          return true;
-        });
-
-        console.log("Processed business images after filtering:", businessImages);
-
-        // Handle custom tags if available
-        let customTags = [];
-        if (rawBusiness.custom_tags) {
-          if (typeof rawBusiness.custom_tags === "string") {
-            try {
-              customTags = JSON.parse(rawBusiness.custom_tags);
-            } catch (e) {
-              console.log("Failed to parse custom_tags as JSON");
-              customTags = [];
-            }
-          } else if (Array.isArray(rawBusiness.custom_tags)) {
-            customTags = rawBusiness.custom_tags;
-          }
-        }
-
-        setBusiness({
-          ...rawBusiness,
-          facebook: socialLinksData.facebook || "",
-          instagram: socialLinksData.instagram || "",
-          linkedin: socialLinksData.linkedin || "",
-          youtube: socialLinksData.youtube || "",
-          images: businessImages,
-          customTags: customTags,
-          emailIsPublic: rawBusiness.email_is_public === "1",
-          phoneIsPublic: rawBusiness.phone_is_public === "1",
-          taglineIsPublic: rawBusiness.tagline_is_public === "1",
-          shortBioIsPublic: rawBusiness.short_bio_is_public === "1",
-          business_services: (() => {
-            if (rawBusiness.business_services) {
-              if (typeof rawBusiness.business_services === 'string') {
-                try {
-                  return JSON.parse(rawBusiness.business_services);
-                } catch (e) {
-                  console.log('Failed to parse business_services as JSON');
-                  return [];
-                }
-              } else if (Array.isArray(rawBusiness.business_services)) {
-                return rawBusiness.business_services;
-              }
-            }
-            // Fallback: use result.services if present
-            if (Array.isArray(result.services)) {
-              return result.services;
-            }
-            return [];
-          })(),
-        });
-      } catch (err) {
-        console.error("Error fetching business data:", err);
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error('Error checking business ownership:', error);
       }
     };
 
-    fetchBusinessInfo();
+    checkBusinessOwnership();
   }, [business_uid]);
+
+  // Add focus listener to refresh data when returning to this screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      console.log('BusinessProfileScreen focused - refreshing data');
+      fetchBusinessInfo();
+    });
+
+    // Initial fetch
+    fetchBusinessInfo();
+
+    return unsubscribe;
+  }, [navigation, business_uid]);
+
+  const handleProductPress = (service) => {
+    if (!isOwner) {
+      Alert.alert(
+        "Add to Cart",
+        `Would you like to add "${service.bs_service_name}" to your cart?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Add to Cart",
+            onPress: () => {
+              setCartItems(prevItems => [...prevItems, service]);
+              Alert.alert("Success", "Item added to cart!");
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const handleViewCart = () => {
+    navigation.navigate('ShoppingCart', {
+      cartItems,
+      onRemoveItem: (index) => {
+        setCartItems(prevItems => prevItems.filter((_, i) => i !== index));
+      },
+      businessName: business.business_name
+    });
+  };
 
   if (loading) {
     return (
@@ -187,20 +263,22 @@ export default function BusinessProfileScreen({ route, navigation }) {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Edit Button */}
-        <View style={styles.editButtonContainer}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() =>
-            navigation.navigate("EditBusinessProfile", {
-              business: business,
-              business_uid: business_uid,
-            })
-          }
-        >
-          <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
-        </TouchableOpacity>
-        </View>
+        {/* Edit Button - Only show if user owns the business */}
+        {isOwner && (
+          <View style={styles.editButtonContainer}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() =>
+                navigation.navigate("EditBusinessProfile", {
+                  business: business,
+                  business_uid: business_uid,
+                })
+              }
+            >
+              <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Business Card (MiniCard at top) */}
         <View style={styles.card}>
@@ -372,9 +450,25 @@ export default function BusinessProfileScreen({ route, navigation }) {
         {/* Business Services Section */}
         {Array.isArray(business.business_services) && business.business_services.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Products & Services</Text>
+            <View style={styles.servicesHeader}>
+              <Text style={styles.cardTitle}>Products & Services</Text>
+              {!isOwner && cartItems.length > 0 && (
+                <TouchableOpacity 
+                  style={styles.cartButton}
+                  onPress={handleViewCart}
+                >
+                  <Ionicons name="cart" size={24} color="#9C45F7" />
+                  <Text style={styles.cartCount}>{cartItems.length}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {business.business_services.map((service, idx) => (
-              <ProductCard key={idx} service={service} />
+              <ProductCard 
+                key={idx} 
+                service={service} 
+                showEditButton={isOwner}
+                onPress={() => handleProductPress(service)}
+              />
             ))}
           </View>
         )}
@@ -532,5 +626,23 @@ const styles = StyleSheet.create({
   editIcon: {
     width: 20,
     height: 20,
+  },
+  servicesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  cartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    padding: 8,
+    borderRadius: 20,
+  },
+  cartCount: {
+    marginLeft: 5,
+    color: '#9C45F7',
+    fontWeight: 'bold',
   },
 });

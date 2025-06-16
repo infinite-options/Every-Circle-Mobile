@@ -2,14 +2,16 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 
-const ProductCard = ({ service, onPress, onEdit }) => {
+const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
   return (
     <TouchableOpacity style={styles.cardContainer} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
       <View style={styles.header}>
         <Text style={styles.name}>{service.bs_service_name}</Text>
-        <TouchableOpacity onPress={() => onEdit(service)} style={styles.editButton}>
-          <Ionicons name="pencil" size={20} color="#007AFF" />
-        </TouchableOpacity>
+        {showEditButton && onEdit && (
+          <TouchableOpacity onPress={() => onEdit(service)} style={styles.editButton}>
+            <Ionicons name="pencil" size={20} color="#007AFF" />
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.textContainer}>
         {service.bs_service_desc ? (
