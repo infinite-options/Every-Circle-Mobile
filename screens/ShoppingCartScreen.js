@@ -1,11 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MiniCard from '../components/MiniCard';
 import BottomNavBar from '../components/BottomNavBar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ShoppingCartScreen = ({ route, navigation }) => {
-  const { cartItems, onRemoveItem, businessName } = route.params;
+  const { cartItems: initialCartItems, onRemoveItem, businessName, business_uid } = route.params;
+  const [cartItems, setCartItems] = useState(initialCartItems);
+
+  // Update local state when initialCartItems changes
+  useEffect(() => {
+    setCartItems(initialCartItems);
+  }, [initialCartItems]);
+
+  const handleRemoveItem = async (index) => {
+    try {
+      // Get current cart items from AsyncStorage
+      const storedCartData = await AsyncStorage.getItem(`cart_${business_uid}`);
+      let cartData = storedCartData ? JSON.parse(storedCartData) : { items: [] };
+      
+      // Remove the item
+      cartData.items = cartData.items.filter((_, i) => i !== index);
+      
+      // Save updated cart
+      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify(cartData));
+      
+      // Update local state immediately
+      setCartItems(prevItems => prevItems.filter((_, i) => i !== index));
+      
+      // Call the parent's onRemoveItem to update the UI in BusinessProfileScreen
+      onRemoveItem(index);
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+      Alert.alert('Error', 'Failed to remove item from cart');
+    }
+  };
 
   const handleCheckout = () => {
     Alert.alert(
@@ -18,10 +48,17 @@ const ShoppingCartScreen = ({ route, navigation }) => {
         },
         {
           text: "Proceed",
-          onPress: () => {
-            // TODO: Implement checkout logic
-            Alert.alert("Success", "Order placed successfully!");
-            navigation.navigate('Home');
+          onPress: async () => {
+            try {
+              // Clear the cart after successful checkout
+              await AsyncStorage.removeItem(`cart_${business_uid}`);
+              setCartItems([]); // Clear local state
+              Alert.alert("Success", "Order placed successfully!");
+              navigation.navigate('Home');
+            } catch (error) {
+              console.error('Error during checkout:', error);
+              Alert.alert('Error', 'Failed to process checkout');
+            }
           }
         }
       ]
@@ -51,7 +88,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
               <View key={index} style={styles.cartItemContainer}>
                 <TouchableOpacity 
                   style={styles.removeButton}
-                  onPress={() => onRemoveItem(index)}
+                  onPress={() => handleRemoveItem(index)}
                 >
                   <Ionicons name="close-circle" size={24} color="#FF3B30" />
                 </TouchableOpacity>
@@ -125,7 +162,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 200,
   },
   emptyCart: {
     fontSize: 18,
@@ -154,8 +191,13 @@ const styles = StyleSheet.create({
   footer: {
     backgroundColor: '#fff',
     padding: 20,
+    paddingBottom: 110,
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   checkoutButton: {
     backgroundColor: '#9C45F7',

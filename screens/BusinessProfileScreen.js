@@ -17,6 +17,23 @@ export default function BusinessProfileScreen({ route, navigation }) {
   const [isOwner, setIsOwner] = useState(false);
   const [cartItems, setCartItems] = useState([]);
 
+  // Load cart items when component mounts
+  useEffect(() => {
+    const loadCartItems = async () => {
+      try {
+        const storedCartData = await AsyncStorage.getItem(`cart_${business_uid}`);
+        if (storedCartData) {
+          const cartData = JSON.parse(storedCartData);
+          setCartItems(cartData.items || []);
+        }
+      } catch (error) {
+        console.error('Error loading cart items:', error);
+      }
+    };
+
+    loadCartItems();
+  }, [business_uid]);
+
   const fetchBusinessInfo = async () => {
     try {
       setLoading(true);
@@ -212,9 +229,21 @@ export default function BusinessProfileScreen({ route, navigation }) {
           },
           {
             text: "Add to Cart",
-            onPress: () => {
-              setCartItems(prevItems => [...prevItems, service]);
-              Alert.alert("Success", "Item added to cart!");
+            onPress: async () => {
+              try {
+                const newCartItems = [...cartItems, service];
+                setCartItems(newCartItems);
+                
+                // Save to AsyncStorage
+                await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
+                  items: newCartItems
+                }));
+                
+                Alert.alert("Success", "Item added to cart!");
+              } catch (error) {
+                console.error('Error adding item to cart:', error);
+                Alert.alert('Error', 'Failed to add item to cart');
+              }
             }
           }
         ]
@@ -222,13 +251,27 @@ export default function BusinessProfileScreen({ route, navigation }) {
     }
   };
 
+  const handleRemoveItem = async (index) => {
+    try {
+      const newCartItems = cartItems.filter((_, i) => i !== index);
+      setCartItems(newCartItems);
+      
+      // Update AsyncStorage
+      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
+        items: newCartItems
+      }));
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+      Alert.alert('Error', 'Failed to remove item from cart');
+    }
+  };
+
   const handleViewCart = () => {
     navigation.navigate('ShoppingCart', {
       cartItems,
-      onRemoveItem: (index) => {
-        setCartItems(prevItems => prevItems.filter((_, i) => i !== index));
-      },
-      businessName: business.business_name
+      onRemoveItem: handleRemoveItem,
+      businessName: business.business_name,
+      business_uid: business_uid
     });
   };
 
