@@ -240,6 +240,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
                 }));
                 
                 Alert.alert("Success", "Item added to cart!");
+                console.log("Item added to cart:", newCartItems);
               } catch (error) {
                 console.error('Error adding item to cart:', error);
                 Alert.alert('Error', 'Failed to add item to cart');
