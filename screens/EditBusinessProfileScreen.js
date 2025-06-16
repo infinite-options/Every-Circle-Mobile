@@ -5,6 +5,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import axios from "axios";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
+import ProductCard from "../components/ProductCard";
 
 const BusinessProfileAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo";
 
@@ -122,6 +123,31 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
           cleanLinks[platform] = formData.socialLinks[platform];
         }
       });
+      
+      const fullServiceSchema = (service, idx) => ({
+        bs_service_name: service.bs_service_name || '',
+        bs_service_desc: service.bs_service_desc || '',
+        bs_notes: service.bs_notes || '',
+        bs_sku: service.bs_sku || '',
+        bs_bounty: service.bs_bounty || '',
+        bs_bounty_currency: service.bs_bounty_currency || 'USD',
+        bs_is_taxable: typeof service.bs_is_taxable === 'undefined' ? 1 : service.bs_is_taxable,
+        bs_tax_rate: service.bs_tax_rate || '0',
+        bs_discount_allowed: typeof service.bs_discount_allowed === 'undefined' ? 1 : service.bs_discount_allowed,
+        bs_refund_policy: service.bs_refund_policy || '',
+        bs_return_window_days: service.bs_return_window_days || '0',
+        bs_display_order: typeof service.bs_display_order === 'undefined' ? idx + 1 : service.bs_display_order,
+        bs_tags: service.bs_tags || '',
+        bs_duration_minutes: service.bs_duration_minutes || '',
+        bs_cost: service.bs_cost || '',
+        bs_cost_currency: service.bs_cost_currency || 'USD',
+        bs_is_visible: typeof service.bs_is_visible === 'undefined' ? 1 : service.bs_is_visible,
+        bs_status: service.bs_status || 'active',
+        bs_image_key: service.bs_image_key || '',
+      });
+
+      const servicesToSend = services.map(fullServiceSchema);
+      payload.append("business_services", JSON.stringify(servicesToSend));
       
       console.log("FormData to be submitted:");
       for (let pair of payload.entries()) {
@@ -308,6 +334,52 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     </View>
   );
 
+  const [services, setServices] = useState(business?.business_services || business?.services || []);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+
+  const defaultService = {
+    bs_service_name: '',
+    bs_service_desc: '',
+    bs_notes: '',
+    bs_sku: '',
+    bs_bounty: '',
+    bs_bounty_currency: 'USD',
+    bs_is_taxable: 1,
+    bs_tax_rate: '0',
+    bs_discount_allowed: 1,
+    bs_refund_policy: '',
+    bs_return_window_days: '0',
+    bs_display_order: 1,
+    bs_tags: '',
+    bs_duration_minutes: '',
+    bs_cost: '',
+    bs_cost_currency: 'USD',
+    bs_is_visible: 1,
+    bs_status: 'active',
+    bs_image_key: '',
+  };
+
+  const [serviceForm, setServiceForm] = useState({ ...defaultService });
+
+  const handleServiceChange = (field, value) => {
+    setServiceForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddService = () => {
+    if (!serviceForm.bs_service_name.trim()) {
+      Alert.alert('Validation', 'Product or Service name is required.');
+      return;
+    }
+    setServices(prev => [...prev, { ...defaultService, ...serviceForm }]);
+    setServiceForm({ ...defaultService });
+    setShowServiceForm(false);
+  };
+
+  const handleEditService = (service) => {
+    setServiceForm(service);
+    setShowServiceForm(true);
+  };
+
   return (
     <View style={styles.pageContainer}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -342,6 +414,32 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         {renderSocialField("YouTube", "youtube")}
 
         {renderImagesSection()}
+
+        {/* Products & Services Section */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Products & Services</Text>
+          {services.length === 0 && <Text style={{ color: '#888', textAlign: 'center' }}>No products or services added yet.</Text>}
+          {services.map((service, idx) => (
+            <ProductCard key={idx} service={service} onEdit={handleEditService} />
+          ))}
+          {showServiceForm ? (
+            <View style={{ backgroundColor: '#f5f5f5', borderRadius: 10, padding: 12, marginTop: 10 }}>
+              <TextInput style={styles.input} value={serviceForm.bs_service_name} onChangeText={t => handleServiceChange('bs_service_name', t)} placeholder="Product or Service Name" />
+              <TextInput style={styles.input} value={serviceForm.bs_service_desc} onChangeText={t => handleServiceChange('bs_service_desc', t)} placeholder="Description" />
+              <TextInput style={styles.input} value={serviceForm.bs_cost} onChangeText={t => handleServiceChange('bs_cost', t)} placeholder="Cost (e.g. 25.00)" keyboardType="decimal-pad" />
+              <TextInput style={styles.input} value={serviceForm.bs_cost_currency} onChangeText={t => handleServiceChange('bs_cost_currency', t)} placeholder="Currency (e.g. USD)" />
+              <TextInput style={styles.input} value={serviceForm.bs_bounty} onChangeText={t => handleServiceChange('bs_bounty', t)} placeholder="Bounty (e.g. 10.00)" keyboardType="decimal-pad" />
+              <TextInput style={styles.input} value={serviceForm.bs_bounty_currency} onChangeText={t => handleServiceChange('bs_bounty_currency', t)} placeholder="Bounty Currency (e.g. USD)" />
+              <TouchableOpacity style={[styles.addTagButton, { marginTop: 10 }]} onPress={handleAddService}>
+                <Text style={styles.addTagButtonText}>Add Product/Service</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={[styles.addTagButton, { marginTop: 10 }]} onPress={() => setShowServiceForm(true)}>
+              <Text style={styles.addTagButtonText}>+ Add Product/Service</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Save</Text>
