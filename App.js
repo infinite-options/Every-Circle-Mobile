@@ -28,6 +28,7 @@ import TermsAndConditionsScreen from "./screens/TermsAndConditionsScreen";
 import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 //import SearchResults from './screens/SearchResults';
 import EditBusinessProfileScreen from "./screens/EditBusinessProfileScreen";
+import ShoppingCartScreen from "./screens/ShoppingCartScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -467,6 +468,7 @@ export default function App() {
         <Stack.Screen name='TermsAndConditions' component={TermsAndConditionsScreen} options={{ title: "Terms & Conditions" }} />
         <Stack.Screen name='PrivacyPolicy' component={PrivacyPolicyScreen} options={{ title: "Privacy Policy" }} />
         <Stack.Screen name='EditBusinessProfile' component={EditBusinessProfileScreen} />
+        <Stack.Screen name='ShoppingCart' component={ShoppingCartScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

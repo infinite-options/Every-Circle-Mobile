@@ -10,6 +10,7 @@ import ProductCard from "../components/ProductCard";
 const BusinessProfileAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo";
 
 export default function EditBusinessProfileScreen({ route, navigation }) {
+  console.log("Edit Button Pressed: EditBusinessProfileScreen", route.params.services);
   const { business } = route.params || {};
   const [businessUID, setBusinessUID] = useState(business?.business_uid || "");
 
@@ -58,6 +59,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   };
 
   const handleSave = async () => {
+    console.log("Save Button Pressed: handleSave");
     if (!formData.name.trim() || !businessUID.trim()) {
       Alert.alert("Error", "Business name and ID are required.");
       return;
@@ -124,29 +126,46 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         }
       });
       
-      const fullServiceSchema = (service, idx) => ({
-        bs_service_name: service.bs_service_name || '',
-        bs_service_desc: service.bs_service_desc || '',
-        bs_notes: service.bs_notes || '',
-        bs_sku: service.bs_sku || '',
-        bs_bounty: service.bs_bounty || '',
-        bs_bounty_currency: service.bs_bounty_currency || 'USD',
-        bs_is_taxable: typeof service.bs_is_taxable === 'undefined' ? 1 : service.bs_is_taxable,
-        bs_tax_rate: service.bs_tax_rate || '0',
-        bs_discount_allowed: typeof service.bs_discount_allowed === 'undefined' ? 1 : service.bs_discount_allowed,
-        bs_refund_policy: service.bs_refund_policy || '',
-        bs_return_window_days: service.bs_return_window_days || '0',
-        bs_display_order: typeof service.bs_display_order === 'undefined' ? idx + 1 : service.bs_display_order,
-        bs_tags: service.bs_tags || '',
-        bs_duration_minutes: service.bs_duration_minutes || '',
-        bs_cost: service.bs_cost || '',
-        bs_cost_currency: service.bs_cost_currency || 'USD',
-        bs_is_visible: typeof service.bs_is_visible === 'undefined' ? 1 : service.bs_is_visible,
-        bs_status: service.bs_status || 'active',
-        bs_image_key: service.bs_image_key || '',
-      });
+      const fullServiceSchema = (service, idx) => {
+        // Create base schema without bs_uid
+        const baseSchema = {
+          bs_service_name: service.bs_service_name || '',
+          bs_service_desc: service.bs_service_desc || '',
+          bs_notes: service.bs_notes || '',
+          bs_sku: service.bs_sku || '',
+          bs_bounty: service.bs_bounty || '',
+          bs_bounty_currency: service.bs_bounty_currency || 'USD',
+          bs_is_taxable: typeof service.bs_is_taxable === 'undefined' ? 1 : service.bs_is_taxable,
+          bs_tax_rate: service.bs_tax_rate || '0',
+          bs_discount_allowed: typeof service.bs_discount_allowed === 'undefined' ? 1 : service.bs_discount_allowed,
+          bs_refund_policy: service.bs_refund_policy || '',
+          bs_return_window_days: service.bs_return_window_days || '0',
+          bs_display_order: typeof service.bs_display_order === 'undefined' ? idx + 1 : service.bs_display_order,
+          bs_tags: service.bs_tags || '',
+          bs_duration_minutes: service.bs_duration_minutes || '',
+          bs_cost: service.bs_cost || '',
+          bs_cost_currency: service.bs_cost_currency || 'USD',
+          bs_is_visible: typeof service.bs_is_visible === 'undefined' ? 1 : service.bs_is_visible,
+          bs_status: service.bs_status || 'active',
+          bs_image_key: service.bs_image_key || '',
+        };
+
+        // Only include bs_uid if it exists and is not empty
+        if (service.bs_uid && service.bs_uid.trim() !== '') {
+          return {
+            ...baseSchema,
+            bs_uid: service.bs_uid
+          };
+        }
+
+        return baseSchema;
+      };
 
       const servicesToSend = services.map(fullServiceSchema);
+      console.log("Services being sent to backend:", servicesToSend.map(s => ({ 
+        name: s.bs_service_name, 
+        bs_uid: s.bs_uid || 'not included' 
+      })));
       payload.append("business_services", JSON.stringify(servicesToSend));
       
       console.log("FormData to be submitted:");
@@ -154,8 +173,8 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         console.log(`${pair[0]}: ${pair[1]}`);
       }
 
-      console.log("Before API Call:", payload);
-      console.log("Business Endpoint:", `${BusinessProfileAPI}`);
+      // console.log("Before API Call:", payload);
+      console.log("Business Endpoint PUT:", `${BusinessProfileAPI}`);
       
       const response = await axios.put(`${BusinessProfileAPI}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -334,10 +353,22 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     </View>
   );
 
-  const [services, setServices] = useState(business?.business_services || business?.services || []);
+  const [services, setServices] = useState(() => {
+    // Initialize services with proper bs_uid preservation
+    const initialServices = business?.business_services || business?.services || [];
+    console.log("Initial services with bs_uid:", initialServices.map(s => ({ name: s.bs_service_name, bs_uid: s.bs_uid })));
+    return initialServices.map(service => ({
+      ...defaultService,
+      ...service,
+      bs_uid: service.bs_uid || '' // Ensure bs_uid is preserved
+    }));
+  });
+
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingServiceIndex, setEditingServiceIndex] = useState(null);
 
   const defaultService = {
+    bs_uid: '',
     bs_service_name: '',
     bs_service_desc: '',
     bs_notes: '',
@@ -370,14 +401,49 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       Alert.alert('Validation', 'Product or Service name is required.');
       return;
     }
-    setServices(prev => [...prev, { ...defaultService, ...serviceForm }]);
+
+    if (editingServiceIndex !== null) {
+      // Update existing service - preserve the bs_uid
+      const updatedServices = [...services];
+      const existingService = updatedServices[editingServiceIndex];
+      console.log("Editing existing service with bs_uid:", existingService.bs_uid);
+      updatedServices[editingServiceIndex] = { 
+        ...serviceForm,
+        bs_uid: existingService.bs_uid // Preserve the original bs_uid
+      };
+      setServices(updatedServices);
+    } else {
+      // Add new service - explicitly set bs_uid to empty string
+      console.log("Adding new service - no bs_uid");
+      setServices(prev => [...prev, { 
+        ...defaultService, 
+        ...serviceForm,
+        bs_uid: '' // Explicitly set empty bs_uid for new services
+      }]);
+    }
+
+    // Reset form and state
     setServiceForm({ ...defaultService });
     setShowServiceForm(false);
+    setEditingServiceIndex(null);
   };
 
-  const handleEditService = (service) => {
-    setServiceForm(service);
+  const handleEditService = (service, index) => {
+    console.log("Editing service with bs_uid:", service.bs_uid);
+    // When editing, make sure to include the bs_uid in the form
+    setServiceForm({
+      ...defaultService,
+      ...service,
+      bs_uid: service.bs_uid || '' // Ensure bs_uid is preserved, default to empty string if missing
+    });
+    setEditingServiceIndex(index);
     setShowServiceForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setServiceForm({ ...defaultService });
+    setShowServiceForm(false);
+    setEditingServiceIndex(null);
   };
 
   return (
@@ -420,22 +486,80 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
           <Text style={styles.label}>Products & Services</Text>
           {services.length === 0 && <Text style={{ color: '#888', textAlign: 'center' }}>No products or services added yet.</Text>}
           {services.map((service, idx) => (
-            <ProductCard key={idx} service={service} onEdit={handleEditService} />
+            <ProductCard 
+              key={idx} 
+              service={service} 
+              onEdit={() => handleEditService(service, idx)} 
+              showEditButton={true}
+            />
           ))}
           {showServiceForm ? (
             <View style={{ backgroundColor: '#f5f5f5', borderRadius: 10, padding: 12, marginTop: 10 }}>
-              <TextInput style={styles.input} value={serviceForm.bs_service_name} onChangeText={t => handleServiceChange('bs_service_name', t)} placeholder="Product or Service Name" />
-              <TextInput style={styles.input} value={serviceForm.bs_service_desc} onChangeText={t => handleServiceChange('bs_service_desc', t)} placeholder="Description" />
-              <TextInput style={styles.input} value={serviceForm.bs_cost} onChangeText={t => handleServiceChange('bs_cost', t)} placeholder="Cost (e.g. 25.00)" keyboardType="decimal-pad" />
-              <TextInput style={styles.input} value={serviceForm.bs_cost_currency} onChangeText={t => handleServiceChange('bs_cost_currency', t)} placeholder="Currency (e.g. USD)" />
-              <TextInput style={styles.input} value={serviceForm.bs_bounty} onChangeText={t => handleServiceChange('bs_bounty', t)} placeholder="Bounty (e.g. 10.00)" keyboardType="decimal-pad" />
-              <TextInput style={styles.input} value={serviceForm.bs_bounty_currency} onChangeText={t => handleServiceChange('bs_bounty_currency', t)} placeholder="Bounty Currency (e.g. USD)" />
-              <TouchableOpacity style={[styles.addTagButton, { marginTop: 10 }]} onPress={handleAddService}>
-                <Text style={styles.addTagButtonText}>Add Product/Service</Text>
-              </TouchableOpacity>
+              <Text style={styles.formTitle}>{editingServiceIndex !== null ? 'Edit Product/Service' : 'Add New Product/Service'}</Text>
+              <TextInput 
+                style={styles.input} 
+                value={serviceForm.bs_service_name} 
+                onChangeText={t => handleServiceChange('bs_service_name', t)} 
+                placeholder="Product or Service Name" 
+              />
+              <TextInput 
+                style={styles.input} 
+                value={serviceForm.bs_service_desc} 
+                onChangeText={t => handleServiceChange('bs_service_desc', t)} 
+                placeholder="Description" 
+              />
+              <TextInput 
+                style={styles.input} 
+                value={serviceForm.bs_cost} 
+                onChangeText={t => handleServiceChange('bs_cost', t)} 
+                placeholder="Cost (e.g. 25.00)" 
+                keyboardType="decimal-pad" 
+              />
+              <TextInput 
+                style={styles.input} 
+                value={serviceForm.bs_cost_currency} 
+                onChangeText={t => handleServiceChange('bs_cost_currency', t)} 
+                placeholder="Currency (e.g. USD)" 
+              />
+              <TextInput 
+                style={styles.input} 
+                value={serviceForm.bs_bounty} 
+                onChangeText={t => handleServiceChange('bs_bounty', t)} 
+                placeholder="Bounty (e.g. 10.00)" 
+                keyboardType="decimal-pad" 
+              />
+              <TextInput 
+                style={styles.input} 
+                value={serviceForm.bs_bounty_currency} 
+                onChangeText={t => handleServiceChange('bs_bounty_currency', t)} 
+                placeholder="Bounty Currency (e.g. USD)" 
+              />
+              <View style={styles.formButtons}>
+                <TouchableOpacity 
+                  style={[styles.formButton, styles.cancelButton]} 
+                  onPress={handleCancelEdit}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.formButton, styles.addButton]} 
+                  onPress={handleAddService}
+                >
+                  <Text style={styles.addButtonText}>
+                    {editingServiceIndex !== null ? 'Update' : 'Add'} Product/Service
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ) : (
-            <TouchableOpacity style={[styles.addTagButton, { marginTop: 10 }]} onPress={() => setShowServiceForm(true)}>
+            <TouchableOpacity 
+              style={[styles.addTagButton, { marginTop: 10 }]} 
+              onPress={() => {
+                setServiceForm({ ...defaultService });
+                setEditingServiceIndex(null);
+                setShowServiceForm(true);
+              }}
+            >
               <Text style={styles.addTagButtonText}>+ Add Product/Service</Text>
             </TouchableOpacity>
           )}
@@ -555,5 +679,38 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  formTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  formButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  formButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  addButton: {
+    backgroundColor: '#00C721',
+  },
+  cancelButtonText: {
+    color: '#666',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  addButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
 });
