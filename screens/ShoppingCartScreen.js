@@ -11,6 +11,8 @@ import {REACT_APP_STRIPE_PUBLIC_KEY} from "@env";
 const STRIPE_PUBLISHABLE_KEY = REACT_APP_STRIPE_PUBLIC_KEY;
 const STRIPE_KEY_ENDPOINT = 'https://l0h6a9zi1e.execute-api.us-west-1.amazonaws.com/dev/stripe_key/ECTEST';
 const CREATE_PAYMENT_INTENT_ENDPOINT = 'https://huo8rhh76i.execute-api.us-west-1.amazonaws.com/dev/api/v2/createPaymentIntent';
+const TRANSACTIONS_ENDPOINT = 'https://ioec2testsspm.infiniteoptions.com/api/v1/transactions';
+const PROFILE_API = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
 
 const ShoppingCartScreen = ({ route, navigation }) => {
   const { cartItems: initialCartItems, onRemoveItem, businessName, business_uid } = route.params;
@@ -151,6 +153,62 @@ const ShoppingCartScreen = ({ route, navigation }) => {
     }
   };
 
+  const getProfileId = async (userUid) => {
+    try {
+      console.log('Fetching profile ID for user:', userUid);
+      const response = await fetch(`${PROFILE_API}/${userUid}`);
+      const data = await response.json();
+      console.log('Profile data received:', data);
+      
+      if (data && data.personal_info && data.personal_info.profile_personal_uid) {
+        return data.personal_info.profile_personal_uid;
+      }
+      throw new Error('Profile ID not found');
+    } catch (error) {
+      console.error('Error fetching profile ID:', error);
+      throw error;
+    }
+  };
+
+  const recordTransactions = async (buyerUid) => {
+    try {
+      console.log('Recording transactions for items:', cartItems);
+      
+      // Get the buyer's profile ID
+      const buyerProfileId = await getProfileId(buyerUid);
+      console.log('Buyer profile ID:', buyerProfileId);
+      
+      // Process each item in the cart
+      for (const item of cartItems) {
+        // Hard code the recommender's profile ID
+        const recommenderProfileId = "110-000231";
+        console.log('Recommender profile ID:', recommenderProfileId);
+        
+        const transactionData = {
+          buyer_id: buyerProfileId,
+          recommender_id: recommenderProfileId,
+          bs_id: item.bs_uid
+        };
+        
+        console.log('Recording transaction:', transactionData);
+        
+        const response = await fetch(TRANSACTIONS_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(transactionData),
+        });
+        
+        const result = await response.json();
+        console.log('Transaction recorded:', result);
+      }
+    } catch (error) {
+      console.error('Error recording transactions:', error);
+      throw error;
+    }
+  };
+
   const handleCheckout = async () => {
     console.log('Checkout button pressed');
     console.log('Current cart items:', cartItems);
@@ -171,15 +229,26 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       }
 
       console.log('Presenting payment sheet...');
-      const { error: paymentError } = await presentPaymentSheet();
+      const result = await presentPaymentSheet();
+      console.log('Full Stripe Result:', result);
 
-      if (paymentError) {
-        console.error('Payment error:', paymentError);
+      if (result.error) {
+        console.error('Payment error:', result.error);
         Alert.alert('Error', 'Payment failed. Please try again.');
         return;
       }
 
       console.log('Payment successful!');
+      console.log('Payment Intent:', result.paymentIntent);
+
+      // Get the buyer's ID
+      const buyerUid = await AsyncStorage.getItem('user_uid');
+      if (!buyerUid) {
+        throw new Error('User ID not found');
+      }
+
+      // Record the transactions
+      await recordTransactions(buyerUid);
       
       // Clear the cart
       await AsyncStorage.removeItem(`cart_${business_uid}`);
