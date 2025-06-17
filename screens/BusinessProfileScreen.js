@@ -1,6 +1,6 @@
 // BusinessProfileScreen.js
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity, Alert, Modal } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
@@ -16,6 +16,9 @@ export default function BusinessProfileScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
   const [cartItems, setCartItems] = useState([]);
+  const [quantityModalVisible, setQuantityModalVisible] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [quantity, setQuantity] = useState(1);
 
   // Load cart items when component mounts
   useEffect(() => {
@@ -219,36 +222,33 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
   const handleProductPress = (service) => {
     if (!isOwner) {
-      Alert.alert(
-        "Add to Cart",
-        `Would you like to add "${service.bs_service_name}" to your cart?`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
-          {
-            text: "Add to Cart",
-            onPress: async () => {
-              try {
-                const newCartItems = [...cartItems, service];
-                setCartItems(newCartItems);
-                
-                // Save to AsyncStorage
-                await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
-                  items: newCartItems
-                }));
-                
-                Alert.alert("Success", "Item added to cart!");
-                console.log("Item added to cart:", newCartItems);
-              } catch (error) {
-                console.error('Error adding item to cart:', error);
-                Alert.alert('Error', 'Failed to add item to cart');
-              }
-            }
-          }
-        ]
-      );
+      setSelectedService(service);
+      setQuantity(1);
+      setQuantityModalVisible(true);
+    }
+  };
+
+  const handleQuantityConfirm = async () => {
+    try {
+      const serviceWithQuantity = {
+        ...selectedService,
+        quantity: quantity,
+        totalPrice: (parseFloat(selectedService.bs_cost) * quantity).toFixed(2)
+      };
+
+      const newCartItems = [...cartItems, serviceWithQuantity];
+      setCartItems(newCartItems);
+      
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
+        items: newCartItems
+      }));
+      
+      console.log("Item added to cart:", serviceWithQuantity);
+      setQuantityModalVisible(false);
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      Alert.alert('Error', 'Failed to add item to cart');
     }
   };
 
@@ -519,6 +519,58 @@ export default function BusinessProfileScreen({ route, navigation }) {
       </ScrollView>
 
       <BottomNavBar navigation={navigation} />
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={quantityModalVisible}
+        onRequestClose={() => setQuantityModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Quantity</Text>
+            <Text style={styles.serviceName}>{selectedService?.bs_service_name}</Text>
+            
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity 
+                style={styles.quantityButton}
+                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
+              >
+                <Ionicons name="remove" size={24} color="#9C45F7" />
+              </TouchableOpacity>
+              
+              <Text style={styles.quantityText}>{quantity}</Text>
+              
+              <TouchableOpacity 
+                style={styles.quantityButton}
+                onPress={() => setQuantity(prev => prev + 1)}
+              >
+                <Ionicons name="add" size={24} color="#9C45F7" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.totalPrice}>
+              Total: ${selectedService ? (parseFloat(selectedService.bs_cost) * quantity).toFixed(2) : '0.00'}
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setQuantityModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleQuantityConfirm}
+              >
+                <Text style={styles.confirmButtonText}>Add to Cart</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -687,6 +739,84 @@ const styles = StyleSheet.create({
   cartCount: {
     marginLeft: 5,
     color: '#9C45F7',
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  serviceName: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  quantityButton: {
+    backgroundColor: '#F5F5F5',
+    padding: 10,
+    borderRadius: 10,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginHorizontal: 20,
+    color: '#333',
+  },
+  totalPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#9C45F7',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#F5F5F5',
+  },
+  confirmButton: {
+    backgroundColor: '#9C45F7',
+  },
+  cancelButtonText: {
+    color: '#666',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  confirmButtonText: {
+    color: 'white',
+    textAlign: 'center',
     fontWeight: 'bold',
   },
 });

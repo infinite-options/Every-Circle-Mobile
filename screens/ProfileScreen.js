@@ -54,13 +54,27 @@ const ProfileScreen = ({ route, navigation }) => {
 
   async function fetchUserData(profileUID) {
     try {
+      console.log('Fetching user data for profile UID:', profileUID);
       const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
       const apiUser = await response.json();
+      console.log('Profile API Response:', JSON.stringify(apiUser, null, 2));
+      
       if (!apiUser || apiUser.message === "Profile not found for this user") {
+        console.log('No profile data found for user');
         setUser(null);
         setLoading(false);
         return;
       }
+
+      // Log each section of the response
+      console.log('Personal Info:', apiUser.personal_info);
+      console.log('Experience Info:', apiUser.experience_info);
+      console.log('Education Info:', apiUser.education_info);
+      console.log('Business Info:', apiUser.business_info);
+      console.log('Expertise Info:', apiUser.expertise_info);
+      console.log('Wishes Info:', apiUser.wishes_info);
+      console.log('Social Links:', apiUser.social_links);
+
       // Map API data to display fields (same as in main logic)
       const userData = {
         profile_uid: profileUID,

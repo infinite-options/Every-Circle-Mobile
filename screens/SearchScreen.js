@@ -1,5 +1,5 @@
 // SearchScreen.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,9 +11,87 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function SearchScreen() {
+export default function SearchScreen({ route }) {
   const navigation = useNavigation();
+  const [cartItems, setCartItems] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
+
+  // Load cart items when component mounts and when screen is focused
+  useEffect(() => {
+    const loadCartItems = async () => {
+      try {
+        console.log('Loading cart items...');
+        // Get all keys from AsyncStorage
+        const keys = await AsyncStorage.getAllKeys();
+        // Filter keys that start with 'cart_'
+        const cartKeys = keys.filter(key => key.startsWith('cart_'));
+        console.log('Found cart keys:', cartKeys);
+        
+        let totalItems = 0;
+        let allCartItems = [];
+        
+        // Load items from each cart
+        for (const key of cartKeys) {
+          const cartData = await AsyncStorage.getItem(key);
+          if (cartData) {
+            const { items } = JSON.parse(cartData);
+            totalItems += items.length;
+            // Add business_uid to each item
+            const businessUid = key.replace('cart_', '');
+            const itemsWithBusiness = items.map(item => ({
+              ...item,
+              business_uid: businessUid
+            }));
+            allCartItems = [...allCartItems, ...itemsWithBusiness];
+          }
+        }
+        
+        console.log('Cart count updated:', totalItems);
+        console.log('Total cart items:', allCartItems.length);
+        setCartCount(totalItems);
+        setCartItems(allCartItems);
+      } catch (error) {
+        console.error('Error loading cart items:', error);
+        // Reset cart state on error
+        setCartCount(0);
+        setCartItems([]);
+      }
+    };
+
+    // Load cart items when component mounts
+    loadCartItems();
+
+    // Add focus listener to refresh cart count when returning to this screen
+    const unsubscribe = navigation.addListener('focus', () => {
+      console.log('SearchScreen focused - refreshing cart');
+      loadCartItems();
+    });
+
+    return unsubscribe;
+  }, [navigation, route.params?.refreshCart]); // Add route.params?.refreshCart as a dependency
+
+  // Clear cart data when refreshCart is true
+  useEffect(() => {
+    const clearCartData = async () => {
+      if (route.params?.refreshCart) {
+        console.log('Clearing cart data due to refreshCart parameter');
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const cartKeys = keys.filter(key => key.startsWith('cart_'));
+          await Promise.all(cartKeys.map(key => AsyncStorage.removeItem(key)));
+          setCartCount(0);
+          setCartItems([]);
+          console.log('Cart data cleared successfully');
+        } catch (error) {
+          console.error('Error clearing cart data:', error);
+        }
+      }
+    };
+
+    clearCartData();
+  }, [route.params?.refreshCart]);
 
   // --- stub initial data, so you see the four items by default ---
   const initialResults = [
@@ -225,8 +303,32 @@ export default function SearchScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Search</Text>
-        <TouchableOpacity style={styles.cartButton}>
+        <TouchableOpacity 
+          style={styles.cartButton}
+          onPress={() => navigation.navigate('ShoppingCart', {
+            cartItems: cartItems,
+            onRemoveItem: async (index) => {
+              // Create a new array without the removed item
+              const newCartItems = cartItems.filter((_, i) => i !== index);
+              setCartItems(newCartItems);
+              setCartCount(newCartItems.length);
+              
+              // Update AsyncStorage for the specific business
+              const businessUid = cartItems[index].business_uid;
+              await AsyncStorage.setItem(`cart_${businessUid}`, JSON.stringify({
+                items: newCartItems.filter(item => item.business_uid === businessUid)
+              }));
+            },
+            businessName: 'All Items',
+            business_uid: 'all'
+          })}
+        >
           <Ionicons name="cart-outline" size={24} color="black" />
+          {cartCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -299,8 +401,29 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 300,
   },
   title: { fontSize: 28, fontWeight: "bold", color: "#fff", flex: 1, textAlign: "center" },
-  cartButton: { backgroundColor: "#fff", borderRadius: 20, padding: 5 },
-
+  cartButton: { 
+    backgroundColor: "#fff", 
+    borderRadius: 20, 
+    padding: 5,
+    position: 'relative'  // Add this for badge positioning
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   contentContainer: { flex: 1, padding: 20, paddingTop: 30, paddingBottom: 100 },
   searchContainer: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
   searchInput: {
