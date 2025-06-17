@@ -236,7 +236,27 @@ export default function BusinessProfileScreen({ route, navigation }) {
         totalPrice: (parseFloat(selectedService.bs_cost) * quantity).toFixed(2)
       };
 
-      const newCartItems = [...cartItems, serviceWithQuantity];
+      // Check if the item already exists in the cart
+      const existingItemIndex = cartItems.findIndex(item => item.bs_uid === selectedService.bs_uid);
+      
+      let newCartItems;
+      if (existingItemIndex !== -1) {
+        // Item exists, update its quantity
+        newCartItems = [...cartItems];
+        const existingItem = newCartItems[existingItemIndex];
+        const newQuantity = (existingItem.quantity || 1) + quantity;
+        newCartItems[existingItemIndex] = {
+          ...existingItem,
+          quantity: newQuantity,
+          totalPrice: (parseFloat(existingItem.bs_cost) * newQuantity).toFixed(2)
+        };
+        console.log(`Updated quantity for existing item ${selectedService.bs_service_name} to ${newQuantity}`);
+      } else {
+        // Item doesn't exist, add it as new
+        newCartItems = [...cartItems, serviceWithQuantity];
+        console.log(`Added new item ${selectedService.bs_service_name} with quantity ${quantity}`);
+      }
+      
       setCartItems(newCartItems);
       
       // Save to AsyncStorage
@@ -244,7 +264,6 @@ export default function BusinessProfileScreen({ route, navigation }) {
         items: newCartItems
       }));
       
-      console.log("Item added to cart:", serviceWithQuantity);
       setQuantityModalVisible(false);
     } catch (error) {
       console.error('Error adding item to cart:', error);
