@@ -63,14 +63,70 @@ const ShoppingCartScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleQuantityChange = async (index, change) => {
+    try {
+      const newCartItems = [...cartItems];
+      const currentQuantity = newCartItems[index].quantity || 1;
+      const newQuantity = Math.max(1, currentQuantity + change); // Ensure quantity is at least 1
+      
+      // Update the item's quantity and total price
+      newCartItems[index] = {
+        ...newCartItems[index],
+        quantity: newQuantity,
+        totalPrice: (parseFloat(newCartItems[index].bs_cost) * newQuantity).toFixed(2)
+      };
+
+      // Update local state
+      setCartItems(newCartItems);
+
+      // Update AsyncStorage for the specific business
+      const businessUid = newCartItems[index].business_uid;
+      const businessItems = newCartItems.filter(item => item.business_uid === businessUid);
+      
+      // Group items by bs_uid and combine quantities
+      const groupedItems = businessItems.reduce((acc, item) => {
+        const existingItem = acc.find(i => i.bs_uid === item.bs_uid);
+        if (existingItem) {
+          existingItem.quantity = (existingItem.quantity || 1) + (item.quantity || 1);
+          existingItem.totalPrice = (parseFloat(existingItem.bs_cost) * existingItem.quantity).toFixed(2);
+        } else {
+          acc.push({...item});
+        }
+        return acc;
+      }, []);
+
+      // Save the grouped items to AsyncStorage
+      await AsyncStorage.setItem(`cart_${businessUid}`, JSON.stringify({
+        items: groupedItems
+      }));
+
+      console.log(`Updated quantity for ${newCartItems[index].bs_service_name} to ${newQuantity}`);
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      Alert.alert('Error', 'Failed to update quantity');
+    }
+  };
+
   const calculateTotal = () => {
-    const total = cartItems.reduce((total, item) => {
+    // Group items by bs_uid and combine quantities before calculating total
+    const groupedItems = cartItems.reduce((acc, item) => {
+      const existingItem = acc.find(i => i.bs_uid === item.bs_uid);
+      if (existingItem) {
+        existingItem.quantity = (existingItem.quantity || 1) + (item.quantity || 1);
+      } else {
+        acc.push({...item});
+      }
+      return acc;
+    }, []);
+
+    const total = groupedItems.reduce((total, item) => {
       const cost = parseFloat(item.bs_cost) || 0;
       const quantity = item.quantity || 1;
       const itemTotal = cost * quantity;
       console.log(`Item ${item.bs_service_name}: ${cost.toFixed(2)} × ${quantity} = ${itemTotal.toFixed(2)}`);
       return total + itemTotal;
     }, 0);
+    
     console.log('Calculated total:', total.toFixed(2));
     return total;
   };
@@ -173,39 +229,62 @@ const ShoppingCartScreen = ({ route, navigation }) => {
     }
   };
 
+  const prepareTransactionData = (buyerUid, paymentIntent, totalAmount) => {
+    // Hard code the recommender's profile ID
+    const recommenderProfileId = "110-000231";
+    
+    const transactionData = {
+      user_profile_id: buyerUid,
+      stripe_payment_intent: paymentIntent,
+      total_amount_paid: parseFloat(totalAmount),
+      total_costs: parseFloat(calculateTotal()),
+      total_taxes: 0, // Currently hardcoded to 0, can be updated if needed
+      items: cartItems.map(item => ({
+        bs_uid: item.bs_uid,
+        bounty: parseFloat(item.bs_bounty) || 0,
+        quantity: parseInt(item.quantity) || 1,
+        recommender_profile_id: recommenderProfileId
+      }))
+    };
+
+    console.log('Prepared Transaction Data:', JSON.stringify(transactionData, null, 2));
+    return transactionData;
+  };
+
   const recordTransactions = async (buyerUid) => {
     try {
       console.log('Recording transactions for items:', cartItems);
       
       // Get the buyer's profile ID
-      const buyerProfileId = await getProfileId(buyerUid);
-      console.log('Buyer profile ID:', buyerProfileId);
-      
-      // Process each item in the cart
-      for (const item of cartItems) {
-        // Hard code the recommender's profile ID
-        const recommenderProfileId = "110-000231";
-        console.log('Recommender profile ID [hardcoded]:', recommenderProfileId);
-        
-        const transactionData = {
-          buyer_id: buyerProfileId,
-          recommender_id: recommenderProfileId,
-          bs_id: item.bs_uid
-        };
-        
-        console.log('Recording transaction:', transactionData);
-        
-        const response = await fetch(TRANSACTIONS_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(transactionData),
-        });
-        
-        const result = await response.json();
-        console.log('Transaction recorded:', result);
+      let buyerProfileId;
+      if (!buyerUid.startsWith('110')) {
+        buyerProfileId = await getProfileId(buyerUid);
+        console.log('Buyer profile ID:', buyerProfileId);
+      } else {
+        buyerProfileId = buyerUid;
       }
+      
+      // Prepare the transaction data
+      const transactionData = prepareTransactionData(buyerProfileId, 'PAYMENT_INTENT_ID', calculateTotal());
+      
+      console.log('Sending transaction data:', JSON.stringify(transactionData, null, 2));
+      
+      // Make a single API call with all transaction data
+      const response = await fetch(TRANSACTIONS_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transactionData),
+      });
+      
+      const result = await response.json();
+      console.log('Transactions recorded:', result);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to record transactions: ${result.message || 'Unknown error'}`);
+      }
+      
     } catch (error) {
       console.error('Error recording transactions:', error);
       throw error;
@@ -214,7 +293,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
 
   const handleCheckout = async () => {
     console.log('Checkout button pressed');
-    console.log('Current cart items:', cartItems);
+    // console.log('Current cart items:', cartItems);
     
     if (!stripeInitialized) {
       Alert.alert('Error', 'Payment system is not ready. Please try again.');
@@ -245,7 +324,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       console.log('Payment Intent:', result.paymentIntent);
 
       // Get the buyer's ID
-      const buyerUid = await AsyncStorage.getItem('user_uid');
+      const buyerUid = await AsyncStorage.getItem('profile_uid');
       if (!buyerUid) {
         throw new Error('User ID not found');
       }
@@ -339,9 +418,23 @@ const ShoppingCartScreen = ({ route, navigation }) => {
                         </Text>
                       </View>
                       
-                      <View style={styles.priceRow}>
+                      <View style={styles.quantityContainer}>
                         <Text style={styles.priceLabel}>Quantity:</Text>
-                        <Text style={styles.priceValue}>{item.quantity || 1}</Text>
+                        <View style={styles.quantityControls}>
+                          <TouchableOpacity 
+                            style={styles.quantityButton}
+                            onPress={() => handleQuantityChange(index, -1)}
+                          >
+                            <Ionicons name="remove" size={20} color="#9C45F7" />
+                          </TouchableOpacity>
+                          <Text style={styles.quantityText}>{item.quantity || 1}</Text>
+                          <TouchableOpacity 
+                            style={styles.quantityButton}
+                            onPress={() => handleQuantityChange(index, 1)}
+                          >
+                            <Ionicons name="add" size={20} color="#9C45F7" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                       
                       <View style={styles.totalRow}>
@@ -565,6 +658,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#9C45F7',
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 4,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  quantityText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginHorizontal: 12,
+    minWidth: 24,
+    textAlign: 'center',
   },
 });
 
