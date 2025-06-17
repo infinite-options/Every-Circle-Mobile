@@ -8,9 +8,9 @@ const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
       <View style={styles.header}>
         <Text style={styles.name}>{service.bs_service_name}</Text>
         {showEditButton && onEdit && (
-          <TouchableOpacity onPress={() => onEdit(service)} style={styles.editButton}>
-            <Ionicons name="pencil" size={20} color="#007AFF" />
-          </TouchableOpacity>
+        <TouchableOpacity onPress={() => onEdit(service)} style={styles.editButton}>
+          <Ionicons name="pencil" size={20} color="#007AFF" />
+        </TouchableOpacity>
         )}
       </View>
       <View style={styles.textContainer}>

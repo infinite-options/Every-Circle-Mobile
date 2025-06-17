@@ -66,16 +66,19 @@ const ShoppingCartScreen = ({ route, navigation }) => {
   const calculateTotal = () => {
     const total = cartItems.reduce((total, item) => {
       const cost = parseFloat(item.bs_cost) || 0;
-      return total + cost;
+      const quantity = item.quantity || 1;
+      const itemTotal = cost * quantity;
+      console.log(`Item ${item.bs_service_name}: ${cost.toFixed(2)} × ${quantity} = ${itemTotal.toFixed(2)}`);
+      return total + itemTotal;
     }, 0);
-    console.log('Calculated total:', total);
+    console.log('Calculated total:', total.toFixed(2));
     return total;
   };
 
   const createPaymentIntent = async () => {
     try {
       console.log('Creating payment intent...');
-      const profile_uid = await AsyncStorage.getItem('user_uid');
+      const profile_uid = await AsyncStorage.getItem('profile_uid');
       console.log('User profile UID:', profile_uid);
       
       if (!profile_uid) {
@@ -182,7 +185,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       for (const item of cartItems) {
         // Hard code the recommender's profile ID
         const recommenderProfileId = "110-000231";
-        console.log('Recommender profile ID:', recommenderProfileId);
+        console.log('Recommender profile ID [hardcoded]:', recommenderProfileId);
         
         const transactionData = {
           buyer_id: buyerProfileId,
@@ -250,20 +253,37 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       // Record the transactions
       await recordTransactions(buyerUid);
       
-      // Clear the cart
-      await AsyncStorage.removeItem(`cart_${business_uid}`);
-      setCartItems([]);
-      
-      Alert.alert(
-        "Success",
-        "Payment successful! Your order has been placed.",
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate('Home')
-          }
-        ]
-      );
+      // Clear ALL cart data from AsyncStorage
+      try {
+        console.log('Clearing all cart data...');
+        const keys = await AsyncStorage.getAllKeys();
+        const cartKeys = keys.filter(key => key.startsWith('cart_'));
+        console.log('Found cart keys to clear:', cartKeys);
+        
+        // Clear each cart
+        await Promise.all(cartKeys.map(key => AsyncStorage.removeItem(key)));
+        console.log('All cart data cleared successfully');
+        
+        // Clear local state
+        setCartItems([]);
+        
+        Alert.alert(
+          "Success",
+          "Payment successful! Your order has been placed.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Navigate to Search screen with refresh parameter
+                navigation.navigate('Search', { refreshCart: true });
+              }
+            }
+          ]
+        );
+      } catch (error) {
+        console.error('Error clearing cart data:', error);
+        Alert.alert('Error', 'There was an error clearing your cart. Please try again.');
+      }
     } catch (error) {
       console.error('Checkout error:', error);
       Alert.alert('Error', 'An error occurred during checkout. Please try again.');
@@ -300,14 +320,45 @@ const ShoppingCartScreen = ({ route, navigation }) => {
                   >
                     <Ionicons name="close-circle" size={24} color="#FF3B30" />
                   </TouchableOpacity>
-                  <MiniCard
-                    business={{
-                      business_name: item.bs_service_name,
-                      business_address_line_1: item.bs_service_desc,
-                      business_phone_number: `Cost: ${item.bs_cost_currency || 'USD'} ${item.bs_cost}`,
-                      business_website: item.bs_bounty ? `Bounty: ${item.bs_bounty_currency || 'USD'} ${item.bs_bounty}` : null,
-                    }}
-                  />
+                  <View style={styles.cartItemContent}>
+                    <Text style={styles.itemName}>{item.bs_service_name}</Text>
+                    <Text style={styles.itemDescription}>{item.bs_service_desc}</Text>
+                    
+                    <View style={styles.priceContainer}>
+                      <View style={styles.priceRow}>
+                        <Text style={styles.priceLabel}>Price:</Text>
+                        <Text style={styles.priceValue}>
+                          {item.bs_cost_currency || 'USD'} {parseFloat(item.bs_cost).toFixed(2)}
+                        </Text>
+                      </View>
+                      
+                      <View style={styles.priceRow}>
+                        <Text style={styles.priceLabel}>Bounty:</Text>
+                        <Text style={styles.priceValue}>
+                          {item.bs_bounty_currency || 'USD'} {(parseFloat(item.bs_bounty) || 0).toFixed(2)}
+                        </Text>
+                      </View>
+                      
+                      <View style={styles.priceRow}>
+                        <Text style={styles.priceLabel}>Quantity:</Text>
+                        <Text style={styles.priceValue}>{item.quantity || 1}</Text>
+                      </View>
+                      
+                      <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Total Price:</Text>
+                        <Text style={styles.totalValue}>
+                          {item.bs_cost_currency || 'USD'} {(parseFloat(item.totalPrice) || parseFloat(item.bs_cost) * (item.quantity || 1)).toFixed(2)}
+                        </Text>
+                      </View>
+                      
+                      <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Total Bounty:</Text>
+                        <Text style={styles.totalValue}>
+                          {item.bs_bounty_currency || 'USD'} {((parseFloat(item.bs_bounty) || 0) * (item.quantity || 1)).toFixed(2)}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
               ))}
               <View style={styles.totalContainer}>
@@ -455,6 +506,65 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.7,
+  },
+  cartItemContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  itemName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
+  },
+  priceContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    paddingTop: 10,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  priceValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 5,
+    paddingTop: 5,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  totalValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#9C45F7',
   },
 });
 
