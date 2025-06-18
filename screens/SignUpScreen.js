@@ -89,6 +89,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
         console.log("SignUpScreen - Google Signup Response:", response);
         const result = await response.json();
         if (result.user_uid) {
+          // Clear AsyncStorage before storing new user data
+          await AsyncStorage.clear();
           await AsyncStorage.setItem("user_uid", result.user_uid);
           await AsyncStorage.setItem("user_email_id", googleUserInfo.email);
           navigation.navigate("UserInfo", {
@@ -109,6 +111,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
         if (createAccountData.message === "User already exists") {
           Alert.alert("User Already Exists", "This email is already registered. Please log in instead.", [{ text: "OK", style: "cancel" }]);
         } else if (createAccountData.code === 281 && createAccountData.user_uid) {
+          // Clear AsyncStorage before storing new user data
+          await AsyncStorage.clear();
           await AsyncStorage.setItem("user_uid", createAccountData.user_uid);
           await AsyncStorage.setItem("user_email_id", email);
           navigation.navigate("UserInfo");

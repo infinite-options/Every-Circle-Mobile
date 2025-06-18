@@ -74,6 +74,7 @@ const ProfileScreen = ({ route, navigation }) => {
       console.log('Expertise Info:', apiUser.expertise_info);
       console.log('Wishes Info:', apiUser.wishes_info);
       console.log('Social Links:', apiUser.social_links);
+      console.log('Ratings Info:', apiUser.ratings_info);
 
       // Map API data to display fields (same as in main logic)
       const userData = {

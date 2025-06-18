@@ -123,6 +123,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       const user_uid = loginObject.result.user_uid;
       const user_email = loginObject.result.user_email_id;
 
+      // Store user_uid and user_email_id in AsyncStorage
       await AsyncStorage.setItem("user_uid", user_uid);
       await AsyncStorage.setItem("user_email_id", user_email);
 
