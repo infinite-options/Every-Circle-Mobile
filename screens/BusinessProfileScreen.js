@@ -19,6 +19,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
   const [quantityModalVisible, setQuantityModalVisible] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [userReview, setUserReview] = useState(null);
 
   // Load cart items when component mounts
   useEffect(() => {
@@ -205,6 +206,28 @@ export default function BusinessProfileScreen({ route, navigation }) {
     };
 
     checkBusinessOwnership();
+  }, [business_uid]);
+
+  // Load user review for this business
+  useEffect(() => {
+    const loadUserReview = async () => {
+      try {
+        const ratingsInfoStr = await AsyncStorage.getItem('user_ratings_info');
+        if (ratingsInfoStr) {
+          const ratingsInfo = JSON.parse(ratingsInfoStr);
+          // Find review for this business
+          const review = Array.isArray(ratingsInfo)
+            ? ratingsInfo.find(r => r.rating_business_id === business_uid)
+            : null;
+          setUserReview(review || null);
+        } else {
+          setUserReview(null);
+        }
+      } catch (e) {
+        setUserReview(null);
+      }
+    };
+    loadUserReview();
   }, [business_uid]);
 
   // Add focus listener to refresh data when returning to this screen
@@ -535,6 +558,48 @@ export default function BusinessProfileScreen({ route, navigation }) {
             ))}
           </View>
         )}
+
+        {/* Review Business Button or User Review */}
+        {!isOwner && (
+          userReview ? (
+            <View style={styles.userReviewContainer}>
+              <Text style={styles.userReviewTitle}>Your Review</Text>
+              <View style={styles.userReviewRow}>
+                <Text style={styles.userReviewLabel}>Rating:</Text>
+                <Text style={styles.userReviewValue}>{userReview.rating_star} / 5</Text>
+              </View>
+              <View style={styles.userReviewRow}>
+                <Text style={styles.userReviewLabel}>Comments:</Text>
+                <Text style={styles.userReviewValue}>{userReview.rating_description}</Text>
+              </View>
+              <View style={styles.userReviewRow}>
+                <Text style={styles.userReviewLabel}>Date:</Text>
+                <Text style={styles.userReviewValue}>{userReview.rating_receipt_date}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.editReviewButton}
+                onPress={() => navigation.navigate('ReviewBusiness', {
+                  business_uid: business_uid,
+                  business_name: business.business_name,
+                  reviewData: userReview,
+                  isEdit: true
+                })}
+              >
+                <Text style={styles.editReviewButtonText}>Edit Review</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.reviewButton}
+              onPress={() => navigation.navigate('ReviewBusiness', {
+                business_uid: business_uid,
+                business_name: business.business_name
+              })}
+            >
+              <Text style={styles.reviewButtonText}>Review Business</Text>
+            </TouchableOpacity>
+          )
+        )}
       </ScrollView>
 
       <BottomNavBar navigation={navigation} />
@@ -836,6 +901,51 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: 'white',
     textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  reviewButton: {
+    backgroundColor: '#9C45F7',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  reviewButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  userReviewContainer: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 16,
+    marginVertical: 20,
+  },
+  userReviewTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  userReviewRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  userReviewLabel: {
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  userReviewValue: {
+    flex: 1,
+  },
+  editReviewButton: {
+    backgroundColor: '#FFA500',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  editReviewButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
   },
 });

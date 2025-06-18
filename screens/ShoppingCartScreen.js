@@ -270,15 +270,15 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       console.log('Sending transaction data:', JSON.stringify(transactionData, null, 2));
       
       // Make a single API call with all transaction data
-      const response = await fetch(TRANSACTIONS_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(transactionData),
-      });
-      
-      const result = await response.json();
+        const response = await fetch(TRANSACTIONS_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(transactionData),
+        });
+        
+        const result = await response.json();
       console.log('Transactions recorded:', result);
       
       if (!response.ok) {

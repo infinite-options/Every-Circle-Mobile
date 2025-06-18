@@ -61,6 +61,11 @@ export default function UserInfoScreen({ navigation, route }) {
               setLastName(data.personal_info.profile_personal_last_name || "");
               setPhoneNumber(data.personal_info.profile_personal_phone_number || "");
             }
+
+            // After fetching the user profile (e.g., fullUser)
+            if (data.ratings_info) {
+              await AsyncStorage.setItem('user_ratings_info', JSON.stringify(data.ratings_info));
+            }
           } else {
             console.log("No existing profile found for user");
           }
@@ -128,7 +133,7 @@ export default function UserInfoScreen({ navigation, route }) {
       formData.append("profile_personal_first_name", firstName.trim());
       formData.append("profile_personal_last_name", lastName.trim());
       formData.append("profile_personal_phone_number", phoneNumber.trim());
-      formData.append("profile_personal_referred_by", "100-000001");
+      formData.append("profile_personal_referred_by", "110-000001");
       formData.append("user_uid", userUid);
 
       // Add profile_uid to form data only for PUT requests
