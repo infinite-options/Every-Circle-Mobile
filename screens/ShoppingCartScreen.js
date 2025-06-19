@@ -15,7 +15,7 @@ const TRANSACTIONS_ENDPOINT = 'https://ioec2testsspm.infiniteoptions.com/api/v1/
 const PROFILE_API = 'https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo';
 
 const ShoppingCartScreen = ({ route, navigation }) => {
-  const { cartItems: initialCartItems, onRemoveItem, businessName, business_uid } = route.params;
+  const { cartItems: initialCartItems, onRemoveItem, businessName, business_uid, recommender_profile_id } = route.params;
   const [cartItems, setCartItems] = useState(initialCartItems);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
@@ -42,21 +42,27 @@ const ShoppingCartScreen = ({ route, navigation }) => {
 
   const handleRemoveItem = async (index) => {
     try {
-      // Get current cart items from AsyncStorage
-      const storedCartData = await AsyncStorage.getItem(`cart_${business_uid}`);
+      // Get the business_uid from the item being removed
+      const itemToRemove = cartItems[index];
+      const itemBusinessUid = itemToRemove.business_uid;
+      
+      // Get current cart items from AsyncStorage for this specific business
+      const storedCartData = await AsyncStorage.getItem(`cart_${itemBusinessUid}`);
       let cartData = storedCartData ? JSON.parse(storedCartData) : { items: [] };
       
-      // Remove the item
-      cartData.items = cartData.items.filter((_, i) => i !== index);
+      // Find and remove the specific item by bs_uid
+      cartData.items = cartData.items.filter(item => item.bs_uid !== itemToRemove.bs_uid);
       
       // Save updated cart
-      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify(cartData));
+      await AsyncStorage.setItem(`cart_${itemBusinessUid}`, JSON.stringify(cartData));
       
       // Update local state immediately
       setCartItems(prevItems => prevItems.filter((_, i) => i !== index));
       
       // Call the parent's onRemoveItem to update the UI in BusinessProfileScreen
       onRemoveItem(index);
+      
+      console.log(`Removed item ${itemToRemove.bs_service_name} from business ${itemBusinessUid}`);
     } catch (error) {
       console.error('Error removing item from cart:', error);
       Alert.alert('Error', 'Failed to remove item from cart');
@@ -230,11 +236,25 @@ const ShoppingCartScreen = ({ route, navigation }) => {
   };
 
   const prepareTransactionData = (buyerUid, paymentIntent, totalAmount) => {
-    // Hard code the recommender's profile ID
-    const recommenderProfileId = "110-000231";
+    // Use the referral profile ID from route params, or fallback to a default
+    // If the recommender is "Charity", use a default referral ID
+    const recommenderProfileId = (recommender_profile_id && recommender_profile_id !== 'Charity') 
+      ? recommender_profile_id 
+      : "110-000231"; // Default referral ID for charity purchases
+    
+    // For the business_id, we need to handle the case where we have multiple businesses
+    // If business_uid is 'all' (from SearchScreen), we'll use the first item's business_uid
+    // Otherwise, use the passed business_uid
+    let transactionBusinessId = business_uid;
+    if (business_uid === 'all' && cartItems.length > 0) {
+      // Use the business_uid from the first cart item
+      transactionBusinessId = cartItems[0].business_uid;
+      console.log('Using business_uid from first cart item:', transactionBusinessId);
+    }
     
     const transactionData = {
       user_profile_id: buyerUid,
+      business_id: transactionBusinessId,
       stripe_payment_intent: paymentIntent,
       total_amount_paid: parseFloat(totalAmount),
       total_costs: parseFloat(calculateTotal()),
@@ -248,6 +268,9 @@ const ShoppingCartScreen = ({ route, navigation }) => {
     };
 
     console.log('Prepared Transaction Data:', JSON.stringify(transactionData, null, 2));
+    console.log('Using recommender profile ID:', recommenderProfileId);
+    console.log('Original recommender from route:', recommender_profile_id);
+    console.log('Transaction business ID:', transactionBusinessId);
     return transactionData;
   };
 

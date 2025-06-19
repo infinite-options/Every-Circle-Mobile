@@ -30,6 +30,7 @@ import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 import EditBusinessProfileScreen from "./screens/EditBusinessProfileScreen";
 import ShoppingCartScreen from "./screens/ShoppingCartScreen";
 import ReviewBusinessScreen from './screens/ReviewBusinessScreen';
+import ReviewDetailScreen from './screens/ReviewDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -471,6 +472,7 @@ export default function App() {
         <Stack.Screen name='EditBusinessProfile' component={EditBusinessProfileScreen} />
         <Stack.Screen name='ShoppingCart' component={ShoppingCartScreen} />
         <Stack.Screen name="ReviewBusiness" component={ReviewBusinessScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
