@@ -50,10 +50,47 @@ export default function SettingsScreen() {
               await GoogleSignin.signOut();
             }
 
-            // Clear all stored data
-            await AsyncStorage.multiRemove(["user_uid", "user_email_id", "displayEmail", "displayPhone"]);
+            // Get all keys to clear Apple authentication data
+            const allKeys = await AsyncStorage.getAllKeys();
+            const appleKeys = allKeys.filter(key => key.startsWith('apple_'));
+            
+            // Clear all stored data - comprehensive cleanup
+            const keysToRemove = [
+              // User authentication data
+              "user_uid", 
+              "user_email_id",
+              "profile_uid",
+              "user_id",
+              "user_name",
+              
+              // User profile data
+              "user_email",
+              "user_first_name", 
+              "user_last_name",
+              "user_phone_number",
+              
+              // Settings
+              "displayEmail", 
+              "displayPhone",
+              
+              // Business data
+              "businessFormData",
+              
+              // Cart data (all cart keys)
+              ...allKeys.filter(key => key.startsWith('cart_')),
+              
+              // Ratings data
+              "user_ratings_info",
+              
+              // Apple authentication data
+              ...appleKeys
+            ];
 
-            // Navigate to Login screen
+            console.log("SettingsScreen.js - Clearing AsyncStorage keys:", keysToRemove);
+            await AsyncStorage.multiRemove(keysToRemove);
+            console.log("SettingsScreen.js - AsyncStorage cleared successfully");
+
+            // Navigate to Home screen
             navigation.reset({
               index: 0,
               routes: [{ name: "Home" }],

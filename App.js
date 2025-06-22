@@ -111,7 +111,7 @@ export default function App() {
         const baseURI = "https://ioec2testsspm.infiniteoptions.com";
         const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
         const endpoint = baseURI + endpointPath;
-        console.log(`App.js - Full endpoint: ${endpoint}`);
+        console.log(`App.js - Full endpoint 1: ${endpoint}`);
 
         const profileResponse = await fetch(endpoint);
         const fullUser = await profileResponse.json();
@@ -305,7 +305,7 @@ export default function App() {
 
   const handleAppleSignIn = useCallback(async (userInfo, navigation) => {
     try {
-      // console.log("App.js - handleAppleSignIn - userInfo:", userInfo);
+      console.log("App.js - handleAppleSignIn - userInfo:", userInfo);
       const { user, idToken } = userInfo;
       // console.log("App.js - handleAppleSignIn - user:", user);
       // console.log("App.js - handleAppleSignIn - idToken:", idToken);
@@ -317,7 +317,7 @@ export default function App() {
         userEmail = payload?.email || `apple_user_${user.id}@example.com`;
         // console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
       }
-      // console.log("App.js - handleAppleSignIn - before APPLE_SIGNIN_ENDPOINT:", APPLE_SIGNIN_ENDPOINT);
+      console.log("App.js - handleAppleSignIn - before APPLE_SIGNIN_ENDPOINT:", APPLE_SIGNIN_ENDPOINT);
       const response = await fetch(APPLE_SIGNIN_ENDPOINT, {
         method: "POST",
         headers: {
@@ -327,9 +327,9 @@ export default function App() {
           id: user.id,
         }),
       });
-      // console.log("App.js - handleAppleSignIn - after APPLE_SIGNIN_ENDPOINT:", response);
+      console.log("App.js - handleAppleSignIn - after APPLE_SIGNIN_ENDPOINT:", response);
       const result = await response.json();
-      // console.log("App.js - handleAppleSignIn - result:", result);
+      console.log("App.js - handleAppleSignIn - result:", result);
       // if (result.message === "Correct Email" && result.result?.[0]) {
       if (result.message === "Successfully executed SQL query." && result.result?.[0]) {
         const userUid = result.result[0].user_uid;
@@ -341,11 +341,15 @@ export default function App() {
         const baseURI = "https://ioec2testsspm.infiniteoptions.com";
         const endpointPath = `/api/v1/userprofileinfo/${userUid}`;
         const endpoint = baseURI + endpointPath;
-        console.log(`App.js - Full endpoint: ${endpoint}`);
+        console.log(`App.js - Full endpoint 2: ${endpoint}`);
 
         const profileResponse = await fetch(endpoint);
         const fullUser = await profileResponse.json();
-        // console.log("App.js - Full user:", JSON.stringify(fullUser, null, 2));
+        console.log("App.js - Full user 2:", JSON.stringify(fullUser, null, 2));
+        await AsyncStorage.setItem("profile_uid", fullUser.personal_info?.profile_personal_uid || "");
+        await AsyncStorage.setItem("user_email_id", fullUser.user_email || "");
+        // await AsyncStorage.setItem("user_name", user.name);
+        // await AsyncStorage.setItem("user_id", fullUser.personal_info?.profile_personal_user_id || "");
 
         navigation.navigate("Profile", {
           user: {
