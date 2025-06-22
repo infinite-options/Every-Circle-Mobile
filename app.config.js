@@ -38,6 +38,8 @@ module.exports = ({ config: expoConfig }) => ({
         signInWithAppleServicesId: process.env.EXPO_PUBLIC_APPLE_SERVICES_ID,
       },
       usesAppleSignIn: true,
+      buildNumber: "1",
+      deploymentTarget: "13.0",
     },
     android: {
       package: process.env.EXPO_PUBLIC_BUNDLE_IDENTIFIER,
