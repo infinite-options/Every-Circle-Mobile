@@ -14,8 +14,14 @@ const AppleSignIn = ({ onSignIn, onError }) => {
           requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
         });
         console.log("AppleSignIn Success- received credential", credential);
+        console.log("AppleSignIn - credential.email:", credential.email);
+        console.log("AppleSignIn - credential.idToken:", credential.idToken);
+        console.log("AppleSignIn - credential.identityToken:", credential.identityToken);
+        console.log("AppleSignIn - credential.user:", credential.user);
+        console.log("AppleSignIn - credential.fullName:", credential.fullName);
 
         // User is authenticated.  Do we need an if statement here?
+        // if no email use credential to look up user info
 
         // If we received the user's name, store it for future use
         if (credential.fullName && credential.fullName.familyName !== null) {
@@ -37,9 +43,9 @@ const AppleSignIn = ({ onSignIn, onError }) => {
             user: {
               id: credential.user,
               email: credential.email,
-              name: fullName?.givenName ? `${fullName.givenName} ${fullName.familyName}` : "Apple User",
+              name: credential.fullName?.givenName ? `${credential.fullName.givenName} ${credential.fullName.familyName}` : "Apple User",
             },
-            idToken: credential.idToken,
+            idToken: credential.idToken || credential.identityToken, // Check both token properties
           };
           console.log("AppleSignIn - userInfo saved", userInfo);
           onSignIn(userInfo);
@@ -47,17 +53,39 @@ const AppleSignIn = ({ onSignIn, onError }) => {
           console.log("AppleSignIn - did not receive name details");
           console.log("AppleSignIn - Call endpoint to get user info");
 
-          //hard code user info for now
+          // Try to get stored email if not provided in current sign-in
+          let userEmail = credential.email;
+          if (!userEmail) {
+            console.log("AppleSignIn - email is null, trying to get from storage");
+            try {
+              const storedEmail = await AsyncStorage.getItem(`apple_email_${credential.user}`);
+              if (storedEmail) {
+                userEmail = storedEmail;
+                console.log("AppleSignIn - retrieved stored email:", userEmail);
+              }
+            } catch (error) {
+              console.log("Error retrieving stored email:", error);
+            }
+          } else {
+            // Store email for future use
+            try {
+              await AsyncStorage.setItem(`apple_email_${credential.user}`, userEmail);
+              console.log("AppleSignIn - stored email for future use");
+            } catch (error) {
+              console.log("Error storing email:", error);
+            }
+          }
+
+          // Use actual credential data instead of hardcoded values
           const userInfo = {
             user: {
-              // id: "001306.0fc3a85d328...bdd71d2a6b2eb.1840",
               id: credential.user,
-              email: "pmarathay@mac.com",
+              email: userEmail || "Apple User", // Use stored email or fallback
               name: "Apple User",
             },
-            idToken: "ey...JA",
+            idToken: credential.idToken || credential.identityToken, // Use actual token from credential
           };
-          console.log("AppleSignIn - Hardcoded userInfo saved", userInfo);
+          console.log("AppleSignIn - userInfo saved", userInfo);
           onSignIn(userInfo);
         }
 
@@ -103,11 +131,11 @@ const AppleSignIn = ({ onSignIn, onError }) => {
           // This is a simplified example - you'll need to implement proper token validation
           const userInfo = {
             user: {
-              id: "web_user_id",
-              email: "email_from_response",
-              name: "name_from_response",
+              id: "web_user_id", // TODO: Extract from response
+              email: "email_from_response", // TODO: Extract from response
+              name: "name_from_response", // TODO: Extract from response
             },
-            idToken: "token_from_response",
+            idToken: "token_from_response", // TODO: Extract from response
           };
           onSignIn(userInfo);
         } else {

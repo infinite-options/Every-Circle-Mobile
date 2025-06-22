@@ -22,6 +22,7 @@ const ProfileScreen = ({ route, navigation }) => {
       async function loadProfile() {
         setLoading(true);
         let profileId = await AsyncStorage.getItem("profile_uid");
+        console.log("ProfileScreen - profileId:", profileId);
         if (profileId) {
           setProfileUID(profileId);
           await fetchUserData(profileId);
@@ -29,6 +30,7 @@ const ProfileScreen = ({ route, navigation }) => {
         }
         // If no profile_uid, try to get user_uid and fetch profile
         const userId = await AsyncStorage.getItem("user_uid");
+        console.log("ProfileScreen - userId:", userId);
         if (userId) {
           try {
             const response = await fetch(`${ProfileScreenAPI}/${userId}`);
