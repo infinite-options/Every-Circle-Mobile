@@ -50,7 +50,6 @@
         "resourceClass": "m-medium",
         "buildConfiguration": "Release",
         "distribution": "store",
-        "bundleIdentifier": "com.infiniteoptions.everycircle",
         "env": {
           "EXPO_PUBLIC_GOOGLE_URL_SCHEME": "com.googleusercontent.apps.255320444536-fjgkn445u968bhsp7i57fpqquemqbmn5",
           "EXPO_PUBLIC_BUNDLE_IDENTIFIER": "com.infiniteoptions.everycircle",
