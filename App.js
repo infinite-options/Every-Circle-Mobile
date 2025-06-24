@@ -1,7 +1,7 @@
 import "./polyfills";
 import React, { useEffect, useState, useCallback } from "react";
 
-import { StyleSheet, Text, View, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, Alert, ActivityIndicator, TouchableOpacity, Image } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -10,6 +10,7 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import config from "./config";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
+import HowItWorksScreen from "./screens/HowItWorksScreen";
 import UserInfoScreen from "./screens/UserInfoScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import EditProfileScreen from "./screens/EditProfileScreen";
@@ -412,7 +413,12 @@ export default function App() {
     console.log("App.js - Rendering HomeScreen");
     return (
       <View style={styles.container}>
-        <View style={[styles.circleMain, { backgroundColor: "#FF9500" }]}>
+        <View style={styles.circleMain}>
+          <Image
+            source={require('./assets/everycirclelogonew_1024x1024.png')}
+            style={{ width: 200, height: 200, resizeMode: 'contain' }}
+            accessibilityLabel="Every Circle Logo"
+          />
           <Text style={styles.title}>Every Circle</Text>
         </View>
         <View style={styles.circlesContainer}>
@@ -421,11 +427,11 @@ export default function App() {
               <Text style={styles.circleText}>Sign Up</Text>
             </View>
           </TouchableOpacity>
-          <View style={styles.circleBox}>
+          <TouchableOpacity style={styles.circleBox} onPress={() => navigation.navigate("HowItWorksScreen")}>
             <View style={[styles.circle, { backgroundColor: "#00C7BE" }]}>
               <Text style={styles.circleText}>How It Works</Text>
             </View>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.circleBox} onPress={() => {
             console.log("App.js - Login Button Pressed");
             navigation.navigate("Login");
@@ -456,6 +462,7 @@ export default function App() {
             <SignUpScreen {...props} onGoogleSignUp={() => signUpHandler(props.navigation)} onAppleSignUp={(userInfo) => handleAppleSignUp(userInfo, props.navigation)} onError={setError} />
           )}
         />
+        <Stack.Screen name='HowItWorksScreen' component={HowItWorksScreen} />
         <Stack.Screen name='UserInfo' component={UserInfoScreen} />
         {/* <Stack.Screen name="UserProfile" component={UserProfile} /> */}
         <Stack.Screen name='AccountType' component={AccountTypeScreen} />
