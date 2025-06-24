@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storeUserEmail, getUserEmail } from "../utils/emailStorage";
 
 export default function UserInfoScreen({ navigation, route }) {
   // console.log("UserInfoScreen - route.params:", route.params);
@@ -19,14 +20,14 @@ export default function UserInfoScreen({ navigation, route }) {
       if (gFirst) setFirstName(gFirst);
       if (gLast) setLastName(gLast);
       if (gEmail) {
-        AsyncStorage.setItem("user_email", gEmail);
+        storeUserEmail(gEmail);
       }
       // Optionally, you could store email/profile picture as well
     }
     // Load saved first and last name if they exist
     const loadSavedData = async () => {
       try {
-        const savedEmail = await AsyncStorage.getItem("user_email");
+        const savedEmail = await getUserEmail();
         const savedFirstName = await AsyncStorage.getItem("user_first_name");
         const savedLastName = await AsyncStorage.getItem("user_last_name");
         const userUid = await AsyncStorage.getItem("user_uid");
@@ -120,7 +121,7 @@ export default function UserInfoScreen({ navigation, route }) {
 
       // Get the user_uid from AsyncStorage
       const userUid = await AsyncStorage.getItem("user_uid");
-      const email = await AsyncStorage.getItem("user_email");
+      const email = await getUserEmail();
       if (!userUid) {
         throw new Error("User UID not found");
       }
@@ -181,6 +182,7 @@ export default function UserInfoScreen({ navigation, route }) {
 
       // navigate to account type screen
       Alert.alert("Success", "Profile saved successfully!");
+      console.log("UserInfoScreen - Navigating to AccountType with:", { user_uid: userUid, email: email });
       navigation.navigate("AccountType", {
         user_uid: userUid,
         email: email,

@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getUserEmail } from "../utils/emailStorage";
 import axios from "axios";
 import { Dimensions } from "react-native";
 
@@ -8,7 +10,26 @@ const { width } = Dimensions.get("window");
 const userProfileAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/";
 
 const AccountTypeScreen = ({ navigation, route }) => {
-  const { email = "", user_uid = "" } = route.params || {};
+  const [email, setEmail] = useState(route.params?.email || "");
+  const { user_uid = "" } = route.params || {};
+
+  useEffect(() => {
+    // If email is not provided in route params, try to get it from AsyncStorage
+    if (!email) {
+      const getEmailFromStorage = async () => {
+        try {
+          const storedEmail = await getUserEmail();
+          if (storedEmail) {
+            setEmail(storedEmail);
+            console.log("AccountTypeScreen - Retrieved email from AsyncStorage:", storedEmail);
+          }
+        } catch (error) {
+          console.error("Error retrieving email from AsyncStorage:", error);
+        }
+      };
+      getEmailFromStorage();
+    }
+  }, [email]);
 
   console.log("AccountTypeScreen - Email: ", email);
   console.log("AccountTypeScreen - User UID: ", user_uid);
