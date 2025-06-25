@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, Modal } from "react-native";
 import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,6 +18,10 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [isGoogleSignUp, setIsGoogleSignUp] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralEmail, setReferralEmail] = useState("");
+  const [pendingGoogleUserInfo, setPendingGoogleUserInfo] = useState(null);
+  const [pendingRegularSignup, setPendingRegularSignup] = useState(false);
 
   // Handle pre-populated Google user info
   useEffect(() => {
@@ -67,6 +71,22 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
     return hash;
   };
 
+  const handleReferralSubmit = async () => {
+    // Optionally validate referralEmail here
+    await AsyncStorage.setItem("referral_email", referralEmail);
+    setShowReferralModal(false);
+    if (pendingGoogleUserInfo) {
+      navigation.navigate("UserInfo", {
+        googleUserInfo: pendingGoogleUserInfo,
+        referralEmail,
+      });
+      setPendingGoogleUserInfo(null);
+    } else if (pendingRegularSignup) {
+      navigation.navigate("UserInfo", { referralEmail });
+      setPendingRegularSignup(false);
+    }
+  };
+
   const handleContinue = async () => {
     try {
       if (isGoogleSignUp) {
@@ -94,9 +114,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           await AsyncStorage.clear();
           await AsyncStorage.setItem("user_uid", result.user_uid);
           await AsyncStorage.setItem("user_email_id", googleUserInfo.email);
-          navigation.navigate("UserInfo", {
-            googleUserInfo: googleUserInfo,
-          });
+          setPendingGoogleUserInfo(googleUserInfo);
+          setShowReferralModal(true);
         } else {
           throw new Error("Failed to create account");
         }
@@ -116,7 +135,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           await AsyncStorage.clear();
           await AsyncStorage.setItem("user_uid", createAccountData.user_uid);
           await AsyncStorage.setItem("user_email_id", email);
-          navigation.navigate("UserInfo");
+          setPendingRegularSignup(true);
+          setShowReferralModal(true);
         } else {
           throw new Error("Failed to create account");
         }
@@ -171,6 +191,25 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           </Text>
         </Text>
       </View>
+
+      <Modal visible={showReferralModal} transparent animationType="fade">
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <View style={{ backgroundColor: "#fff", padding: 24, borderRadius: 12, width: 300 }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}>Who referred you to Every Circle?</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 16 }}
+              placeholder="Enter referral email (optional)"
+              value={referralEmail}
+              onChangeText={setReferralEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <TouchableOpacity style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center" }} onPress={handleReferralSubmit}>
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
