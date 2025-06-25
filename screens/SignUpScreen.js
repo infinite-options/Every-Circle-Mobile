@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, Modal } from "react-native";
 import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,6 +10,7 @@ import * as Crypto from "expo-crypto";
 const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
+const REFERRAL_API = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/";
 
 export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation, route }) {
   
@@ -18,6 +19,13 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [isGoogleSignUp, setIsGoogleSignUp] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralId, setReferralId] = useState("");
+  const [pendingGoogleUserInfo, setPendingGoogleUserInfo] = useState(null);
+  const [pendingAppleUserInfo, setPendingAppleUserInfo] = useState(null);
+  const [pendingRegularSignup, setPendingRegularSignup] = useState(false);
+  const [referralError, setReferralError] = useState("");
+  const [isCheckingReferral, setIsCheckingReferral] = useState(false);
 
   // Handle pre-populated Google user info
   useEffect(() => {
@@ -30,6 +38,14 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
       // Pre-populate other fields if needed
     }
   }, [route.params?.googleUserInfo]);
+
+  // Listen for Apple sign up completion (if passed via route)
+  useEffect(() => {
+    if (route.params?.appleUserInfo) {
+      setPendingAppleUserInfo(route.params.appleUserInfo);
+      setShowReferralModal(true);
+    }
+  }, [route.params?.appleUserInfo]);
 
   const validateInputs = (email, password, confirmPassword) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,6 +83,69 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
     return hash;
   };
 
+  const handleReferralSubmit = async () => {
+    setReferralError("");
+    if (!referralId) {
+      setReferralError("Please enter a referral email or click New User.");
+      return;
+    }
+    setIsCheckingReferral(true);
+    try {
+      const response = await fetch(REFERRAL_API + encodeURIComponent(referralId));
+      const data = await response.json();
+      if (data.user_uid && data.user_uid !== "unknown") {
+        await AsyncStorage.setItem("referral_id", referralId);
+        setShowReferralModal(false);
+        const foundReferralId = data.user_uid;
+        if (pendingGoogleUserInfo) {
+          navigation.navigate("UserInfo", {
+            googleUserInfo: pendingGoogleUserInfo,
+            referralId: foundReferralId,
+          });
+          setPendingGoogleUserInfo(null);
+        } else if (pendingAppleUserInfo) {
+          navigation.navigate("UserInfo", {
+            appleUserInfo: pendingAppleUserInfo,
+            referralId: foundReferralId,
+          });
+          setPendingAppleUserInfo(null);
+        } else if (pendingRegularSignup) {
+          navigation.navigate("UserInfo", { referralId: foundReferralId });
+          setPendingRegularSignup(false);
+        }
+      } else {
+        setReferralError("Referral email not found. Please try another or click New User.");
+      }
+    } catch (error) {
+      setReferralError("Error checking referral. Please try again.");
+    } finally {
+      setIsCheckingReferral(false);
+    }
+  };
+
+  const handleNewUserReferral = async () => {
+    setReferralError("");
+    setShowReferralModal(false);
+    const newUserReferralId = "110-000001";
+    await AsyncStorage.setItem("referral_id", newUserReferralId);
+    if (pendingGoogleUserInfo) {
+      navigation.navigate("UserInfo", {
+        googleUserInfo: pendingGoogleUserInfo,
+        referralId: newUserReferralId,
+      });
+      setPendingGoogleUserInfo(null);
+    } else if (pendingAppleUserInfo) {
+      navigation.navigate("UserInfo", {
+        appleUserInfo: pendingAppleUserInfo,
+        referralId: newUserReferralId,
+      });
+      setPendingAppleUserInfo(null);
+    } else if (pendingRegularSignup) {
+      navigation.navigate("UserInfo", { referralId: newUserReferralId });
+      setPendingRegularSignup(false);
+    }
+  };
+
   const handleContinue = async () => {
     try {
       if (isGoogleSignUp) {
@@ -94,9 +173,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           await AsyncStorage.clear();
           await AsyncStorage.setItem("user_uid", result.user_uid);
           await AsyncStorage.setItem("user_email_id", googleUserInfo.email);
-          navigation.navigate("UserInfo", {
-            googleUserInfo: googleUserInfo,
-          });
+          setPendingGoogleUserInfo(googleUserInfo);
+          setShowReferralModal(true);
         } else {
           throw new Error("Failed to create account");
         }
@@ -116,7 +194,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           await AsyncStorage.clear();
           await AsyncStorage.setItem("user_uid", createAccountData.user_uid);
           await AsyncStorage.setItem("user_email_id", email);
-          navigation.navigate("UserInfo");
+          setPendingRegularSignup(true);
+          setShowReferralModal(true);
         } else {
           throw new Error("Failed to create account");
         }
@@ -171,6 +250,30 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           </Text>
         </Text>
       </View>
+
+      <Modal visible={showReferralModal} transparent animationType="fade">
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <View style={{ backgroundColor: "#fff", padding: 24, borderRadius: 12, width: 300 }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}>Who referred you to Every Circle?</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 8 }}
+              placeholder="Enter referral email (optional)"
+              value={referralId}
+              onChangeText={setReferralId}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!isCheckingReferral}
+            />
+            {!!referralError && <Text style={{ color: 'red', marginBottom: 8 }}>{referralError}</Text>}
+            <TouchableOpacity style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center", marginBottom: 8 }} onPress={handleReferralSubmit} disabled={isCheckingReferral}>
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>{isCheckingReferral ? "Checking..." : "Continue"}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ backgroundColor: "#FFA500", padding: 12, borderRadius: 8, alignItems: "center" }} onPress={handleNewUserReferral} disabled={isCheckingReferral}>
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>New User</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
