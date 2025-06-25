@@ -10,6 +10,7 @@ import * as Crypto from "expo-crypto";
 const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
+const REFERRAL_API = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/";
 
 export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation, route }) {
   
@@ -22,6 +23,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
   const [referralEmail, setReferralEmail] = useState("");
   const [pendingGoogleUserInfo, setPendingGoogleUserInfo] = useState(null);
   const [pendingRegularSignup, setPendingRegularSignup] = useState(false);
+  const [referralError, setReferralError] = useState("");
+  const [isCheckingReferral, setIsCheckingReferral] = useState(false);
 
   // Handle pre-populated Google user info
   useEffect(() => {
@@ -72,17 +75,52 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
   };
 
   const handleReferralSubmit = async () => {
-    // Optionally validate referralEmail here
-    await AsyncStorage.setItem("referral_email", referralEmail);
+    setReferralError("");
+    if (!referralEmail) {
+      setReferralError("Please enter a referral email or click New User.");
+      return;
+    }
+    setIsCheckingReferral(true);
+    try {
+      const response = await fetch(REFERRAL_API + encodeURIComponent(referralEmail));
+      const data = await response.json();
+      if (data.user_uid && data.user_uid !== "unknown") {
+        await AsyncStorage.setItem("referral_email", referralEmail);
+        setShowReferralModal(false);
+        const referralId = data.user_uid;
+        if (pendingGoogleUserInfo) {
+          navigation.navigate("UserInfo", {
+            googleUserInfo: pendingGoogleUserInfo,
+            referralEmail: referralId,
+          });
+          setPendingGoogleUserInfo(null);
+        } else if (pendingRegularSignup) {
+          navigation.navigate("UserInfo", { referralEmail: referralId });
+          setPendingRegularSignup(false);
+        }
+      } else {
+        setReferralError("Referral email not found. Please try another or click New User.");
+      }
+    } catch (error) {
+      setReferralError("Error checking referral. Please try again.");
+    } finally {
+      setIsCheckingReferral(false);
+    }
+  };
+
+  const handleNewUserReferral = async () => {
+    setReferralError("");
     setShowReferralModal(false);
+    const referralId = "110-000001";
+    await AsyncStorage.setItem("referral_email", referralId);
     if (pendingGoogleUserInfo) {
       navigation.navigate("UserInfo", {
         googleUserInfo: pendingGoogleUserInfo,
-        referralEmail,
+        referralEmail: referralId,
       });
       setPendingGoogleUserInfo(null);
     } else if (pendingRegularSignup) {
-      navigation.navigate("UserInfo", { referralEmail });
+      navigation.navigate("UserInfo", { referralEmail: referralId });
       setPendingRegularSignup(false);
     }
   };
@@ -197,15 +235,20 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           <View style={{ backgroundColor: "#fff", padding: 24, borderRadius: 12, width: 300 }}>
             <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}>Who referred you to Every Circle?</Text>
             <TextInput
-              style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 16 }}
+              style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 8 }}
               placeholder="Enter referral email (optional)"
               value={referralEmail}
               onChangeText={setReferralEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!isCheckingReferral}
             />
-            <TouchableOpacity style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center" }} onPress={handleReferralSubmit}>
-              <Text style={{ color: "#fff", fontWeight: "bold" }}>Continue</Text>
+            {!!referralError && <Text style={{ color: 'red', marginBottom: 8 }}>{referralError}</Text>}
+            <TouchableOpacity style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center", marginBottom: 8 }} onPress={handleReferralSubmit} disabled={isCheckingReferral}>
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>{isCheckingReferral ? "Checking..." : "Continue"}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ backgroundColor: "#FFA500", padding: 12, borderRadius: 8, alignItems: "center" }} onPress={handleNewUserReferral} disabled={isCheckingReferral}>
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>New User</Text>
             </TouchableOpacity>
           </View>
         </View>
