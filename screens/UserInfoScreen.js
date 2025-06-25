@@ -122,19 +122,24 @@ export default function UserInfoScreen({ navigation, route }) {
       // Get the user_uid from AsyncStorage
       const userUid = await AsyncStorage.getItem("user_uid");
       const email = await getUserEmail();
+      let referralEmail = route?.params?.referralEmail;
+      if (!referralEmail) {
+        referralEmail = await AsyncStorage.getItem("referral_email");
+      }
       if (!userUid) {
         throw new Error("User UID not found");
       }
 
       console.log("UserInfoScreen - AsyncStorage - userUid", userUid);
       console.log("UserInfoScreen - AsyncStorage - email", email);
+      console.log("UserInfoScreen - Referral Email", referralEmail);
 
       // Create form data for the API request
       const formData = new FormData();
       formData.append("profile_personal_first_name", firstName.trim());
       formData.append("profile_personal_last_name", lastName.trim());
       formData.append("profile_personal_phone_number", phoneNumber.trim());
-      formData.append("profile_personal_referred_by", "110-000001");
+      formData.append("profile_personal_referred_by", referralEmail || "100-000001");
       formData.append("user_uid", userUid);
 
       // Add profile_uid to form data only for PUT requests
