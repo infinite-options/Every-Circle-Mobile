@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Switch, TouchableOpacity, SafeAreaView, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, Switch, TouchableOpacity, SafeAreaView, ScrollView, Alert, Modal } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { Modal } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import BottomNavBar from "../components/BottomNavBar";
+import QRCode from "react-native-qrcode-svg";
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
@@ -17,6 +17,7 @@ export default function SettingsScreen() {
   const [allowCookies, setAllowCookies] = useState(false);
   const [displayEmail, setDisplayEmail] = useState(true);
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState(false);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
 
   console.log('In SettingsScreen');
 
@@ -150,6 +151,14 @@ export default function SettingsScreen() {
             <Switch value={allowCookies} onValueChange={setAllowCookies} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={allowCookies ? "#fff" : "#f4f3f4"} />
           </View>
 
+          {/* Generate QR Code */}
+          <TouchableOpacity style={[styles.settingItem, darkMode && styles.darkSettingItem]} onPress={() => setQrModalVisible(true)}>
+            <View style={styles.itemLabel}>
+              <MaterialIcons name='qr-code' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
+              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Generate QR Code</Text>
+            </View>
+          </TouchableOpacity>
+
           {/* Privacy Policy */}
           <TouchableOpacity style={[styles.settingItem, darkMode && styles.darkSettingItem]} onPress={() => navigation.navigate("PrivacyPolicy")}>
             <View style={styles.itemLabel}>
@@ -222,6 +231,27 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
+
+      {/* QR Code Modal */}
+      <Modal visible={qrModalVisible} transparent={true} animationType='fade'>
+        <View style={styles.modalOverlay}>
+          <View style={styles.qrModalBox}>
+            <Text style={styles.qrModalTitle}>QR Code</Text>
+            <Text style={styles.qrModalSubtitle}>Scan to visit Infinite Options</Text>
+            <View style={styles.qrCodeContainer}>
+              <QRCode
+                value="https://infiniteoptions.com/"
+                size={200}
+                color="#000"
+                backgroundColor="#fff"
+              />
+            </View>
+            <TouchableOpacity onPress={() => setQrModalVisible(false)} style={styles.closeModalButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Bottom Navigation */}
       <Modal visible={termsModalVisible} transparent={true} animationType='fade'>
@@ -323,5 +353,30 @@ const styles = StyleSheet.create({
   },
   darkLogoutText: {
     color: "#FF3B30",
+  },
+  qrModalBox: {
+    backgroundColor: "#fff",
+    padding: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    minWidth: 300,
+  },
+  qrModalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#333",
+  },
+  qrModalSubtitle: {
+    fontSize: 16,
+    marginBottom: 25,
+    color: "#666",
+    textAlign: "center",
+  },
+  qrCodeContainer: {
+    marginBottom: 25,
+    padding: 15,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 10,
   },
 });
