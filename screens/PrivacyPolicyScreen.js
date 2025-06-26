@@ -8,7 +8,7 @@ import {
   StyleSheet
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import BottomNavBar from '../components/BottomNavBar';
 
 export default function PrivacyPolicyScreen() {
   const navigation = useNavigation();
@@ -24,10 +24,10 @@ export default function PrivacyPolicyScreen() {
             Infinite Options, LLC (”us”, "we", or "our") operates Manifest My Space (the “Application"). This page informs you of our policies regarding the collection, use and disclosure of Personal Information we receive from users of the mobile application and web applications (the “Platforms”). 
             We use your Personal Information only for providing and improving the Application. By using the Application, you agree to the collection and use of information in accordance with this policy. 
             {'\n\n'}Information Collection And Use 
-            {'\n'}While using our Application, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you. Personally identifiable information may include, but is not limited to your name, email, social id (if you used social media to log in), street address, phone number, and payment information ("Personal Information”). This data is stored within our secure databases and we use this data to identify you with your account and purchases. We also use this data to pre-populate the information into your Application profile. 
+            {'\n'}While using our Application, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you. Personally identifiable information may include, but is not limited to your name, email, social id (if you used social media to log in), street address, phone number, and payment information ("Personal Information"). This data is stored within our secure databases and we use this data to identify you with your account and purchases. We also use this data to pre-populate the information into your Application profile. 
             {'\n\n'}Log Data 
             {'\n'}Like many application operators, we collect information that your Platform sends whenever you visit our Application ("Log Data"). 
-            {'\n'}This Log Data may include information such as your phone’s Internet Protocol ("IP") address, phone type, software version, the pages of our Application that you visit, the time and date of your visit, the time spent on those pages and other statistics. 
+            {'\n'}This Log Data may include information such as your phone's Internet Protocol ("IP") address, phone type, software version, the pages of our Application that you visit, the time and date of your visit, the time spent on those pages and other statistics. 
             {'\n'}In addition, we may use third party services such as Google Analytics that collect, monitor and analyze this information to improve the Application. 
             {'\n\n'}Communications 
             {'\n'}We may use your Personal Information to contact you with newsletters, marketing or promotional materials and other information regarding the mobile application.
@@ -54,34 +54,8 @@ export default function PrivacyPolicyScreen() {
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
       </ScrollView>
-      {/* Bottom Navigation Bar */}
-      <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
-          <Ionicons name="person-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
-          <Ionicons name="settings-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
-          <MaterialIcons name="account-balance" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
-          <Ionicons name="share-social-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Search")}>
-          <Ionicons name="search-outline" size={24} color="#333" />
-          <Text style={styles.navLabel}></Text>
-        </TouchableOpacity>
-      </View>
-
+      
+      <BottomNavBar navigation={navigation} />
     </SafeAreaView>
   );
 }
@@ -107,24 +81,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     borderRadius: 6
   },
-  navContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  navButton: {
-    alignItems: 'center',
-  },
-  navLabel: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 4,
-  },
-  
   closeButtonText: {
     color: '#fff',
     fontSize: 16,
