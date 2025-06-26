@@ -87,37 +87,45 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
     setReferralError("");
     if (!referralId) {
       setReferralError("Please enter a referral email or click New User.");
+      console.log("Referral Modal: No referral email entered");
       return;
     }
     setIsCheckingReferral(true);
     try {
+      console.log("Referral Modal: Checking referral for email:", referralId);
       const response = await fetch(REFERRAL_API + encodeURIComponent(referralId));
       const data = await response.json();
+      console.log("Referral Modal: Backend response:", data);
       if (data.user_uid && data.user_uid !== "unknown") {
-        await AsyncStorage.setItem("referral_id", referralId);
+        console.log("Referral Modal: Referral UID returned from backend:", data.user_uid);
+        // Store both the email and the UID
+        await AsyncStorage.setItem("referral_email", referralId);
+        await AsyncStorage.setItem("referral_uid", data.user_uid);
         setShowReferralModal(false);
-        const foundReferralId = data.user_uid;
+        const foundReferralUid = data.user_uid;
         if (pendingGoogleUserInfo) {
           navigation.navigate("UserInfo", {
             googleUserInfo: pendingGoogleUserInfo,
-            referralId: foundReferralId,
+            referralId: foundReferralUid,
           });
           setPendingGoogleUserInfo(null);
         } else if (pendingAppleUserInfo) {
           navigation.navigate("UserInfo", {
             appleUserInfo: pendingAppleUserInfo,
-            referralId: foundReferralId,
+            referralId: foundReferralUid,
           });
           setPendingAppleUserInfo(null);
         } else if (pendingRegularSignup) {
-          navigation.navigate("UserInfo", { referralId: foundReferralId });
+          navigation.navigate("UserInfo", { referralId: foundReferralUid });
           setPendingRegularSignup(false);
         }
       } else {
+        console.log("Referral Modal: No referral UID returned, user should enter another email or click New User.");
         setReferralError("Referral email not found. Please try another or click New User.");
       }
     } catch (error) {
       setReferralError("Error checking referral. Please try again.");
+      console.log("Referral Modal: Error checking referral:", error);
     } finally {
       setIsCheckingReferral(false);
     }
@@ -127,7 +135,9 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
     setReferralError("");
     setShowReferralModal(false);
     const newUserReferralId = "110-000001";
-    await AsyncStorage.setItem("referral_id", newUserReferralId);
+    // Store both email (empty for new user) and UID
+    await AsyncStorage.setItem("referral_email", "");
+    await AsyncStorage.setItem("referral_uid", newUserReferralId);
     if (pendingGoogleUserInfo) {
       navigation.navigate("UserInfo", {
         googleUserInfo: pendingGoogleUserInfo,

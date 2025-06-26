@@ -124,7 +124,7 @@ export default function UserInfoScreen({ navigation, route }) {
       const email = await getUserEmail();
       let referralId = route?.params?.referralId;
       if (!referralId) {
-        referralId = await AsyncStorage.getItem("referral_id");
+        referralId = await AsyncStorage.getItem("referral_uid");
       }
       if (!userUid) {
         throw new Error("User UID not found");
@@ -132,7 +132,7 @@ export default function UserInfoScreen({ navigation, route }) {
 
       console.log("UserInfoScreen - AsyncStorage - userUid", userUid);
       console.log("UserInfoScreen - AsyncStorage - email", email);
-      console.log("UserInfoScreen - Referral Id", referralId);
+      console.log("UserInfoScreen - Referral UID", referralId);
 
       // Create form data for the API request
       const formData = new FormData();
@@ -149,8 +149,13 @@ export default function UserInfoScreen({ navigation, route }) {
 
       // Log the form data contents
       console.log("Form data contents:");
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
+      console.log(`profile_personal_first_name: ${firstName.trim()}`);
+      console.log(`profile_personal_last_name: ${lastName.trim()}`);
+      console.log(`profile_personal_phone_number: ${phoneNumber.trim()}`);
+      console.log(`profile_personal_referred_by: ${referralId || "100-000001"}`);
+      console.log(`user_uid: ${userUid}`);
+      if (profileExists && profilePersonalUid) {
+        console.log(`profile_uid: ${profilePersonalUid}`);
       }
 
       const endpoint = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
@@ -167,9 +172,6 @@ export default function UserInfoScreen({ navigation, route }) {
       console.log("Sending this data:", formData);
       const response = await fetch(endpoint, {
         method,
-        headers: {
-          // Remove "Content-Type": "multipart/form-data"
-        },
         body: formData,
       });
 
