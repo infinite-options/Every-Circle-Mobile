@@ -93,7 +93,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
     try {
       console.log("Fetching business for Place ID:", googlePlaceId);
       setLoading(true);
-      const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo/${googlePlaceId}`);
+      const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/${googlePlaceId}`);
       console.log("Business Fetch Response:", response);
       if (response.ok) {
         const result = await response.json();

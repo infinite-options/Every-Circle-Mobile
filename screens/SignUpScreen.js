@@ -10,7 +10,7 @@ import * as Crypto from "expo-crypto";
 const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
-const REFERRAL_API = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/";
+const REFERRAL_API = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/";
 
 export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation, route }) {
   

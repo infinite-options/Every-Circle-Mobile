@@ -33,7 +33,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
     // console.log('In BusinessStep2');
     const fetchCategories = async () => {
       try {
-        const res = await fetch("https://ioec2testsspm.infiniteoptions.com/category_list/all");
+        const res = await fetch("https://ioec2ecaspm.infiniteoptions.com/category_list/all");
         const json = await res.json();
         setAllCategories(json.result);
         setMainCategories(json.result.filter((cat) => cat.category_parent_id === null));

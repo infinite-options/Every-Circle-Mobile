@@ -21,7 +21,7 @@ export default function UserProfile({ onContinue, onEdit }) {
       }
 
       console.log("Fetching profile for user:", userUid);
-      const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+      const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
 
       const data = await response.json();
       console.log("User profile data:", JSON.stringify(data));

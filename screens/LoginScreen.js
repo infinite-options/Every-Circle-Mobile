@@ -14,7 +14,7 @@ import config from "../config";
 // Endpoints
 const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
-const PROFILE_ENDPOINT = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+const PROFILE_ENDPOINT = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
 
 // Helper function to extract the last two digits before .apps.googleusercontent.com
 const getLastTwoDigits = (clientId) => {
@@ -134,14 +134,14 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       // console.log("user_uid", user_uid);
       // console.log("PROFILE_ENDPOINT", PROFILE_ENDPOINT);
       console.log("LoginScreen - Profile Endpoint call: ", `${PROFILE_ENDPOINT}/${user_uid}`);
-      // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`);
+      // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`);
       // const response = await axios.get(
-      //   `https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`
+      //   `https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`
       // );
       // console.log("profileResponse", response);
       // const profileResponse = await fetch(`${PROFILE_ENDPOINT}/${user_uid}`);
 
-      const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`, {
+      const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });

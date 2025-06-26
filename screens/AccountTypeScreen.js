@@ -7,7 +7,7 @@ import { Dimensions } from "react-native";
 
 const { width } = Dimensions.get("window");
 
-const userProfileAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/";
+const userProfileAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/";
 
 const AccountTypeScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState(route.params?.email || "");
@@ -47,7 +47,7 @@ const AccountTypeScreen = ({ navigation, route }) => {
       console.log("Check Email API: ", url);
 
       // const response = await axios.get(
-      //   https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}
+      //   https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}
       // );
 
       const response = await axios.get(url);

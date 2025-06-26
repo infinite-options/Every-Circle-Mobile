@@ -7,7 +7,7 @@ import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BusinessProfileApi = "https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo/";
+const BusinessProfileApi = "https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/";
 
 export default function ReviewDetailScreen({ route, navigation }) {
   const { business_uid, business_name, reviewer_profile_id } = route.params;

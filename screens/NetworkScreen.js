@@ -16,7 +16,7 @@ const NetworkScreen = ({ navigation }) => {
       setBountyLoading(true);
       const profileId = await AsyncStorage.getItem('profile_uid');
       if (profileId) {
-        const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/bountyresults/${profileId}`);
+        const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/bountyresults/${profileId}`);
         const result = await response.json();
         console.log('Bounty results:', result);
         setBountyData(result);

@@ -115,9 +115,9 @@ export default function SearchScreen({ route }) {
     setLoading(true);
     try {
       // Try the v1 API endpoint to match other endpoints in the app
-      // const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/v1/business_results/${encodeURIComponent(q)}`;
-      // const apiUrl = `https://ioec2testsspm.infiniteoptions.com/api/v1/tagsplitsearchdistinct/${encodeURIComponent(q)}`;
-      const apiUrl = `https://ioec2testsspm.infiniteoptions.com/api/tagcategorydistinct/${encodeURIComponent(q)}`;
+      const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/v1/businessresults/${encodeURIComponent(q)}`;
+      // const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/v1/tagsplitsearchdistinct/${encodeURIComponent(q)}`;
+      // const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/tagcategorydistinct/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
       console.log("🌐 API URL:", apiUrl);
       
@@ -180,12 +180,12 @@ export default function SearchScreen({ route }) {
 
   const tryAlternativeEndpoints = async (query) => {
     const alternativeEndpoints = [
-      // `https://ioec2testsspm.infiniteoptions.com/api/businessresults/${encodeURIComponent(query)}`,
-      // `https://ioec2testsspm.infiniteoptions.com/api/v1/business_search/${encodeURIComponent(query)}`,
-      // `https://ioec2testsspm.infiniteoptions.com/api/search/${encodeURIComponent(query)}`,
-      // `https://ioec2testsspm.infiniteoptions.com/api/v1/search/${encodeURIComponent(query)}`
-      `https://ioec2testsspm.infiniteoptions.com/api/tagsearchdistinct/${encodeURIComponent(query)}`
-      `https://ioec2testsspm.infiniteoptions.com/api/tagcategorydistinct/${encodeURIComponent(query)}`
+      // `https://ioec2ecaspm.infiniteoptions.com/api/businessresults/${encodeURIComponent(query)}`,
+      // `https://ioec2ecaspm.infiniteoptions.com/api/v1/business_search/${encodeURIComponent(query)}`,
+      // `https://ioec2ecaspm.infiniteoptions.com/api/search/${encodeURIComponent(query)}`,
+      // `https://ioec2ecaspm.infiniteoptions.com/api/v1/search/${encodeURIComponent(query)}`
+      `https://ioec2ecaspm.infiniteoptions.com/api/tagsearchdistinct/${encodeURIComponent(query)}`
+      `https://ioec2ecaspm.infiniteoptions.com/api/tagcategorydistinct/${encodeURIComponent(query)}`
     ];
 
     for (const endpoint of alternativeEndpoints) {
