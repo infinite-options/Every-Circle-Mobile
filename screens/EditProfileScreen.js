@@ -11,7 +11,7 @@ import BottomNavBar from "../components/BottomNavBar";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from 'expo-file-system';
 
-const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+const ProfileScreenAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
 const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
 
 const EditProfileScreen = ({ route, navigation }) => {

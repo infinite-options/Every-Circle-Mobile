@@ -108,8 +108,8 @@ export default function App() {
         console.log("App.js - User UID (from IO Login API):", user_uid);
         await AsyncStorage.setItem("user_uid", user_uid);
 
-        // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
-        const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+        // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
+        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
         const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Full endpoint 1: ${endpoint}`);
@@ -338,8 +338,8 @@ export default function App() {
         // console.log("Success", userUid);
 
         // Get full user profile data
-        // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
-        const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+        // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
         const endpointPath = `/api/v1/userprofileinfo/${userUid}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Full endpoint 2: ${endpoint}`);

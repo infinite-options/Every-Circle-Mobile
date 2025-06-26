@@ -9,7 +9,7 @@ import BusinessStep4 from './BusinessStep4';
 import ContinueButton from '../components/ContinueButton';
 import BottomNavBar from '../components/BottomNavBar';
 
-const BusinessProfileApi = 'https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo';
+const BusinessProfileApi = 'https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo';
 
 export default function BusinessSetupController({ navigation }) {
   const [activeStep, setActiveStep] = useState(0);

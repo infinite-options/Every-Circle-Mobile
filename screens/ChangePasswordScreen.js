@@ -37,7 +37,7 @@ export default function ChangePasswordScreen() {
 
           // Fetch user details to get email if not in AsyncStorage
           try {
-            const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`);
+            const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`);
             const userData = await response.json();
             console.log("User data fetched:", userData);
 

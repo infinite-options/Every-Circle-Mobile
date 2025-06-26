@@ -13,7 +13,7 @@ const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic
 
   const fetchBusinesses = async (index) => {
     try {
-      const response = await fetch("https://ioec2testsspm.infiniteoptions.com/businesses");
+      const response = await fetch("https://ioec2ecaspm.infiniteoptions.com/businesses");
       const data = await response.json();
       setBusinessList(data);
       setActiveBusinessIndex(index);

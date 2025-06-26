@@ -45,7 +45,7 @@ export default function UserInfoScreen({ navigation, route }) {
         // Check if profile exists
         if (userUid) {
           console.log("Checking for existing profile with userUid:", userUid);
-          const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+          const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
           const data = await response.json();
           console.log("Profile check response:", JSON.stringify(data, null, 2));
 
@@ -158,7 +158,7 @@ export default function UserInfoScreen({ navigation, route }) {
         console.log(`profile_uid: ${profilePersonalUid}`);
       }
 
-      const endpoint = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+      const endpoint = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
       const method = profileExists ? "PUT" : "POST";
 
       console.log("Making API request:", {
