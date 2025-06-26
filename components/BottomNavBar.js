@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get('window');
 
-const BottomNavBar = ({ navigation }) => {
+const BottomNavBar = ({ navigation, onSharePress }) => {
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
     <View style={styles.navContainer}>
@@ -23,7 +23,7 @@ const BottomNavBar = ({ navigation }) => {
         <Text style={styles.navLabel}>Home</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Network")}>
+      <TouchableOpacity style={styles.navButton} onPress={() => { if (onSharePress) onSharePress(); navigation.navigate("Network"); }}>
         <Image source={require("../assets/share.png")} style={styles.navIcon} />
         <Text style={styles.navLabel}>Share</Text>
       </TouchableOpacity>

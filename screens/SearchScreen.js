@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -114,7 +115,7 @@ export default function SearchScreen({ route }) {
     setLoading(true);
     try {
       // Try the v1 API endpoint to match other endpoints in the app
-      // const apiUrl = `https://ioec2testsspm.infiniteoptions.com/api/v1/business_results/${encodeURIComponent(q)}`;
+      // const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/v1/business_results/${encodeURIComponent(q)}`;
       // const apiUrl = `https://ioec2testsspm.infiniteoptions.com/api/v1/tagsplitsearchdistinct/${encodeURIComponent(q)}`;
       const apiUrl = `https://ioec2testsspm.infiniteoptions.com/api/tagcategorydistinct/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
@@ -300,6 +301,7 @@ export default function SearchScreen({ route }) {
 
   return (
     <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Search</Text>
@@ -376,11 +378,16 @@ export default function SearchScreen({ route }) {
 
       {/* Bottom Navigation Bar */}
       <BottomNavBar navigation={navigation} />
+      </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   ratingContainer: {
        flexDirection: "row",
        alignItems: "center",
@@ -393,22 +400,28 @@ const styles = StyleSheet.create({
      },
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
-    backgroundColor: "#9C45F7",
-    paddingTop: 50,
-    paddingBottom: 80,
+    backgroundColor: "#8b58f9",
+    paddingVertical: 15,
+    alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 300,
-    borderBottomRightRadius: 300,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  title: { fontSize: 28, fontWeight: "bold", color: "#fff", flex: 1, textAlign: "center" },
-  cartButton: { 
-    backgroundColor: "#fff", 
-    borderRadius: 20, 
+  title: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "bold",
+    flex: 1,
+    textAlign: "center",
+  },
+  cartButton: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
     padding: 5,
-    position: 'relative'  // Add this for badge positioning
+    marginLeft: 10,
+    position: 'relative',
   },
   cartBadge: {
     position: 'absolute',
