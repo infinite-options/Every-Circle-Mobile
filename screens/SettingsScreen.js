@@ -191,39 +191,6 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Display Email */}
-          <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
-            <View style={styles.itemLabel}>
-              <MaterialIcons name='email' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Display Email</Text>
-            </View>
-            <Switch
-              value={displayEmail}
-              onValueChange={async (newVal) => {
-                setDisplayEmail(newVal);
-                await AsyncStorage.setItem("displayEmail", JSON.stringify(newVal));
-                // if you want ProfileScreen to refresh immediately:
-                navigation.navigate("Profile");
-              }}
-            />
-          </View>
-
-          {/* Display Phone Number */}
-          <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
-            <View style={styles.itemLabel}>
-              <MaterialIcons name='phone' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
-              <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Display Phone Number</Text>
-            </View>
-            <Switch
-              value={displayPhoneNumber}
-              onValueChange={async (newVal) => {
-                setDisplayPhoneNumber(newVal);
-                await AsyncStorage.setItem("displayPhone", JSON.stringify(newVal));
-                navigation.navigate("Profile");
-              }}
-            />
-          </View>
-
           {/* Logout Button */}
           <TouchableOpacity style={[styles.logoutButton, darkMode && styles.darkLogoutButton]} onPress={handleLogout}>
             <MaterialIcons name='logout' size={20} style={styles.icon} color={darkMode ? "#fff" : "#FF3B30"} />

@@ -99,7 +99,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
       if (data.user_uid && data.user_uid !== "unknown") {
         console.log("Referral Modal: Referral UID returned from backend:", data.user_uid);
         // Store both the email and the UID
-        await AsyncStorage.setItem("referral_email", referralId);
+        // await AsyncStorage.setItem("referral_email", referralId);
         await AsyncStorage.setItem("referral_uid", data.user_uid);
         setShowReferralModal(false);
         const foundReferralUid = data.user_uid;
