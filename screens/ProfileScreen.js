@@ -68,15 +68,15 @@ const ProfileScreen = ({ route, navigation }) => {
         return;
       }
 
-      // Log each section of the response
-      console.log('Personal Info:', apiUser.personal_info);
-      console.log('Experience Info:', apiUser.experience_info);
-      console.log('Education Info:', apiUser.education_info);
-      console.log('Business Info:', apiUser.business_info);
-      console.log('Expertise Info:', apiUser.expertise_info);
-      console.log('Wishes Info:', apiUser.wishes_info);
-      console.log('Social Links:', apiUser.social_links);
-      console.log('Ratings Info:', apiUser.ratings_info);
+      // Log each section of the response - turn on or off as needed
+      // console.log('Personal Info:', apiUser.personal_info);
+      // console.log('Experience Info:', apiUser.experience_info);
+      // console.log('Education Info:', apiUser.education_info);
+      // console.log('Business Info:', apiUser.business_info);
+      // console.log('Expertise Info:', apiUser.expertise_info);
+      // console.log('Wishes Info:', apiUser.wishes_info);
+      // console.log('Social Links:', apiUser.social_links);
+      // console.log('Ratings Info:', apiUser.ratings_info);
 
       // Map API data to display fields (same as in main logic)
       const userData = {
@@ -196,8 +196,9 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.cardContainer}>
+          {/* This is the Profile Image */}
           <Image 
-            source={user.profileImage && user.profileImage !== "" && user.imageIsPublic && String(user.profileImage).trim() !== "" 
+            source={user.profileImage && user.profileImage !== "" && String(user.profileImage).trim() !== "" 
               ? { uri: String(user.profileImage) } 
               : require("../assets/profile.png")
             } 
@@ -217,14 +218,12 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.email && user.emailIsPublic && <Text style={styles.contact}>{user.email}</Text>}
         </View>
 
-        {/* {renderField('First Name (Public)', user?.firstName, true)}
-      {renderField('Last Name (Public)', user?.lastName, true)}
-      {renderField('Phone Number', user?.phoneNumber, user?.phoneIsPublic)}
-      {renderField('Email', user?.email, user?.emailIsPublic)}
-      {renderField('Tag Line (40 characters)', user?.tagLine, user?.tagLineIsPublic)}
-      {renderField('Short Bio (15 words)', user?.shortBio, user?.shortBioIsPublic)} */}
-
-        <MiniCard user={user} />
+        {/* This is the MiniCard */}
+        <MiniCard user={{
+          ...user,
+          imageIsPublic: user.imageIsPublic,
+          profileImage: user.imageIsPublic ? user.profileImage : ""
+        }} />
 
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Experience:</Text>
