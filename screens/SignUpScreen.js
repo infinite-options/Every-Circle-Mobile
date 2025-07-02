@@ -159,6 +159,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
   const handleContinue = async () => {
     try {
       if (isGoogleSignUp) {
+        console.log("SignUpScreen - Google Signup");
         const { googleUserInfo } = route.params;
         const payload = {
           email: googleUserInfo.email,
@@ -189,6 +190,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           throw new Error("Failed to create account");
         }
       } else {
+        console.log("SignUpScreen - Regular Signup");
         // Regular email/password signup
         const createAccountResponse = await fetch(CREATE_ACCOUNT_ENDPOINT, {
           method: "POST",
@@ -197,6 +199,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
         });
 
         const createAccountData = await createAccountResponse.json();
+        console.log("SignUpScreen - Regular Signup Response:", createAccountData);
         if (createAccountData.message === "User already exists") {
           Alert.alert("User Already Exists", "This email is already registered. Please log in instead.", [{ text: "OK", style: "cancel" }]);
         } else if (createAccountData.code === 281 && createAccountData.user_uid) {

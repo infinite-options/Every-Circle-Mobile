@@ -52,7 +52,15 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
           </View>
 
           <TextInput style={styles.input} placeholder='Wish Name' value={item.helpNeeds} onChangeText={(text) => handleInputChange(index, "helpNeeds", text)} />
-          <TextInput style={styles.input} placeholder='Description' value={item.details} onChangeText={(text) => handleInputChange(index, "details", text)} />
+          <TextInput 
+            style={styles.descriptionInput} 
+            placeholder='Description' 
+            value={item.details} 
+            onChangeText={(text) => handleInputChange(index, "details", text)}
+            multiline={true}
+            textAlignVertical="top"
+            scrollEnabled={false}
+          />
 
           <View style={styles.amountRow}>
             <Text style={styles.dollar}>💰</Text>
@@ -104,6 +112,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#fff",
     marginBottom: 5,
+  },
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 8,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    marginBottom: 5,
+    minHeight: 40,
+    maxHeight: 120,
   },
   amountRow: {
     flexDirection: "row",

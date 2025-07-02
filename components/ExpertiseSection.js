@@ -58,7 +58,15 @@ const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic,
           </View>
 
           <TextInput style={styles.input} placeholder='Expertise Name' value={item.name} onChangeText={(text) => handleInputChange(index, "name", text)} />
-          <TextInput style={styles.input} placeholder='Description' value={item.description} onChangeText={(text) => handleInputChange(index, "description", text)} />
+          <TextInput 
+            style={styles.descriptionInput} 
+            placeholder='Description' 
+            value={item.description} 
+            onChangeText={(text) => handleInputChange(index, "description", text)}
+            multiline={true}
+            textAlignVertical="top"
+            scrollEnabled={false}
+          />
 
           <View style={styles.amountRow}>
             <Text style={styles.costLabel}>Cost</Text>
@@ -118,6 +126,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#fff",
     marginBottom: 5,
+  },
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 8,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    marginBottom: 5,
+    minHeight: 40,
+    maxHeight: 120,
   },
   amountRow: {
     flexDirection: "row",
