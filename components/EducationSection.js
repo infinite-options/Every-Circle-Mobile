@@ -21,11 +21,6 @@ const EducationSection = ({ education, setEducation, toggleVisibility, isPublic,
     const updated = [...education];
     updated[index].isPublic = !updated[index].isPublic;
     setEducation(updated);
-
-    // If it's the only entry, sync the outer toggle too
-    if (updated.length === 1) {
-      toggleVisibility("educationIsPublic");
-    }
   };
 
   return (

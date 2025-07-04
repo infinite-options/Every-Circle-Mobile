@@ -104,6 +104,7 @@ const ProfileScreen = ({ route, navigation }) => {
             profile_experience_uid: exp.profile_experience_uid || "",
             company: exp.profile_experience_company_name || "",
             title: exp.profile_experience_position || "",
+            description: exp.profile_experience_description || "",
             startDate: exp.profile_experience_start_date || "",
             endDate: exp.profile_experience_end_date || "",
             isPublic: exp.profile_experience_is_public === 1 || exp.isPublic === true,
@@ -236,6 +237,7 @@ const ProfileScreen = ({ route, navigation }) => {
                 ) : null}
                 <Text style={styles.inputText}>{exp.title || ""}</Text>
                 <Text style={styles.inputText}>{exp.company || ""}</Text>
+                {exp.description && <Text style={styles.inputText}>{exp.description}</Text>}
               </View>
             ))}
         </View>

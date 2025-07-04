@@ -6,6 +6,7 @@ const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPubl
     const newEntry = {
       company: "",
       title: "",
+      description: "",
       startDate: "",
       endDate: "",
       isPublic: false,
@@ -53,9 +54,6 @@ const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPubl
                 const updated = [...experience];
                 updated[index].isPublic = !updated[index].isPublic;
                 setExperience(updated);
-                if (updated.length === 1) {
-                  toggleVisibility("experienceIsPublic");
-                }
               }}
             >
               <Text style={{ color: item.isPublic ? "#4CAF50" : "#f44336", fontWeight: "bold", marginLeft: 10 }}>{item.isPublic ? "Public" : "Private"}</Text>
@@ -65,6 +63,16 @@ const ExperienceSection = ({ experience, setExperience, toggleVisibility, isPubl
           <TextInput style={styles.input} placeholder='Company' value={item.company} onChangeText={(text) => handleInputChange(index, "company", text)} />
 
           <TextInput style={styles.input} placeholder='Job Title' value={item.title} onChangeText={(text) => handleInputChange(index, "title", text)} />
+
+          <TextInput 
+            style={styles.descriptionInput} 
+            placeholder='Description' 
+            value={item.description} 
+            onChangeText={(text) => handleInputChange(index, "description", text)}
+            multiline={true}
+            textAlignVertical="top"
+            scrollEnabled={false}
+          />
 
           <View style={styles.dateContainer}>
             <TextInput style={styles.dateInput} placeholder='MM/YYYY' value={item.startDate} onChangeText={(text) => handleInputChange(index, "startDate", text)} />
@@ -117,6 +125,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#fff",
     marginBottom: 8,
+  },
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    marginBottom: 8,
+    minHeight: 40,
+    maxHeight: 120,
   },
   dateContainer: {
     flexDirection: "row",

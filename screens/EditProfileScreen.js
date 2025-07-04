@@ -62,10 +62,11 @@ const EditProfileScreen = ({ route, navigation }) => {
       profile_experience_uid: e.profile_experience_uid || "",
       company: e.company || e.profile_experience_company_name || "",
       title: e.title || e.profile_experience_position || "",
+      description: e.description || e.profile_experience_description || "",
       startDate: e.startDate || e.profile_experience_start_date || "",
       endDate: e.endDate || e.profile_experience_end_date || "",
       isPublic: e.isPublic !== undefined ? e.isPublic : e.profile_experience_is_public === 1,
-    })) || [{ company: "", title: "", startDate: "", endDate: "", isPublic: true }],
+    })) || [{ company: "", title: "", description: "", startDate: "", endDate: "", isPublic: true }],
     education: user?.education?.map((e) => ({
       profile_education_uid: e.profile_education_uid || "",
       school: e.school || e.profile_education_school_name || "",
@@ -111,11 +112,39 @@ const EditProfileScreen = ({ route, navigation }) => {
     setFormData((prev) => {
       const newValue = !prev[fieldName];
       const updated = { ...prev, [fieldName]: newValue };
-      if (fieldName === "experienceIsPublic" && prev.experience.length === 1) updated.experience[0].isPublic = newValue;
-      if (fieldName === "educationIsPublic" && prev.education.length === 1) updated.education[0].isPublic = newValue;
-      if (fieldName === "wishesIsPublic" && prev.wishes.length === 1) updated.wishes[0].isPublic = newValue;
-      if (fieldName === "expertiseIsPublic" && prev.expertise.length === 1) updated.expertise[0].isPublic = newValue;
-      if (fieldName === "businessIsPublic" && prev.businesses.length === 1) updated.businesses[0].isPublic = newValue;
+      
+      // Update all items in the section when the section toggle is changed
+      if (fieldName === "experienceIsPublic") {
+        updated.experience = prev.experience.map(item => ({
+          ...item,
+          isPublic: newValue
+        }));
+      }
+      if (fieldName === "educationIsPublic") {
+        updated.education = prev.education.map(item => ({
+          ...item,
+          isPublic: newValue
+        }));
+      }
+      if (fieldName === "wishesIsPublic") {
+        updated.wishes = prev.wishes.map(item => ({
+          ...item,
+          isPublic: newValue
+        }));
+      }
+      if (fieldName === "expertiseIsPublic") {
+        updated.expertise = prev.expertise.map(item => ({
+          ...item,
+          isPublic: newValue
+        }));
+      }
+      if (fieldName === "businessIsPublic") {
+        updated.businesses = prev.businesses.map(item => ({
+          ...item,
+          isPublic: newValue
+        }));
+      }
+      
       return updated;
     });
   };
@@ -285,7 +314,39 @@ const EditProfileScreen = ({ route, navigation }) => {
       payload.append("profile_personal_business_is_public", formData.businessIsPublic ? 1 : 0);
       payload.append("profile_personal_image_is_public", formData.imageIsPublic ? 1 : 0);
 
-      payload.append("experience_info", JSON.stringify(formData.experience || []));
+      // Map experience data to backend field names - using frontend field names for consistency
+      const experiencePayload = (formData.experience || [])
+        .map((exp) => {
+          // Only process if company or title is present
+          if (!exp.company && !exp.title) return null;
+
+          // If it's an existing experience (has profile_experience_uid)
+          if (exp.profile_experience_uid) {
+            return {
+              profile_experience_uid: exp.profile_experience_uid,
+              company: exp.company || "",
+              title: exp.title || "",
+              description: exp.description || "",
+              startDate: exp.startDate || "",
+              endDate: exp.endDate || "",
+              isPublic: exp.isPublic ? 1 : 0,
+            };
+          }
+
+          // If it's a new experience, don't include profile_experience_uid
+          return {
+            company: exp.company || "",
+            title: exp.title || "",
+            description: exp.description || "",
+            startDate: exp.startDate || "",
+            endDate: exp.endDate || "",
+            isPublic: exp.isPublic ? 1 : 0,
+          };
+        })
+        .filter(Boolean);
+
+      console.log("Experience payload being sent:", experiencePayload);
+      payload.append("experience_info", JSON.stringify(experiencePayload));
       payload.append("education_info", JSON.stringify(formData.education || []));
       payload.append("expertise_info", JSON.stringify(formData.expertise || []));
       payload.append("wishes_info", JSON.stringify(formData.wishes || []));
@@ -380,7 +441,7 @@ const EditProfileScreen = ({ route, navigation }) => {
 
       console.log("Payload being sent to API:", payload);
 
-      console.log("Sending payload to server...");
+      console.log("Sending payload to server... PUT");
       const response = await axios({
         method: "put",
         url: `${ProfileScreenAPI}?profile_uid=${trimmedProfileUID}`,
