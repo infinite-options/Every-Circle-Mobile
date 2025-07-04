@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 5,
     backgroundColor: "#fff",
-    width: "30%",
+    width: "45%",
   },
   bountyInput: {
     borderWidth: 1,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 5,
     backgroundColor: "#fff",
-    width: "20%",
+    width: "25%",
   },
   dollar: { fontSize: 20, marginHorizontal: 5 },
   deleteIcon: { width: 20, height: 20 },

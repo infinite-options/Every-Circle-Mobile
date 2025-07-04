@@ -235,8 +235,8 @@ const ProfileScreen = ({ route, navigation }) => {
                 {(exp.startDate || exp.endDate) ? (
                   <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
                 ) : null}
-                <Text style={styles.inputText}>{exp.title || ""}</Text>
                 <Text style={styles.inputText}>{exp.company || ""}</Text>
+                <Text style={styles.inputText}>{exp.title || ""}</Text>
                 {exp.description && <Text style={styles.inputText}>{exp.description}</Text>}
               </View>
             ))}
@@ -251,8 +251,8 @@ const ProfileScreen = ({ route, navigation }) => {
                 {(edu.startDate || edu.endDate) ? (
                   <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
                 ) : null}
-                <Text style={styles.inputText}>{edu.degree || ""}</Text>
                 <Text style={styles.inputText}>{edu.school || ""}</Text>
+                <Text style={styles.inputText}>{edu.degree || ""}</Text>
               </View>
             ))}
         </View>
