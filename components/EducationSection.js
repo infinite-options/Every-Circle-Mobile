@@ -2,6 +2,56 @@ import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 
 const EducationSection = ({ education, setEducation, toggleVisibility, isPublic, handleDelete }) => {
+  // Helper function to format date input
+  const formatDateInput = (text) => {
+    // If the user manually entered a slash after 2 digits, preserve it
+    if (text.length === 3 && text[2] === '/') {
+      return text;
+    }
+    
+    // Remove any non-digit characters except for manually entered slashes
+    const cleaned = text.replace(/[^\d/]/g, '');
+    
+    // Limit to 7 characters (MM/YYYY)
+    const limited = cleaned.slice(0, 7);
+    
+    // If we have exactly 2 digits and the next character is a slash, keep it
+    if (limited.length === 3 && limited[2] === '/') {
+      return limited;
+    }
+    
+    // If we have more than 2 digits and no slash, add one
+    if (limited.length > 2 && !limited.includes('/')) {
+      return limited.slice(0, 2) + '/' + limited.slice(2);
+    }
+    
+    // If we have a slash and the month part is only 1 digit, pad it with a leading zero
+    if (limited.includes('/')) {
+      const parts = limited.split('/');
+      if (parts[0].length === 1 && parts[0] !== '') {
+        return '0' + parts[0] + '/' + (parts[1] || '');
+      }
+    }
+    
+    // Validate month value - if month is greater than 12, treat it as single digit
+    if (limited.includes('/')) {
+      const parts = limited.split('/');
+      if (parts[0] && parts[0].length === 2) {
+        const month = parseInt(parts[0], 10);
+        if (month > 12) {
+          // If month is > 12, treat first digit as month and second digit as start of year
+          return parts[0][0] + '/' + parts[0][1] + (parts[1] || '');
+        }
+        // Don't allow month 00
+        if (month === 0) {
+          return parts[0][0] + '/' + (parts[1] || '');
+        }
+      }
+    }
+    
+    return limited;
+  };
+
   const addEducation = () => {
     const newEntry = { school: "", degree: "", startDate: "", endDate: "", isPublic: false };
     setEducation([...education, newEntry]);
@@ -15,6 +65,11 @@ const EducationSection = ({ education, setEducation, toggleVisibility, isPublic,
     const updated = [...education];
     updated[index][field] = value;
     setEducation(updated);
+  };
+
+  const handleDateChange = (index, field, value) => {
+    const formattedValue = formatDateInput(value);
+    handleInputChange(index, field, formattedValue);
   };
 
   const toggleEntryVisibility = (index) => {
@@ -50,9 +105,9 @@ const EducationSection = ({ education, setEducation, toggleVisibility, isPublic,
           <TextInput style={styles.input} placeholder='School' value={item.school} onChangeText={(text) => handleInputChange(index, "school", text)} />
           <TextInput style={styles.input} placeholder='Degree' value={item.degree} onChangeText={(text) => handleInputChange(index, "degree", text)} />
           <View style={styles.dateRow}>
-            <TextInput style={styles.dateInput} placeholder='MM/YYYY' value={item.startDate} onChangeText={(text) => handleInputChange(index, "startDate", text)} />
+            <TextInput style={styles.dateInput} placeholder='MM/YYYY' value={item.startDate} onChangeText={(text) => handleDateChange(index, "startDate", text)} />
             <Text style={styles.dash}> - </Text>
-            <TextInput style={styles.dateInput} placeholder='MM/YYYY' value={item.endDate} onChangeText={(text) => handleInputChange(index, "endDate", text)} />
+            <TextInput style={styles.dateInput} placeholder='MM/YYYY' value={item.endDate} onChangeText={(text) => handleDateChange(index, "endDate", text)} />
             <TouchableOpacity onPress={() => deleteEducation(index)}>
               <Image source={require("../assets/delete.png")} style={styles.deleteIcon} />
             </TouchableOpacity>

@@ -419,7 +419,9 @@ export default function App() {
             style={{ width: 200, height: 200, resizeMode: 'contain' }}
             accessibilityLabel="Every Circle Logo"
           />
-          <Text style={styles.title}>Every Circle</Text>
+          <Text style={styles.title}>
+            <Text style={styles.italicText}>every</Text>Circle
+          </Text>
         </View>
         <View style={styles.circlesContainer}>
           <TouchableOpacity style={styles.circleBox} onPress={() => navigation.navigate("SignUp")}>
@@ -536,6 +538,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "bold",
+    fontFamily: "Georgia",
+  },
+  italicText: {
+    fontStyle: "italic",
+    fontFamily: "Georgia",
   },
   apiKeysContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.8)",
