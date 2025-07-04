@@ -21,11 +21,6 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
     const updated = [...wishes];
     updated[index].isPublic = !updated[index].isPublic;
     setWishes(updated);
-
-    // If it's the only entry, sync the outer toggle too
-    if (updated.length === 1) {
-      toggleVisibility("wishesIsPublic");
-    }
   };
 
   return (

@@ -27,11 +27,6 @@ const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic,
     const updated = [...expertise];
     updated[index].isPublic = !updated[index].isPublic;
     setExpertise(updated);
-
-    // Sync outer toggle if it's the only one
-    if (updated.length === 1) {
-      toggleVisibility("expertiseIsPublic");
-    }
   };
 
   return (
