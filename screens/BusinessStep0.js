@@ -7,12 +7,12 @@ import { Dropdown } from 'react-native-element-dropdown';
 
 const { width } = Dimensions.get('window');
 
-export default function BusinessStep1({ formData, setFormData, navigation }) {
+export default function BusinessStep0({ formData, setFormData, navigation }) {
   const [loading, setLoading] = useState(false);
   const googlePlacesRef = useRef();
 
   useEffect(() => {
-    console.log('In BusinessStep1');
+    console.log('In BusinessStep0');
     // Don't load saved form data - start fresh for new business
     // const loadSavedForm = async () => {
     //   try {
@@ -123,7 +123,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
   
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#00C721' }}>
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={{ flex: 1 }}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -137,9 +137,9 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
           >
             <View style={styles.formCard}>
               <Text style={styles.title}>Welcome to Every Circle!</Text>
-              <Text style={styles.subtitle}>Let's Build Your Business Page! Step 1</Text>
+              <Text style={styles.subtitle}>Let's Start Building Your Business Page!</Text>
 
-              <Text style={styles.label}>Search Business</Text>
+              <Text style={styles.label}>Search for Existing Business</Text>
               <View style={{ width: '100%', marginBottom: 20, zIndex: 1000 }}>
                 <GooglePlacesAutocomplete
                   ref={googlePlacesRef}
@@ -177,7 +177,10 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 />
               </View>
 
-              <Text style={styles.label}>Business Name</Text>
+              <Text style={{ textAlign: 'center', width: '100%' }}>--- OR ---</Text>
+
+
+              <Text style={styles.label}>EnterBusiness Name</Text>
               <TextInput
                 style={styles.input}
                 value={formData.businessName || ''}
@@ -202,7 +205,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 onChangeText={(text) => updateFormData("phoneNumber", text)}
               />
 
-              <Text style={styles.label}>Business Role</Text>
+              {/* <Text style={styles.label}>Business Role</Text>
               <Dropdown
                 style={styles.input}
                 data={businessRoles}
@@ -221,7 +224,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 value={formData.einNumber || ''}
                 placeholder="Enter EIN number"
                 onChangeText={text => updateFormData('einNumber', text)}
-              />
+              /> */}
 
               {loading && (
                 <ActivityIndicator size="large" color="#00C721" style={styles.loadingIndicator} />
@@ -291,8 +294,4 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignSelf: 'flex-start',
   },
-});
-
-
-
-
+}); 
