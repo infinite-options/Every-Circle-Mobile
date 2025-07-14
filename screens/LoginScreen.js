@@ -9,6 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Constants from "expo-constants";
 import config from "../config";
+import { Ionicons } from '@expo/vector-icons';
 // import SignUpScreen from "./screens/SignUpScreen";
 
 // Endpoints
@@ -59,6 +60,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
   const [isValid, setIsValid] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const validateInputs = (email, password) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -189,7 +191,19 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
 
       <View style={styles.inputContainer}>
         <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' />
-        <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry />
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder='Password'
+            value={password}
+            onChangeText={handlePasswordChange}
+            secureTextEntry={!isPasswordVisible}
+            autoCapitalize='none'
+          />
+          <TouchableOpacity style={styles.passwordVisibilityToggle} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity style={[styles.continueButton, isValid && styles.continueButtonActive]} onPress={handleContinue} disabled={!isValid || showSpinner}>
@@ -275,6 +289,15 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 15,
     fontSize: 16,
+  },
+  passwordInputContainer: {
+    position: 'relative',
+  },
+  passwordVisibilityToggle: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+    zIndex: 1,
   },
   continueButton: {
     backgroundColor: "#E5E5E5",

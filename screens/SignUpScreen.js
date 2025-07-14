@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, M
 import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from '@expo/vector-icons';
 // import CryptoJS from "react-native-crypto-js";
 // import * as CryptoJS from "react-native-crypto-js";
 import * as Crypto from "expo-crypto";
@@ -26,6 +27,8 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
   const [pendingRegularSignup, setPendingRegularSignup] = useState(false);
   const [referralError, setReferralError] = useState("");
   const [isCheckingReferral, setIsCheckingReferral] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
   // Handle pre-populated Google user info
   useEffect(() => {
@@ -230,8 +233,32 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
         <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' editable={!isGoogleSignUp} />
         {!isGoogleSignUp && (
           <>
-            <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry />
-            <TextInput style={styles.input} placeholder='Confirm Password' value={confirmPassword} onChangeText={handleConfirmPasswordChange} secureTextEntry />
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder='Password'
+                value={password}
+                onChangeText={handlePasswordChange}
+                secureTextEntry={!isPasswordVisible}
+                autoCapitalize='none'
+              />
+              <TouchableOpacity style={styles.passwordVisibilityToggle} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+                <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder='Confirm Password'
+                value={confirmPassword}
+                onChangeText={handleConfirmPasswordChange}
+                secureTextEntry={!isConfirmPasswordVisible}
+                autoCapitalize='none'
+              />
+              <TouchableOpacity style={styles.passwordVisibilityToggle} onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}>
+                <Ionicons name={isConfirmPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
           </>
         )}
       </View>
@@ -322,6 +349,15 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 15,
     fontSize: 16,
+  },
+  passwordInputContainer: {
+    position: 'relative',
+  },
+  passwordVisibilityToggle: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+    zIndex: 1,
   },
   continueButton: {
     backgroundColor: "#E5E5E5",
