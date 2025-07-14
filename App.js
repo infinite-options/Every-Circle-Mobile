@@ -264,7 +264,7 @@ export default function App() {
       const result = await response.json();
       console.log("App.js - Sign up response:", result);
 
-      if (result.user_uid) {
+      if (result.user_uid && result.code >= 200 && result.code < 300) {
         console.log("App.js - Sign up successful, storing user data");
         await AsyncStorage.setItem("user_uid", result.user_uid);
         await AsyncStorage.setItem("user_email_id", userInfo.user.email);
@@ -282,6 +282,7 @@ export default function App() {
           },
         ]);
       } else {
+        console.log("App.js - Failed to create account");
         throw new Error("Failed to create account");
       }
       if (await AsyncStorage.getItem("user_uid")) {
