@@ -562,12 +562,6 @@ const EditProfileScreen = ({ route, navigation }) => {
     <View style={{ flex: 1, backgroundColor: "#fff", position: "relative" }}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <Text style={styles.header}>Edit Profile</Text>
-      {isLoading && (
-        <View style={{ alignItems: 'center', marginVertical: 16 }}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      )}
-
       {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
       {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
         {/* Profile Image Upload Section */}
@@ -643,7 +637,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       />
 
       <TouchableOpacity style={[styles.saveButton, !isChanged && styles.disabledButton]} onPress={handleSave} disabled={!isChanged || isLoading}>
-        {isLoading ? <ActivityIndicator size="large" color="#007AFF" /> : <Text style={styles.saveText}>Save</Text>}
+        {isLoading ? <ActivityIndicator size="large" color="#fff" /> : <Text style={styles.saveText}>Save</Text>}
       </TouchableOpacity>
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 10 }}>
