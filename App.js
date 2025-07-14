@@ -274,13 +274,43 @@ export default function App() {
         //   Alert.alert("Error", "Failed to store user ID. Please try again.");
         // }
       } else if (result.message === "User already exists") {
-        console.log("App.js - User already exists");
-        Alert.alert("Account Exists", "This Google account is already registered. Please sign in instead.", [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ]);
+        console.log("App.js - User already exists, treating as successful login");
+        
+        // Store user data as if it was a successful login
+        await AsyncStorage.setItem("user_uid", result.user_uid || userInfo.user.id);
+        await AsyncStorage.setItem("user_email_id", userInfo.user.email);
+        
+        // Fetch user profile data
+        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
+        const endpointPath = `/api/v1/userprofileinfo/${result.user_uid || userInfo.user.id}`;
+        const endpoint = baseURI + endpointPath;
+        console.log(`App.js - Fetching profile for existing user: ${endpoint}`);
+
+        const profileResponse = await fetch(endpoint);
+        const fullUser = await profileResponse.json();
+        console.log("App.js - Existing user profile:", JSON.stringify(fullUser, null, 2));
+
+        if (fullUser && fullUser.personal_info?.profile_personal_uid) {
+          await AsyncStorage.setItem("profile_uid", fullUser.personal_info.profile_personal_uid);
+          
+          // Navigate to Profile page as if it was a successful login
+          navigation.navigate("Profile", {
+            user: {
+              ...fullUser,
+              user_email: userInfo.user.email,
+            },
+            profile_uid: fullUser.personal_info.profile_personal_uid,
+          });
+        } else {
+          // Fallback if profile not found
+          Alert.alert("Profile Not Found", "Your account exists but profile data could not be loaded. Please try signing in instead.", [
+            {
+              text: "OK",
+              onPress: () => navigation.navigate("Login"),
+            },
+          ]);
+        }
+        return; // Add return to prevent further execution
       } else {
         console.log("App.js - Failed to create account");
         throw new Error("Failed to create account");
