@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal, ActivityIndicator } from "react-native";
 import axios from "axios";
 import ExperienceSection from "../components/ExperienceSection";
 import EducationSection from "../components/EducationSection";
@@ -107,6 +107,9 @@ const EditProfileScreen = ({ route, navigation }) => {
 
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [pendingBusinessNames, setPendingBusinessNames] = useState([]);
+  const [isChanged, setIsChanged] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => {
@@ -149,6 +152,19 @@ const EditProfileScreen = ({ route, navigation }) => {
     });
   };
 
+  // Update all field changes to set isChanged to true
+  const handleFieldChange = (fieldName, value) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    setIsChanged(true);
+  };
+
+  // Update all toggles to set isChanged to true
+  const handleToggleVisibility = (fieldName) => {
+    setIsChanged(true);
+    toggleVisibility(fieldName);
+  };
+
+  // Update image picker to set isChanged to true
   const handlePickImage = async () => {
     console.log("handlePickImage called");
     try {
@@ -197,6 +213,7 @@ const EditProfileScreen = ({ route, navigation }) => {
         setProfileImageUri(result.assets[0].uri);
         setProfileImage(result.assets[0].uri);
         setImageError(false); // Reset error state when new image is selected
+        setIsChanged(true);
       } else {
         console.log("No image selected or picker was canceled");
       }
@@ -234,6 +251,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     }
     const updated = formData.experience.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, experience: updated }));
+    setIsChanged(true);
   };
 
   const handleDeleteEducation = (index) => {
@@ -247,6 +265,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     }
     const updated = formData.education.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, education: updated }));
+    setIsChanged(true);
   };
 
   const handleDeleteExpertise = (index) => {
@@ -259,6 +278,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     }
     const updated = formData.expertise.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, expertise: updated }));
+    setIsChanged(true);
   };
 
   const handleDeleteWish = (index) => {
@@ -271,6 +291,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     }
     const updated = formData.wishes.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, wishes: updated }));
+    setIsChanged(true);
   };
 
   // Add image error handler
@@ -293,6 +314,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       return;
     }
 
+    setIsLoading(true);
     try {
       const payload = new FormData();
       payload.append("profile_uid", trimmedProfileUID);
@@ -442,6 +464,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       console.log("Payload being sent to API:", payload);
 
       console.log("Sending payload to server... PUT");
+      await new Promise(res => setTimeout(res, 2000)); // Add this line to simulate a 2s delay
       const response = await axios({
         method: "put",
         url: `${ProfileScreenAPI}?profile_uid=${trimmedProfileUID}`,
@@ -456,6 +479,7 @@ const EditProfileScreen = ({ route, navigation }) => {
         console.log("Profile update successful");
         Alert.alert("Success", "Profile updated successfully!");
         setOriginalProfileImage(profileImageUri); // Update the original image after successful save
+        setIsChanged(false);
 
         // Only show modal for new businesses (those without profile_business_uid)
         const newBusinesses = formData.businesses?.filter((biz) => biz.name && !biz.profile_business_uid) || [];
@@ -481,6 +505,8 @@ const EditProfileScreen = ({ route, navigation }) => {
         errorMsg += ` (Image file size: ${(imageFileSize / 1024).toFixed(1)} KB)`;
       }
       Alert.alert("Error", errorMsg);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -489,14 +515,14 @@ const EditProfileScreen = ({ route, navigation }) => {
       {/* Row: Label and Toggle */}
       <View style={styles.labelRow}>
         <Text style={styles.label}>{label}</Text>
-        <TouchableOpacity onPress={() => toggleVisibility(visibilityFieldName)}>
+        <TouchableOpacity onPress={() => handleToggleVisibility(visibilityFieldName)}>
           <Text style={[styles.toggleText, { color: isPublic ? "green" : "red" }]}>{isPublic ? "Public" : "Private"}</Text>
         </TouchableOpacity>
       </View>
       <TextInput
         style={[styles.input, !editable && styles.disabledInput]}
         value={value}
-        onChangeText={(text) => setFormData({ ...formData, [fieldName]: text })}
+        onChangeText={(text) => handleFieldChange(fieldName, text)}
         editable={editable}
         placeholder={`Enter ${label.toLowerCase()}`}
       />
@@ -536,6 +562,11 @@ const EditProfileScreen = ({ route, navigation }) => {
     <View style={{ flex: 1, backgroundColor: "#fff", position: "relative" }}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <Text style={styles.header}>Edit Profile</Text>
+      {isLoading && (
+        <View style={{ alignItems: 'center', marginVertical: 16 }}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      )}
 
       {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
       {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
@@ -574,15 +605,15 @@ const EditProfileScreen = ({ route, navigation }) => {
 
       <ExperienceSection
         experience={formData.experience}
-        setExperience={(e) => setFormData({ ...formData, experience: e })}
-        toggleVisibility={() => toggleVisibility("experienceIsPublic")}
+        setExperience={(e) => { setFormData({ ...formData, experience: e }); setIsChanged(true); }}
+        toggleVisibility={() => handleToggleVisibility("experienceIsPublic")}
         isPublic={formData.experienceIsPublic}
           handleDelete={handleDeleteExperience}
       />
       <EducationSection
         education={formData.education}
-        setEducation={(e) => setFormData({ ...formData, education: e })}
-        toggleVisibility={() => toggleVisibility("educationIsPublic")}
+        setEducation={(e) => { setFormData({ ...formData, education: e }); setIsChanged(true); }}
+        toggleVisibility={() => handleToggleVisibility("educationIsPublic")}
         isPublic={formData.educationIsPublic}
           handleDelete={handleDeleteEducation}
       />
@@ -597,22 +628,22 @@ const EditProfileScreen = ({ route, navigation }) => {
         */}
       <ExpertiseSection
         expertise={formData.expertise}
-        setExpertise={(e) => setFormData({ ...formData, expertise: e })}
-        toggleVisibility={() => toggleVisibility("expertiseIsPublic")}
+        setExpertise={(e) => { setFormData({ ...formData, expertise: e }); setIsChanged(true); }}
+        toggleVisibility={() => handleToggleVisibility("expertiseIsPublic")}
         isPublic={formData.expertiseIsPublic}
           handleDelete={handleDeleteExpertise}
       />
 
       <WishesSection
         wishes={formData.wishes}
-        setWishes={(e) => setFormData({ ...formData, wishes: e })}
-        toggleVisibility={() => toggleVisibility("wishesIsPublic")}
+        setWishes={(e) => { setFormData({ ...formData, wishes: e }); setIsChanged(true); }}
+        toggleVisibility={() => handleToggleVisibility("wishesIsPublic")}
         isPublic={formData.wishesIsPublic}
           handleDelete={handleDeleteWish}
       />
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveText}>Save</Text>
+      <TouchableOpacity style={[styles.saveButton, !isChanged && styles.disabledButton]} onPress={handleSave} disabled={!isChanged || isLoading}>
+        {isLoading ? <ActivityIndicator size="large" color="#007AFF" /> : <Text style={styles.saveText}>Save</Text>}
       </TouchableOpacity>
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 10 }}>
@@ -659,6 +690,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
     marginVertical: 20,
+  },
+  disabledButton: {
+    backgroundColor: "#ccc",
   },
   labelRow: {
     flexDirection: "row",

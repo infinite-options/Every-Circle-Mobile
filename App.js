@@ -206,6 +206,8 @@ export default function App() {
   const signUpHandler = useCallback(async (navigation) => {
     console.log("App.js - signUpHandler - Google Button Pressed");
     try {
+      // Clear AsyncStorage before starting sign up to avoid stale data
+      await AsyncStorage.clear();
       // Check if already signed in
       const isSignedIn = await GoogleSignin.isSignedIn();
       console.log("App.js - Is user already signed in?", isSignedIn);
@@ -316,7 +318,17 @@ export default function App() {
         throw new Error("Failed to create account");
       }
       if (await AsyncStorage.getItem("user_uid")) {
-        navigation.navigate("UserInfo");
+        // Pass Google user info to UserInfoScreen for pre-filling
+        navigation.navigate("UserInfo", {
+          googleUserInfo: {
+            email: userInfo.user.email,
+            firstName: userInfo.user.givenName,
+            lastName: userInfo.user.familyName,
+            profilePicture: userInfo.user.photo,
+            googleId: userInfo.user.id,
+            accessToken: tokens.accessToken,
+          },
+        });
       } else {
         Alert.alert("Error", "Failed to store user ID. Please try again.");
       }
@@ -421,7 +433,16 @@ export default function App() {
       const result = await response.json();
       if (result.user_uid) {
         await AsyncStorage.setItem("user_uid", result.user_uid);
-        navigation.navigate("UserInfo");
+        // Pass Apple user info to UserInfoScreen for pre-filling
+        navigation.navigate("UserInfo", {
+          appleUserInfo: {
+            email: userEmail,
+            firstName: user.name?.split(" ")[0] || "",
+            lastName: user.name?.split(" ").slice(1).join(" ") || "",
+            appleId: user.id,
+            idToken: idToken,
+          },
+        });
       }
     } catch (err) {
       setError(err.message);

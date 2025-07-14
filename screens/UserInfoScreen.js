@@ -14,17 +14,30 @@ export default function UserInfoScreen({ navigation, route }) {
 
   useEffect(() => {
     console.log("UserInfoScreen - route.params:", route.params);
+    
     // Pre-populate from Google user info if present
     if (route?.params?.googleUserInfo) {
       const { firstName: gFirst, lastName: gLast, email: gEmail } = route.params.googleUserInfo;
+      console.log("UserInfoScreen - Pre-filling with Google user info:", { gFirst, gLast, gEmail });
       if (gFirst) setFirstName(gFirst);
       if (gLast) setLastName(gLast);
       if (gEmail) {
         storeUserEmail(gEmail);
       }
-      // Optionally, you could store email/profile picture as well
     }
-    // Load saved first and last name if they exist
+    
+    // Pre-populate from Apple user info if present
+    if (route?.params?.appleUserInfo) {
+      const { firstName: aFirst, lastName: aLast, email: aEmail } = route.params.appleUserInfo;
+      console.log("UserInfoScreen - Pre-filling with Apple user info:", { aFirst, aLast, aEmail });
+      if (aFirst) setFirstName(aFirst);
+      if (aLast) setLastName(aLast);
+      if (aEmail) {
+        storeUserEmail(aEmail);
+      }
+    }
+    
+    // Load saved first and last name if they exist (only if not already set by social login)
     const loadSavedData = async () => {
       try {
         const savedEmail = await getUserEmail();
@@ -39,6 +52,7 @@ export default function UserInfoScreen({ navigation, route }) {
           userUid,
         });
 
+        // Only set saved names if not already set by social login
         if (savedFirstName && !firstName) setFirstName(savedFirstName);
         if (savedLastName && !lastName) setLastName(savedLastName);
 
@@ -55,11 +69,11 @@ export default function UserInfoScreen({ navigation, route }) {
             setProfilePersonalUid(data.personal_info?.profile_personal_uid);
             console.log("Profile personal UID:", data.personal_info?.profile_personal_uid);
 
-            // Pre-fill the form with existing data
+            // Pre-fill the form with existing data (only if not already set by social login)
             if (data.personal_info) {
               console.log("Pre-filling form with existing data:", data.personal_info);
-              setFirstName(data.personal_info.profile_personal_first_name || "");
-              setLastName(data.personal_info.profile_personal_last_name || "");
+              if (!firstName) setFirstName(data.personal_info.profile_personal_first_name || "");
+              if (!lastName) setLastName(data.personal_info.profile_personal_last_name || "");
               setPhoneNumber(data.personal_info.profile_personal_phone_number || "");
             }
 
@@ -78,7 +92,7 @@ export default function UserInfoScreen({ navigation, route }) {
 
     loadSavedData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route?.params?.googleUserInfo]);
+  }, [route?.params?.googleUserInfo, route?.params?.appleUserInfo]);
 
   const formatPhoneNumber = (text) => {
     const cleaned = ("" + text).replace(/\D/g, "");
