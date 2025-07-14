@@ -31,7 +31,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     einNumber: business?.business_ein_number || "",
     website: business?.business_website || "",
     customTags: Array.isArray(business?.custom_tags) ? business.custom_tags : [],
-    images: Array.isArray(business?.business_google_photos) ? business.business_google_photos : [],
+    images: Array.isArray(business?.images) ? business.images : [],
     socialLinks: {
       facebook: business?.facebook || "",
       instagram: business?.instagram || "",
@@ -322,17 +322,19 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         <Text style={styles.addImageButtonText}>+ Add Images</Text>
       </TouchableOpacity>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-        {(formData.images || []).map((imageUri, index) => (
-          <View key={index} style={styles.imageContainer}>
-            <Image source={{ uri: imageUri }} style={styles.businessImage} />
-            <TouchableOpacity 
-              style={styles.removeImageButton} 
-              onPress={() => removeImage(index)}
-            >
-              <Text style={styles.removeImageText}>×</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+        <View style={styles.imageRow}>
+          {(formData.images || []).map((imageUri, index) => (
+            <View key={index} style={styles.imageWrapper}>
+              <Image source={{ uri: imageUri }} style={styles.businessImage} resizeMode='cover' />
+              <TouchableOpacity 
+                style={styles.deleteIcon}
+                onPress={() => removeImage(index)}
+              >
+                <Text style={styles.deleteText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -648,26 +650,43 @@ const styles = StyleSheet.create({
   },
   imageScroll: {
     marginTop: 10,
+    height: 120,
   },
-  imageContainer: {
-    width: 100,
-    height: 100,
+  imageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  imageWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    overflow: "hidden",
     marginRight: 10,
+    backgroundColor: "#fff",
+    position: "relative",
   },
   businessImage: {
     width: "100%",
     height: "100%",
-    borderRadius: 5,
+    borderRadius: 10,
   },
-  removeImageButton: {
+  deleteIcon: {
     position: "absolute",
-    top: 5,
-    right: 5,
-    padding: 5,
+    top: 2,
+    right: 2,
+    backgroundColor: "#ff3b30",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
   },
-  removeImageText: {
-    color: "red",
-    fontSize: 16,
+  deleteText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   addImageButton: {
     backgroundColor: "#00C721",

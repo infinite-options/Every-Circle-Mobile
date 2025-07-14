@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BusinessStep0 from './BusinessStep0';
 import BusinessStep1 from './BusinessStep1';
 import BusinessStep2 from './BusinessStep2';
 import BusinessStep3 from './BusinessStep3';
@@ -91,7 +92,7 @@ export default function BusinessSetupController({ navigation }) {
 
   const handleNext = () => {
     console.log('activeStep', activeStep);
-    if (activeStep < 3) {
+    if (activeStep < 4) {
       setActiveStep(prev => prev + 1);
     } else {
       submitBusinessData();
@@ -191,12 +192,14 @@ export default function BusinessSetupController({ navigation }) {
   const renderStep = () => {
     switch (activeStep) {
       case 0:
-        return <BusinessStep1 formData={formData} setFormData={setFormData} navigation={navigation} />;
+        return <BusinessStep0 formData={formData} setFormData={setFormData} navigation={navigation} />;
       case 1:
-        return <BusinessStep2 formData={formData} setFormData={setFormData} navigation={navigation} />;
+        return <BusinessStep1 formData={formData} setFormData={setFormData} navigation={navigation} />;
       case 2:
-        return <BusinessStep3 formData={formData} setFormData={setFormData} navigation={navigation} />;
+        return <BusinessStep2 formData={formData} setFormData={setFormData} navigation={navigation} />;
       case 3:
+        return <BusinessStep3 formData={formData} setFormData={setFormData} navigation={navigation} />;
+      case 4:
         return <BusinessStep4 formData={formData} setFormData={setFormData} navigation={navigation} />;
       default:
         return null;
@@ -217,14 +220,14 @@ export default function BusinessSetupController({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#00C721',
+    backgroundColor: '#FFF',
   },
   bottomButtonContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#00C721',
+    backgroundColor: '#FFF',
     paddingTop: 0,
     paddingBottom: 80,
     paddingHorizontal: 20,
