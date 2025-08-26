@@ -14,7 +14,9 @@ import config from "../config";
 // Endpoints
 const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
-const PROFILE_ENDPOINT = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+import { API_BASE_URL } from "../apiConfig";
+
+const PROFILE_ENDPOINT = `${API_BASE_URL}/api/v1/userprofileinfo`;
 
 // Helper function to extract the last two digits before .apps.googleusercontent.com
 const getLastTwoDigits = (clientId) => {
@@ -112,6 +114,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       // console.log("LoginScreen - hashedPassword", hashedPassword);
 
       // 3. Login
+      console.log("LoginScreen - LOGIN_ENDPOINT", LOGIN_ENDPOINT);
       const loginResponse = await fetch(LOGIN_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,29 +132,69 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       console.log("LoginScreen - user_uid", user_uid);
       // console.log("LoginScreen - User Email", user_email);
 
+      // Handle case where no use_uid is returned
+      if (!user_uid) {
+        console.log("LoginScreen - No user data returned, redirecting to sign up");
+
+        // Clear all user-related data from AsyncStorage
+        await AsyncStorage.multiRemove(["user_uid", "user_email_id", "profile_uid", "user_first_name", "user_last_name", "user_phone_number"]);
+        console.log("LoginScreen - Cleared AsyncStorage for no user_uid case");
+
+        Alert.alert("Account Not Found", "This email is not registered. Please sign up to create an account.", [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              setShowSpinner(false);
+            },
+          },
+          {
+            text: "Sign Up",
+            onPress: () => {
+              setShowSpinner(false);
+              navigation.navigate("SignUp");
+            },
+          },
+        ]);
+        return;
+      }
+
       // 4. Fetch user profile
       // console.log("user_uid", user_uid);
       // console.log("PROFILE_ENDPOINT", PROFILE_ENDPOINT);
       console.log("LoginScreen - Profile Endpoint call: ", `${PROFILE_ENDPOINT}/${user_uid}`);
-      // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`);
-      // const response = await axios.get(
-      //   `https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`
-      // );
-      // console.log("profileResponse", response);
-      // const profileResponse = await fetch(`${PROFILE_ENDPOINT}/${user_uid}`);
 
-      const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`, {
+      const profileResponse = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${user_uid}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
 
-      // console.log("profileResponse", profileResponse);
+      console.log("LoginScreen - profileResponse", profileResponse);
 
       const fullUser = await profileResponse.json();
       console.log("LoginScreen - user profile info", fullUser);
 
-      if (!fullUser || fullUser.message === "Profile not found for this user") {
-        Alert.alert("Error", "Profile not found.");
+      // Handle case where profile is not found for existing user
+      if (fullUser.message === "Profile not found for this user") {
+        console.log("LoginScreen - Profile not found for existing user, redirecting to UserInfo");
+
+        // Clear any existing profile data but keep the new user credentials
+        await AsyncStorage.multiRemove(["profile_uid", "user_first_name", "user_last_name", "user_phone_number"]);
+        console.log("LoginScreen - Cleared profile data from AsyncStorage for incomplete profile case");
+
+        // Store the user_uid so UserInfo screen can use it
+        await AsyncStorage.setItem("user_uid", user_uid);
+        await AsyncStorage.setItem("user_email_id", user_email);
+
+        Alert.alert("Complete Your Profile", "Your account exists but your profile is incomplete. Please complete your profile information.", [
+          {
+            text: "Continue",
+            onPress: () => {
+              setShowSpinner(false);
+              navigation.navigate("UserInfo");
+            },
+          },
+        ]);
         return;
       }
 

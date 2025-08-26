@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import * as Crypto from "expo-crypto";
 import BottomNavBar from "../components/BottomNavBar";
+import { API_BASE_URL } from "../apiConfig";
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation();
@@ -37,7 +38,7 @@ export default function ChangePasswordScreen() {
 
           // Fetch user details to get email if not in AsyncStorage
           try {
-            const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`);
+            const response = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${uid}`);
             const userData = await response.json();
             console.log("User data fetched:", userData);
 

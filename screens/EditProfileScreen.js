@@ -9,9 +9,11 @@ import ExpertiseSection from "../components/ExpertiseSection";
 import BusinessSection from "../components/BusinessSection";
 import BottomNavBar from "../components/BottomNavBar";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from "expo-file-system";
 
-const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
+import { API_BASE_URL } from "../apiConfig";
+
+const ProfileScreenAPI = `${API_BASE_URL}/api/v1/userprofileinfo`;
 const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
 
 const EditProfileScreen = ({ route, navigation }) => {
@@ -336,7 +338,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       if (profileImageUri && !imageError && profileImageUri !== originalProfileImage) {
         const fileInfo = await FileSystem.getInfoAsync(profileImageUri);
         imageFileSize = fileInfo.size || 0;
-        console.log('Image file size (bytes):', imageFileSize);
+        console.log("Image file size (bytes):", imageFileSize);
 
         const uriParts = profileImageUri.split(".");
         const fileType = uriParts[uriParts.length - 1];
@@ -460,7 +462,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     wishesIsPublic: formData.wishesIsPublic,
     businessIsPublic: formData.businessIsPublic,
     // Only show the image in MiniCard if imageIsPublic is true
-    profileImage: formData.imageIsPublic ? (profileImageUri || "") : "",
+    profileImage: formData.imageIsPublic ? profileImageUri || "" : "",
   };
 
   // Profile Image Public/Private Toggle Handler
@@ -481,16 +483,10 @@ const EditProfileScreen = ({ route, navigation }) => {
         {/* Profile Image Upload Section */}
         <View style={styles.imageSection}>
           <Text style={styles.label}>Profile Image</Text>
-          <Image 
-            source={profileImageUri && !imageError ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} 
-            style={styles.profileImage}
-            onError={handleImageError}
-          />
+          <Image source={profileImageUri && !imageError ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} style={styles.profileImage} onError={handleImageError} />
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
             <TouchableOpacity onPress={toggleProfileImageVisibility}>
-              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>
-                {formData.imageIsPublic ? "Public" : "Private"}
-              </Text>
+              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>{formData.imageIsPublic ? "Public" : "Private"}</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={handlePickImage}>

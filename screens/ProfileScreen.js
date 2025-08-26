@@ -4,10 +4,12 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from "@react-navigation/native";
 
-// const ProfileScreenAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo";
-const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+import { API_BASE_URL } from "../apiConfig";
+
+// const ProfileScreenAPI = `${API_BASE_URL}/api/v1/userprofileinfo`;
+const baseURI = API_BASE_URL;
 const endpointPath = `/api/v1/userprofileinfo`;
 const ProfileScreenAPI = baseURI + endpointPath;
 console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
@@ -160,9 +162,8 @@ const ProfileScreen = ({ route, navigation }) => {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text style={{ fontSize: 18, color: "red", textAlign: "center", marginBottom: 20 }}>No user data available. Please try again.</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Home")}
-          style={{ backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}>
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Go Home</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")} style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8 }}>
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>Go Home</Text>
         </TouchableOpacity>
       </View>
     );
@@ -179,11 +180,10 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.cardContainer}>
-          <Image 
-            source={user.profileImage && user.profileImage !== "" && user.imageIsPublic && String(user.profileImage).trim() !== "" 
-              ? { uri: String(user.profileImage) } 
-              : require("../assets/profile.png")
-            } 
+          <Image
+            source={
+              user.profileImage && user.profileImage !== "" && user.imageIsPublic && String(user.profileImage).trim() !== "" ? { uri: String(user.profileImage) } : require("../assets/profile.png")
+            }
             style={styles.profileImage}
             onError={(error) => {
               console.log("ProfileScreen image failed to load:", error.nativeEvent.error);
@@ -214,8 +214,8 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.experience
             ?.filter((exp) => exp.isPublic)
             .map((exp, index, arr) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}> 
-                {(exp.startDate || exp.endDate) ? (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                {exp.startDate || exp.endDate ? (
                   <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
                 ) : null}
                 <Text style={styles.inputText}>{exp.title || ""}</Text>
@@ -229,8 +229,8 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.education
             ?.filter((edu) => edu.isPublic)
             .map((edu, index) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}> 
-                {(edu.startDate || edu.endDate) ? (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                {edu.startDate || edu.endDate ? (
                   <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
                 ) : null}
                 <Text style={styles.inputText}>{edu.degree || ""}</Text>
@@ -243,23 +243,22 @@ const ProfileScreen = ({ route, navigation }) => {
         {user.businesses && user.businesses.length > 0 && (
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Businesses:</Text>
-            {user.businesses
-              .map((bus, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
-                  onPress={() => {
-                    if (bus.profile_business_uid) {
-                      navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
-                    } else {
-                      Alert.alert("Error", "Business profile not found.");
-                    }
-                  }}
-                >
-                  <Text style={styles.inputText}>{bus.name || ""}</Text>
-                  <Text style={styles.inputText}>{bus.role || ""}</Text>
-                </TouchableOpacity>
-              ))}
+            {user.businesses.map((bus, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
+                onPress={() => {
+                  if (bus.profile_business_uid) {
+                    navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
+                  } else {
+                    Alert.alert("Error", "Business profile not found.");
+                  }
+                }}
+              >
+                <Text style={styles.inputText}>{bus.name || ""}</Text>
+                <Text style={styles.inputText}>{bus.role || ""}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 

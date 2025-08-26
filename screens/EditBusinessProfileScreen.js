@@ -6,7 +6,9 @@ import axios from "axios";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 
-const BusinessProfileAPI = "https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo";
+import { API_BASE_URL } from "../apiConfig";
+
+const BusinessProfileAPI = `${API_BASE_URL}/api/v1/userprofileinfo`;
 
 export default function EditBusinessProfileScreen({ route, navigation }) {
   const { business } = route.params || {};
@@ -45,11 +47,11 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   const [customTagInput, setCustomTagInput] = useState("");
 
   const businessRoles = [
-    { label: 'Owner', value: 'owner' },
-    { label: 'Employee', value: 'employee' },
-    { label: 'Partner', value: 'partner' },
-    { label: 'Admin', value: 'admin' },
-    { label: 'Other', value: 'other' },
+    { label: "Owner", value: "owner" },
+    { label: "Employee", value: "employee" },
+    { label: "Partner", value: "partner" },
+    { label: "Admin", value: "admin" },
+    { label: "Other", value: "other" },
   ];
 
   const toggleVisibility = (fieldName) => {
@@ -81,35 +83,32 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       payload.append("business_ein_number", formData.einNumber);
       payload.append("business_website", formData.website);
       payload.append("custom_tags", JSON.stringify(formData.customTags));
-      
+
       // Separate Google and user-uploaded images
       const googleImages = formData.images || [];
       const userImages = formData.images || [];
 
       // Append Google images as URLs
-      payload.append('business_google_photos', JSON.stringify(googleImages));
+      payload.append("business_google_photos", JSON.stringify(googleImages));
 
       // Append user-uploaded images as files and collect their filenames
       const userImageFilenames = [];
       userImages.forEach((imageUri, index) => {
-        if (imageUri && (imageUri.startsWith('file://') || imageUri.startsWith('content://'))) {
-          const uriParts = imageUri.split('.');
+        if (imageUri && (imageUri.startsWith("file://") || imageUri.startsWith("content://"))) {
+          const uriParts = imageUri.split(".");
           const fileType = uriParts[uriParts.length - 1];
           const fileName = `business_image_${index}.${fileType}`;
           userImageFilenames.push(fileName);
-          payload.append(
-            `image_${index}`,
-            {
-              uri: imageUri,
-              type: `image/${fileType}`,
-              name: fileName,
-            }
-          );
+          payload.append(`image_${index}`, {
+            uri: imageUri,
+            type: `image/${fileType}`,
+            name: fileName,
+          });
         }
       });
       // Send the filenames as business_images_url
-      payload.append('business_images_url', JSON.stringify(userImageFilenames));
-      
+      payload.append("business_images_url", JSON.stringify(userImageFilenames));
+
       payload.append("social_links", JSON.stringify(formData.socialLinks));
       payload.append("business_email_id_is_public", formData.emailIsPublic ? "1" : "0");
       payload.append("business_phone_number_is_public", formData.phoneIsPublic ? "1" : "0");
@@ -122,7 +121,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
           cleanLinks[platform] = formData.socialLinks[platform];
         }
       });
-      
+
       console.log("FormData to be submitted:");
       for (let pair of payload.entries()) {
         console.log(`${pair[0]}: ${pair[1]}`);
@@ -130,7 +129,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 
       console.log("Before API Call:", payload);
       console.log("Business Endpoint:", `${BusinessProfileAPI}`);
-      
+
       const response = await axios.put(`${BusinessProfileAPI}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -161,7 +160,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   };
 
   const removeCustomTag = (tagToRemove) => {
-    const updatedTags = (formData.customTags || []).filter(tag => tag !== tagToRemove);
+    const updatedTags = (formData.customTags || []).filter((tag) => tag !== tagToRemove);
     setFormData({ ...formData, customTags: updatedTags });
   };
 
@@ -172,7 +171,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       aspect: [1, 1],
       quality: 0.7,
     });
-    
+
     if (!result.canceled) {
       // Calculate total size of current images (if any have fileSize info)
       let currentTotal = 0;
@@ -191,7 +190,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       // 2MB = 2 * 1024 * 1024 = 2,097,152 bytes
       const MAX_SIZE = 2 * 1024 * 1024;
       if (newTotal > MAX_SIZE) {
-        Alert.alert('File not selectable', `Total image size (${(newTotal / 1024).toFixed(1)} KB) will exceed the 2MB upload limit.`);
+        Alert.alert("File not selectable", `Total image size (${(newTotal / 1024).toFixed(1)} KB) will exceed the 2MB upload limit.`);
         return;
       }
       const currentImages = formData.images || [];
@@ -247,12 +246,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     <View style={styles.fieldContainer}>
       <Text style={styles.label}>Custom Tags</Text>
       <View style={styles.tagInputContainer}>
-        <TextInput
-          style={[styles.input, { flex: 1, marginRight: 10, marginBottom: 0 }]}
-          value={customTagInput}
-          placeholder="Add a custom tag"
-          onChangeText={setCustomTagInput}
-        />
+        <TextInput style={[styles.input, { flex: 1, marginRight: 10, marginBottom: 0 }]} value={customTagInput} placeholder='Add a custom tag' onChangeText={setCustomTagInput} />
         <TouchableOpacity style={styles.addTagButton} onPress={addCustomTag}>
           <Text style={styles.addTagButtonText}>Add</Text>
         </TouchableOpacity>
@@ -280,10 +274,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         {(formData.images || []).map((imageUri, index) => (
           <View key={index} style={styles.imageContainer}>
             <Image source={{ uri: imageUri }} style={styles.businessImage} />
-            <TouchableOpacity 
-              style={styles.removeImageButton} 
-              onPress={() => removeImage(index)}
-            >
+            <TouchableOpacity style={styles.removeImageButton} onPress={() => removeImage(index)}>
               <Text style={styles.removeImageText}>×</Text>
             </TouchableOpacity>
           </View>
@@ -298,11 +289,11 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       <Dropdown
         style={styles.input}
         data={businessRoles}
-        labelField="label"
-        valueField="value"
-        placeholder="Select your role"
+        labelField='label'
+        valueField='value'
+        placeholder='Select your role'
         value={formData.businessRole}
-        onChange={item => setFormData({ ...formData, businessRole: item.value })}
+        onChange={(item) => setFormData({ ...formData, businessRole: item.value })}
         containerStyle={{ borderRadius: 10 }}
       />
     </View>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal, ScrollView } from "react-native";
+import { API_BASE_URL } from "../apiConfig";
 
 const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -13,7 +14,7 @@ const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic
 
   const fetchBusinesses = async (index) => {
     try {
-      const response = await fetch("https://ioec2testsspm.infiniteoptions.com/businesses");
+      const response = await fetch(`${API_BASE_URL}/businesses`);
       const data = await response.json();
       setBusinessList(data);
       setActiveBusinessIndex(index);

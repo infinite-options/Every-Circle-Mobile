@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MenuBar from "../components/MenuBar";
+import { API_BASE_URL } from "../apiConfig";
 
 export default function UserProfile({ onContinue, onEdit }) {
   console.log("UserProfile - Rendering");
@@ -21,7 +22,7 @@ export default function UserProfile({ onContinue, onEdit }) {
       }
 
       console.log("Fetching profile for user:", userUid);
-      const response = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${userUid}`);
 
       const data = await response.json();
       console.log("User profile data:", JSON.stringify(data));

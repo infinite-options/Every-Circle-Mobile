@@ -6,8 +6,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import config from "./config";
+import { API_BASE_URL, GOOGLE_SIGNUP_ENDPOINT, GOOGLE_SIGNIN_ENDPOINT, APPLE_SIGNIN_ENDPOINT } from "./apiConfig";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import UserInfoScreen from "./screens/UserInfoScreen";
@@ -31,9 +32,7 @@ import EditBusinessProfileScreen from "./screens/EditBusinessProfileScreen";
 
 const Stack = createNativeStackNavigator();
 
-const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
-const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
-const APPLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
+// API endpoints are now imported from apiConfig.js
 
 export const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
@@ -67,6 +66,7 @@ export default function App() {
           androidClientId: config.googleClientIds.android,
           webClientId: config.googleClientIds.web,
           offlineAccess: true,
+          openIdRealm: config.bundleIdentifier,
         });
         console.log("App.js - Google Sign-In configured successfully");
       } catch (err) {
@@ -104,10 +104,9 @@ export default function App() {
         console.log("App.js - User UID (from IO Login API):", user_uid);
         await AsyncStorage.setItem("user_uid", user_uid);
 
-        // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
-        const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+        // const profileResponse = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${user_uid}`);
         const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
-        const endpoint = baseURI + endpointPath;
+        const endpoint = API_BASE_URL + endpointPath;
         console.log(`App.js - Full endpoint: ${endpoint}`);
 
         const profileResponse = await fetch(endpoint);
@@ -334,10 +333,9 @@ export default function App() {
         // console.log("Success", userUid);
 
         // Get full user profile data
-        // const profileResponse = await fetch(`https://ioec2testsspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
-        const baseURI = "https://ioec2testsspm.infiniteoptions.com";
+        // const profileResponse = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${userUid}`);
         const endpointPath = `/api/v1/userprofileinfo/${userUid}`;
-        const endpoint = baseURI + endpointPath;
+        const endpoint = API_BASE_URL + endpointPath;
         console.log(`App.js - Full endpoint: ${endpoint}`);
 
         const profileResponse = await fetch(endpoint);
@@ -419,10 +417,13 @@ export default function App() {
               <Text style={styles.circleText}>How It Works</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.circleBox} onPress={() => {
-            console.log("App.js - Login Button Pressed");
-            navigation.navigate("Login");
-          }}>
+          <TouchableOpacity
+            style={styles.circleBox}
+            onPress={() => {
+              console.log("App.js - Login Button Pressed");
+              navigation.navigate("Login");
+            }}
+          >
             <View style={[styles.circle, { backgroundColor: "#AF52DE" }]}>
               <Text style={styles.circleText}>Login</Text>
             </View>

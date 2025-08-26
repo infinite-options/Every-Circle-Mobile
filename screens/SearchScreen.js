@@ -1,19 +1,14 @@
 // SearchScreen.js
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
+import { API_BASE_URL } from "../apiConfig";
 
 export default function SearchScreen() {
   const navigation = useNavigation();
+  console.log("In SearchScreen");
 
   // --- stub initial data, so you see the four items by default ---
   const initialResults = [
@@ -32,63 +27,62 @@ export default function SearchScreen() {
     if (!q) return;
 
     console.log("🔍 User searched for:", q);
-    
+
     setLoading(true);
     try {
       // Try the v1 API endpoint to match other endpoints in the app
-      // const apiUrl = `https://ioec2testsspm.infiniteoptions.com/api/v1/business_results/${encodeURIComponent(q)}`;
-      const apiUrl = `https://ioec2testsspm.infiniteoptions.com/api/v1/tagsplitsearchdistinct/${encodeURIComponent(q)}`;
+      // const apiUrl = `${API_BASE_URL}/api/v1/business_results/${encodeURIComponent(q)}`;
+      const apiUrl = `${API_BASE_URL}/api/v1/tagsplitsearchdistinct/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
       console.log("🌐 API URL:", apiUrl);
-      
+
       const res = await fetch(apiUrl);
-      
+
       console.log("📡 Response status:", res.status);
       console.log("📡 Response headers:", res.headers);
-      console.log("📡 Content-Type:", res.headers.get('content-type'));
-      
+      console.log("📡 Content-Type:", res.headers.get("content-type"));
+
       // Check if response is ok
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       // Get raw response text first
       const responseText = await res.text();
       console.log("📄 Raw response text (first 500 chars):", responseText.substring(0, 500));
-      
+
       // Check if response looks like JSON
-      if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
+      if (!responseText.trim().startsWith("{") && !responseText.trim().startsWith("[")) {
         throw new Error(`API returned non-JSON response: ${responseText.substring(0, 200)}`);
       }
-      
+
       // Parse JSON
       const json = JSON.parse(responseText);
-      
+
       console.log("📡 Search API Response:", JSON.stringify(json, null, 2));
       console.log("📊 Number of results returned:", json.results?.length || json.result?.length || 0);
-      
+
       // Handle both possible response structures
       const resultsArray = json.results || json.result || [];
-      
+
       const list = resultsArray.map((b, i) => ({
-            id: `${b.business_uid || i}`,
-            company: b.business_name || b.company || "Unknown Business",
-            // Use score as rating if rating_star not available, convert to 1-5 scale
-            rating: typeof b.rating_star === "number" ? b.rating_star : 
-                    typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
-            hasPriceTag: b.has_price_tag || false,
-            hasX: b.has_x || false,
-            hasDollar: b.has_dollar_sign || false,
-          }));
-      
+        id: `${b.business_uid || i}`,
+        company: b.business_name || b.company || "Unknown Business",
+        // Use score as rating if rating_star not available, convert to 1-5 scale
+        rating: typeof b.rating_star === "number" ? b.rating_star : typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
+        hasPriceTag: b.has_price_tag || false,
+        hasX: b.has_x || false,
+        hasDollar: b.has_dollar_sign || false,
+      }));
+
       console.log("✅ Processed search results:", list);
       setResults(list);
     } catch (err) {
       console.warn("❌ Search failed for query:", q, "Error:", err);
       console.warn("❌ Error details:", err.message);
-      
+
       // If the v1 endpoint fails, let's try alternative endpoints
-      if (err.message.includes('404')) {
+      if (err.message.includes("404")) {
         console.log("🔄 Trying alternative endpoints...");
         await tryAlternativeEndpoints(q);
       } else {
@@ -100,10 +94,10 @@ export default function SearchScreen() {
 
   const tryAlternativeEndpoints = async (query) => {
     const alternativeEndpoints = [
-      `https://ioec2testsspm.infiniteoptions.com/api/businessresults/${encodeURIComponent(query)}`,
-      `https://ioec2testsspm.infiniteoptions.com/api/v1/business_search/${encodeURIComponent(query)}`,
-      `https://ioec2testsspm.infiniteoptions.com/api/search/${encodeURIComponent(query)}`,
-      `https://ioec2testsspm.infiniteoptions.com/api/v1/search/${encodeURIComponent(query)}`
+      `${API_BASE_URL}/api/businessresults/${encodeURIComponent(query)}`,
+      `${API_BASE_URL}/api/v1/business_search/${encodeURIComponent(query)}`,
+      `${API_BASE_URL}/api/search/${encodeURIComponent(query)}`,
+      `${API_BASE_URL}/api/v1/search/${encodeURIComponent(query)}`,
     ];
 
     for (const endpoint of alternativeEndpoints) {
@@ -111,27 +105,26 @@ export default function SearchScreen() {
         console.log("🔄 Trying alternative endpoint:", endpoint);
         const res = await fetch(endpoint);
         console.log("📡 Alternative endpoint response status:", res.status);
-        
+
         if (res.ok) {
           const responseText = await res.text();
-          if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+          if (responseText.trim().startsWith("{") || responseText.trim().startsWith("[")) {
             const json = JSON.parse(responseText);
             console.log("✅ Alternative endpoint worked! Response:", JSON.stringify(json, null, 2));
-            
+
             // Handle both possible response structures
             const resultsArray = json.results || json.result || [];
-            
+
             const list = resultsArray.map((b, i) => ({
               id: `${b.business_uid || i}`,
               company: b.business_name || b.company || "Unknown Business",
               // Use score as rating if rating_star not available, convert to 1-5 scale
-              rating: typeof b.rating_star === "number" ? b.rating_star : 
-                      typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
+              rating: typeof b.rating_star === "number" ? b.rating_star : typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
               hasPriceTag: b.has_price_tag || false,
               hasX: b.has_x || false,
               hasDollar: b.has_dollar_sign || false,
             }));
-            
+
             console.log("✅ Processed results from alternative endpoint:", list);
             setResults(list);
             return;
@@ -141,7 +134,7 @@ export default function SearchScreen() {
         console.log("❌ Alternative endpoint failed:", endpoint, error.message);
       }
     }
-    
+
     console.log("❌ All endpoints failed, showing empty results");
     setResults([]);
   };
@@ -158,7 +151,7 @@ export default function SearchScreen() {
 
   const renderResultItem = (item, idx) => (
     <TouchableOpacity
-      key={`${item.id}-${idx}`} 
+      key={`${item.id}-${idx}`}
       style={styles.resultItem}
       activeOpacity={0.7}
       onPress={() => {
@@ -170,15 +163,10 @@ export default function SearchScreen() {
         <Text style={styles.companyName}>{item.company}</Text>
       </View>
       <View style={styles.resultActions}>
-      <View style={styles.ratingContainer}>
-        <Ionicons name="star" size={16} color="#FFCD3C" />
-        <Text style={styles.ratingText}>
-          {typeof item.rating === "number"
-            ? item.rating.toFixed(1)
-            : item.rating}
-        </Text>
-      </View>
-
+        <View style={styles.ratingContainer}>
+          <Ionicons name='star' size={16} color='#FFCD3C' />
+          <Text style={styles.ratingText}>{typeof item.rating === "number" ? item.rating.toFixed(1) : item.rating}</Text>
+        </View>
 
         <TouchableOpacity
           style={styles.actionButton}
@@ -186,14 +174,14 @@ export default function SearchScreen() {
             e.stopPropagation(); // Prevent triggering the parent TouchableOpacity
             navigation.navigate("SearchTab", {
               centerCompany: {
-                id:     item.id,
-                name:   item.company,
+                id: item.id,
+                name: item.company,
                 rating: item.rating,
               },
             });
           }}
         >
-          <Ionicons name="share-social-outline" size={22} color="black" />
+          <Ionicons name='share-social-outline' size={22} color='black' />
         </TouchableOpacity>
 
         {item.hasX && (
@@ -221,31 +209,21 @@ export default function SearchScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Search</Text>
+        <Text style={styles.headerText}>Search</Text>
         <TouchableOpacity style={styles.cartButton}>
-          <Ionicons name="cart-outline" size={24} color="black" />
+          <Ionicons name='cart-outline' size={24} color='black' />
         </TouchableOpacity>
       </View>
 
       {/* Main Content */}
       <View style={styles.contentContainer}>
         <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="What are you looking for?"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            onSubmitEditing={onSearch}
-          />
+          <TextInput style={styles.searchInput} placeholder='What are you looking for?' value={searchQuery} onChangeText={setSearchQuery} returnKeyType='search' onSubmitEditing={onSearch} />
           <TouchableOpacity style={styles.searchButton} onPress={onSearch}>
-            <Ionicons name="search" size={22} color="black" />
+            <Ionicons name='search' size={22} color='black' />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => navigation.navigate("Filters")}
-          >
-            <MaterialIcons name="filter-list" size={22} color="black" />
+          <TouchableOpacity style={styles.filterButton} onPress={() => navigation.navigate("Filters")}>
+            <MaterialIcons name='filter-list' size={22} color='black' />
           </TouchableOpacity>
         </View>
 
@@ -254,12 +232,7 @@ export default function SearchScreen() {
           <Text style={styles.tableHeaderText}>Rating</Text>
         </View>
 
-        <ScrollView style={styles.resultsContainer}>
-          {loading
-            ? <Text style={styles.loadingText}>Loading…</Text>
-            : results.map((item, idx) => renderResultItem(item, idx))
-          }
-        </ScrollView>
+        <ScrollView style={styles.resultsContainer}>{loading ? <Text style={styles.loadingText}>Loading…</Text> : results.map((item, idx) => renderResultItem(item, idx))}</ScrollView>
 
         <View style={styles.bannerAd}>
           <Text style={styles.bannerAdText}>Relevant Banner Ad</Text>
@@ -274,29 +247,37 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
   ratingContainer: {
-       flexDirection: "row",
-       alignItems: "center",
-     },
-     ratingText: {
-       marginLeft: 4,
-       fontSize: 14,
-       fontWeight: "500",
-       color: "#333",
-     },
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  ratingText: {
+    marginLeft: 4,
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
     backgroundColor: "#9C45F7",
-    paddingTop: 50,
-    paddingBottom: 80,
+    paddingVertical: 15,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 300,
-    borderBottomRightRadius: 300,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  title: { fontSize: 28, fontWeight: "bold", color: "#fff", flex: 1, textAlign: "center" },
-  cartButton: { backgroundColor: "#fff", borderRadius: 20, padding: 5 },
+  headerText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "bold",
+    flex: 1,
+    textAlign: "center",
+  },
+  cartButton: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 5,
+  },
 
   contentContainer: { flex: 1, padding: 20, paddingTop: 30, paddingBottom: 100 },
   searchContainer: { flexDirection: "row", alignItems: "center", marginBottom: 25 },

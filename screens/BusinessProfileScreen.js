@@ -5,7 +5,9 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 
-const BusinessProfileApi = "https://ioec2testsspm.infiniteoptions.com/api/v1/businessinfo/";
+import { API_BASE_URL } from "../apiConfig";
+
+const BusinessProfileApi = `${API_BASE_URL}/api/v1/businessinfo/`;
 
 export default function BusinessProfileScreen({ route, navigation }) {
   const { business_uid } = route.params;
@@ -66,30 +68,26 @@ export default function BusinessProfileScreen({ route, navigation }) {
         }
 
         // Filter out problematic URLs that won't work in React Native
-        businessImages = businessImages.filter(uri => {
+        businessImages = businessImages.filter((uri) => {
           // Check if URI is valid
           if (!uri || typeof uri !== "string" || uri.trim() === "" || uri === "null" || uri === "undefined") {
             return false;
           }
-          
+
           // Filter out Google Maps API URLs that don't work in React Native
-          if (uri.includes('maps.googleapis.com/maps/api/place/js/PhotoService') || 
-              uri.includes('PhotoService.GetPhoto') ||
-              uri.includes('callback=none')) {
+          if (uri.includes("maps.googleapis.com/maps/api/place/js/PhotoService") || uri.includes("PhotoService.GetPhoto") || uri.includes("callback=none")) {
             console.log("Filtering out Google API URL that won't work in React Native:", uri.substring(0, 100) + "...");
             return false;
           }
-          
+
           // Only allow direct image URLs or valid http/https URLs
-          const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || 
-                                 uri.startsWith('http://') || 
-                                 uri.startsWith('https://');
-          
+          const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || uri.startsWith("http://") || uri.startsWith("https://");
+
           if (!isValidImageUrl) {
             console.log("Filtering out invalid image URL:", uri.substring(0, 100));
             return false;
           }
-          
+
           return true;
         });
 
@@ -153,11 +151,8 @@ export default function BusinessProfileScreen({ route, navigation }) {
     <View style={styles.pageContainer}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name='arrow-back' size={24} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Business Profile</Text>
         <View style={styles.headerSpacer} />
@@ -166,38 +161,38 @@ export default function BusinessProfileScreen({ route, navigation }) {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Edit Button */}
         <View style={styles.editButtonContainer}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() =>
-            navigation.navigate("EditBusinessProfile", {
-              business: business,
-              business_uid: business_uid,
-            })
-          }
-        >
-          <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() =>
+              navigation.navigate("EditBusinessProfile", {
+                business: business,
+                business_uid: business_uid,
+              })
+            }
+          >
+            <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
+          </TouchableOpacity>
         </View>
 
         {/* Business Card (MiniCard at top) */}
         <View style={styles.card}>
-        <MiniCard
-          business={{
-            business_name: business.business_name,
-            business_address_line_1: business.business_address_line_1,
-            business_zip_code: business.business_zip_code,
-            business_phone_number: business.business_phone_number,
-            business_website: business.business_website,
-            first_image: business.images && business.images.length > 0 ? business.images[0] : null,
-            phoneIsPublic: business.phoneIsPublic,
-          }}
-        />
+          <MiniCard
+            business={{
+              business_name: business.business_name,
+              business_address_line_1: business.business_address_line_1,
+              business_zip_code: business.business_zip_code,
+              business_phone_number: business.business_phone_number,
+              business_website: business.business_website,
+              first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+              phoneIsPublic: business.phoneIsPublic,
+            }}
+          />
         </View>
 
         {/* Contact Information Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.label}>Location:</Text>
             <Text style={styles.value}>
@@ -252,7 +247,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
         </View>
 
         {/* Business Details Card */}
-        {(business.taglineIsPublic && business.tagline) && (
+        {business.taglineIsPublic && business.tagline && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Tagline</Text>
             <Text style={styles.bioText}>{business.tagline}</Text>
@@ -288,7 +283,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
             {business.price_level && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Price Level:</Text>
-                <Text style={styles.value}>{'$'.repeat(parseInt(business.price_level) || 1)}</Text>
+                <Text style={styles.value}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
               </View>
             )}
           </View>
@@ -335,14 +330,12 @@ export default function BusinessProfileScreen({ route, navigation }) {
                     }}
                     onLoad={() => console.log(`Business image ${index} loaded successfully`)}
                     defaultSource={require("../assets/profile.png")}
-                    resizeMode="cover"
+                    resizeMode='cover'
                   />
                 </View>
               ))}
             </ScrollView>
-            {business.images.length === 0 && (
-              <Text style={styles.noDataText}>No compatible images available</Text>
-            )}
+            {business.images.length === 0 && <Text style={styles.noDataText}>No compatible images available</Text>}
           </View>
         )}
       </ScrollView>
