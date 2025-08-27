@@ -5,10 +5,10 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BusinessProfileApi = "https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/";
-const ProfileScreenAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
+const BusinessProfileApi = `${API_BASE_URL}/api/v1/businessinfo/`;
+const ProfileScreenAPI = `${API_BASE_URL}/api/v1/userprofileinfo`;
 
 export default function BusinessProfileScreen({ route, navigation }) {
   const { business_uid } = route.params;
@@ -33,7 +33,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
           setCartItems(cartData.items || []);
         }
       } catch (error) {
-        console.error('Error loading cart items:', error);
+        console.error("Error loading cart items:", error);
       }
     };
 
@@ -44,10 +44,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
   useEffect(() => {
     const getCurrentUserProfileId = async () => {
       try {
-        const profileId = await AsyncStorage.getItem('profile_uid');
+        const profileId = await AsyncStorage.getItem("profile_uid");
         setCurrentUserProfileId(profileId);
       } catch (error) {
-        console.error('Error getting current user profile ID:', error);
+        console.error("Error getting current user profile ID:", error);
       }
     };
     getCurrentUserProfileId();
@@ -56,32 +56,35 @@ export default function BusinessProfileScreen({ route, navigation }) {
   // Process reviews when currentUserProfileId becomes available
   useEffect(() => {
     if (currentUserProfileId && business && business.ratings) {
-      console.log('Reprocessing reviews with profile ID:', currentUserProfileId);
-      
+      console.log("Reprocessing reviews with profile ID:", currentUserProfileId);
+
       let userReviewFromAPI = null;
       let otherReviews = [];
-      
-      console.log('Processing ratings from business data:');
-      console.log('Current user profile ID:', currentUserProfileId);
-      console.log('All ratings from business:', business.ratings);
-      
+
+      console.log("Processing ratings from business data:");
+      console.log("Current user profile ID:", currentUserProfileId);
+      console.log("All ratings from business:", business.ratings);
+
       if (business.ratings && Array.isArray(business.ratings)) {
-        business.ratings.forEach(rating => {
-          console.log('Processing rating:', rating.rating_uid, 'Profile ID:', rating.rating_profile_id);
+        business.ratings.forEach((rating) => {
+          console.log("Processing rating:", rating.rating_uid, "Profile ID:", rating.rating_profile_id);
           if (rating.rating_profile_id === currentUserProfileId) {
-            console.log('Found user review:', rating.rating_uid);
+            console.log("Found user review:", rating.rating_uid);
             userReviewFromAPI = rating;
           } else {
-            console.log('Adding to other reviews:', rating.rating_uid);
+            console.log("Adding to other reviews:", rating.rating_uid);
             otherReviews.push(rating);
           }
         });
       }
-      
-      console.log('User review found:', userReviewFromAPI ? userReviewFromAPI.rating_uid : 'None');
-      console.log('Other reviews count:', otherReviews.length);
-      console.log('Other reviews:', otherReviews.map(r => r.rating_uid));
-      
+
+      console.log("User review found:", userReviewFromAPI ? userReviewFromAPI.rating_uid : "None");
+      console.log("Other reviews count:", otherReviews.length);
+      console.log(
+        "Other reviews:",
+        otherReviews.map((r) => r.rating_uid)
+      );
+
       setUserReview(userReviewFromAPI);
       setAllReviews(otherReviews);
     }
@@ -91,7 +94,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
     try {
       setLoading(true);
       const endpoint = `${BusinessProfileApi}${business_uid}`;
-      console.log('BusinessProfileScreen GET endpoint:', endpoint);
+      console.log("BusinessProfileScreen GET endpoint:", endpoint);
       const response = await fetch(endpoint);
       const result = await response.json();
 
@@ -142,30 +145,26 @@ export default function BusinessProfileScreen({ route, navigation }) {
       }
 
       // Filter out problematic URLs that won't work in React Native
-      businessImages = businessImages.filter(uri => {
+      businessImages = businessImages.filter((uri) => {
         // Check if URI is valid
         if (!uri || typeof uri !== "string" || uri.trim() === "" || uri === "null" || uri === "undefined") {
           return false;
         }
-        
+
         // Filter out Google Maps API URLs that don't work in React Native
-        if (uri.includes('maps.googleapis.com/maps/api/place/js/PhotoService') || 
-            uri.includes('PhotoService.GetPhoto') ||
-            uri.includes('callback=none')) {
+        if (uri.includes("maps.googleapis.com/maps/api/place/js/PhotoService") || uri.includes("PhotoService.GetPhoto") || uri.includes("callback=none")) {
           console.log("Filtering out Google API URL that won't work in React Native:", uri.substring(0, 100) + "...");
           return false;
         }
-        
+
         // Only allow direct image URLs or valid http/https URLs
-        const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || 
-                               uri.startsWith('http://') || 
-                               uri.startsWith('https://');
-        
+        const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || uri.startsWith("http://") || uri.startsWith("https://");
+
         if (!isValidImageUrl) {
           console.log("Filtering out invalid image URL:", uri.substring(0, 100));
           return false;
         }
-        
+
         return true;
       });
 
@@ -202,11 +201,11 @@ export default function BusinessProfileScreen({ route, navigation }) {
         shortBioIsPublic: rawBusiness.short_bio_is_public === "1",
         business_services: (() => {
           if (rawBusiness.business_services) {
-            if (typeof rawBusiness.business_services === 'string') {
+            if (typeof rawBusiness.business_services === "string") {
               try {
                 return JSON.parse(rawBusiness.business_services);
               } catch (e) {
-                console.log('Failed to parse business_services as JSON');
+                console.log("Failed to parse business_services as JSON");
                 return [];
               }
             } else if (Array.isArray(rawBusiness.business_services)) {
@@ -232,29 +231,24 @@ export default function BusinessProfileScreen({ route, navigation }) {
   useEffect(() => {
     const checkBusinessOwnership = async () => {
       try {
-        const profileUID = await AsyncStorage.getItem('user_uid');
+        const profileUID = await AsyncStorage.getItem("user_uid");
         if (!profileUID) {
-          console.log('No user profile found');
+          console.log("No user profile found");
           return;
         }
 
         const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
         const userData = await response.json();
-        
+
         if (userData && userData.business_info) {
-          const businessInfo = typeof userData.business_info === 'string' 
-            ? JSON.parse(userData.business_info) 
-            : userData.business_info;
-            
-          const isBusinessOwner = businessInfo.some(biz => 
-            biz.business_uid === business_uid || 
-            biz.profile_business_business_id === business_uid
-          );
-          
+          const businessInfo = typeof userData.business_info === "string" ? JSON.parse(userData.business_info) : userData.business_info;
+
+          const isBusinessOwner = businessInfo.some((biz) => biz.business_uid === business_uid || biz.profile_business_business_id === business_uid);
+
           setIsOwner(isBusinessOwner);
         }
       } catch (error) {
-        console.error('Error checking business ownership:', error);
+        console.error("Error checking business ownership:", error);
       }
     };
 
@@ -263,8 +257,8 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
   // Add focus listener to refresh data when returning to this screen
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      console.log('BusinessProfileScreen focused - refreshing data');
+    const unsubscribe = navigation.addListener("focus", () => {
+      console.log("BusinessProfileScreen focused - refreshing data");
       fetchBusinessInfo();
     });
 
@@ -287,12 +281,12 @@ export default function BusinessProfileScreen({ route, navigation }) {
       const serviceWithQuantity = {
         ...selectedService,
         quantity: quantity,
-        totalPrice: (parseFloat(selectedService.bs_cost) * quantity).toFixed(2)
+        totalPrice: (parseFloat(selectedService.bs_cost) * quantity).toFixed(2),
       };
 
       // Check if the item already exists in the cart
-      const existingItemIndex = cartItems.findIndex(item => item.bs_uid === selectedService.bs_uid);
-      
+      const existingItemIndex = cartItems.findIndex((item) => item.bs_uid === selectedService.bs_uid);
+
       let newCartItems;
       if (existingItemIndex !== -1) {
         // Item exists, update its quantity
@@ -302,7 +296,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
         newCartItems[existingItemIndex] = {
           ...existingItem,
           quantity: newQuantity,
-          totalPrice: (parseFloat(existingItem.bs_cost) * newQuantity).toFixed(2)
+          totalPrice: (parseFloat(existingItem.bs_cost) * newQuantity).toFixed(2),
         };
         console.log(`Updated quantity for existing item ${selectedService.bs_service_name} to ${newQuantity}`);
       } else {
@@ -310,18 +304,21 @@ export default function BusinessProfileScreen({ route, navigation }) {
         newCartItems = [...cartItems, serviceWithQuantity];
         console.log(`Added new item ${selectedService.bs_service_name} with quantity ${quantity}`);
       }
-      
+
       setCartItems(newCartItems);
-      
+
       // Save to AsyncStorage
-      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
-        items: newCartItems
-      }));
-      
+      await AsyncStorage.setItem(
+        `cart_${business_uid}`,
+        JSON.stringify({
+          items: newCartItems,
+        })
+      );
+
       setQuantityModalVisible(false);
     } catch (error) {
-      console.error('Error adding item to cart:', error);
-      Alert.alert('Error', 'Failed to add item to cart');
+      console.error("Error adding item to cart:", error);
+      Alert.alert("Error", "Failed to add item to cart");
     }
   };
 
@@ -329,24 +326,27 @@ export default function BusinessProfileScreen({ route, navigation }) {
     try {
       const newCartItems = cartItems.filter((_, i) => i !== index);
       setCartItems(newCartItems);
-      
+
       // Update AsyncStorage
-      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
-        items: newCartItems
-      }));
+      await AsyncStorage.setItem(
+        `cart_${business_uid}`,
+        JSON.stringify({
+          items: newCartItems,
+        })
+      );
     } catch (error) {
-      console.error('Error removing item from cart:', error);
-      Alert.alert('Error', 'Failed to remove item from cart');
+      console.error("Error removing item from cart:", error);
+      Alert.alert("Error", "Failed to remove item from cart");
     }
   };
 
   const handleViewCart = () => {
-    navigation.navigate('ShoppingCart', {
+    navigation.navigate("ShoppingCart", {
       cartItems,
       onRemoveItem: handleRemoveItem,
       businessName: business.business_name,
       business_uid: business_uid,
-      recommender_profile_id: currentUserProfileId
+      recommender_profile_id: currentUserProfileId,
     });
   };
 
@@ -380,11 +380,8 @@ export default function BusinessProfileScreen({ route, navigation }) {
     <View style={styles.pageContainer}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name='arrow-back' size={24} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Business Profile</Text>
         <View style={styles.headerSpacer} />
@@ -410,23 +407,23 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
         {/* Business Card (MiniCard at top) */}
         <View style={styles.card}>
-        <MiniCard
-          business={{
-            business_name: business.business_name,
-            business_address_line_1: business.business_address_line_1,
-            business_zip_code: business.business_zip_code,
-            business_phone_number: business.business_phone_number,
-            business_website: business.business_website,
-            first_image: business.images && business.images.length > 0 ? business.images[0] : null,
-            phoneIsPublic: business.phoneIsPublic,
-          }}
-        />
+          <MiniCard
+            business={{
+              business_name: business.business_name,
+              business_address_line_1: business.business_address_line_1,
+              business_zip_code: business.business_zip_code,
+              business_phone_number: business.business_phone_number,
+              business_website: business.business_website,
+              first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+              phoneIsPublic: business.phoneIsPublic,
+            }}
+          />
         </View>
 
         {/* Contact Information Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.label}>Location:</Text>
             <Text style={styles.value}>
@@ -481,7 +478,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
         </View>
 
         {/* Business Details Card */}
-        {(business.taglineIsPublic && business.tagline) && (
+        {business.taglineIsPublic && business.tagline && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Tagline</Text>
             <Text style={styles.bioText}>{business.tagline}</Text>
@@ -517,7 +514,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
             {business.price_level && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Price Level:</Text>
-                <Text style={styles.value}>{'$'.repeat(parseInt(business.price_level) || 1)}</Text>
+                <Text style={styles.value}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
               </View>
             )}
           </View>
@@ -564,20 +561,18 @@ export default function BusinessProfileScreen({ route, navigation }) {
                     }}
                     onLoad={() => console.log(`Business image ${index} loaded successfully`)}
                     defaultSource={require("../assets/profile.png")}
-                    resizeMode="cover"
+                    resizeMode='cover'
                   />
                 </View>
               ))}
             </ScrollView>
-            {business.images.length === 0 && (
-              <Text style={styles.noDataText}>No compatible images available</Text>
-            )}
+            {business.images.length === 0 && <Text style={styles.noDataText}>No compatible images available</Text>}
           </View>
         )}
 
         {/* Review Business Button or User Review */}
-        {!isOwner && (
-          userReview ? (
+        {!isOwner &&
+          (userReview ? (
             <View style={styles.userReviewContainer}>
               <Text style={styles.userReviewTitle}>Your Review</Text>
               <View style={styles.userReviewRow}>
@@ -594,12 +589,14 @@ export default function BusinessProfileScreen({ route, navigation }) {
               </View>
               <TouchableOpacity
                 style={styles.editReviewButton}
-                onPress={() => navigation.navigate('ReviewBusiness', {
-                  business_uid: business_uid,
-                  business_name: business.business_name,
-                  reviewData: userReview,
-                  isEdit: true
-                })}
+                onPress={() =>
+                  navigation.navigate("ReviewBusiness", {
+                    business_uid: business_uid,
+                    business_name: business.business_name,
+                    reviewData: userReview,
+                    isEdit: true,
+                  })
+                }
               >
                 <Text style={styles.editReviewButtonText}>Edit Review</Text>
               </TouchableOpacity>
@@ -607,15 +604,16 @@ export default function BusinessProfileScreen({ route, navigation }) {
           ) : (
             <TouchableOpacity
               style={styles.reviewButton}
-              onPress={() => navigation.navigate('ReviewBusiness', {
-                business_uid: business_uid,
-                business_name: business.business_name
-              })}
+              onPress={() =>
+                navigation.navigate("ReviewBusiness", {
+                  business_uid: business_uid,
+                  business_name: business.business_name,
+                })
+              }
             >
               <Text style={styles.reviewButtonText}>Review Business</Text>
             </TouchableOpacity>
-          )
-        )}
+          ))}
 
         {/* All Reviews Section */}
         {allReviews.length > 0 && (
@@ -625,19 +623,19 @@ export default function BusinessProfileScreen({ route, navigation }) {
               <TouchableOpacity
                 key={review.rating_uid || index}
                 style={styles.reviewCard}
-                onPress={() => navigation.navigate('ReviewDetail', {
-                  business_uid: business_uid,
-                  business_name: business.business_name,
-                  reviewer_profile_id: review.rating_profile_id
-                })}
+                onPress={() =>
+                  navigation.navigate("ReviewDetail", {
+                    business_uid: business_uid,
+                    business_name: business.business_name,
+                    reviewer_profile_id: review.rating_profile_id,
+                  })
+                }
                 activeOpacity={0.7}
               >
                 <View style={styles.reviewCardHeader}>
                   <View style={styles.reviewProfileInfo}>
                     <View style={styles.reviewProfileAvatar}>
-                      <Text style={styles.reviewProfileInitial}>
-                        {review.rating_profile_id ? review.rating_profile_id.charAt(0).toUpperCase() : 'U'}
-                      </Text>
+                      <Text style={styles.reviewProfileInitial}>{review.rating_profile_id ? review.rating_profile_id.charAt(0).toUpperCase() : "U"}</Text>
                     </View>
                     <View style={styles.reviewProfileDetails}>
                       <Text style={styles.reviewProfileName}>User {review.rating_profile_id}</Text>
@@ -649,13 +647,13 @@ export default function BusinessProfileScreen({ route, navigation }) {
                     <Text style={styles.reviewRatingText}>{review.rating_star}/5</Text>
                   </View>
                 </View>
-                
+
                 {review.rating_description && (
                   <View style={styles.reviewContent}>
                     <Text style={styles.reviewDescription}>{review.rating_description}</Text>
                   </View>
                 )}
-                
+
                 <View style={styles.reviewFooter}>
                   <View style={styles.reviewMetadata}>
                     <Text style={styles.reviewMetadataText}>Transaction ID: {review.rating_uid}</Text>
@@ -672,22 +670,14 @@ export default function BusinessProfileScreen({ route, navigation }) {
             <View style={styles.servicesHeader}>
               <Text style={styles.cardTitle}>Products & Services</Text>
               {!isOwner && cartItems.length > 0 && (
-                <TouchableOpacity 
-                  style={styles.cartButton}
-                  onPress={handleViewCart}
-                >
-                  <Ionicons name="cart" size={24} color="#9C45F7" />
+                <TouchableOpacity style={styles.cartButton} onPress={handleViewCart}>
+                  <Ionicons name='cart' size={24} color='#9C45F7' />
                   <Text style={styles.cartCount}>{cartItems.length}</Text>
                 </TouchableOpacity>
               )}
             </View>
             {business.business_services.map((service, idx) => (
-              <ProductCard 
-                key={idx} 
-                service={service} 
-                showEditButton={isOwner}
-                onPress={() => handleProductPress(service)}
-              />
+              <ProductCard key={idx} service={service} showEditButton={isOwner} onPress={() => handleProductPress(service)} />
             ))}
           </View>
         )}
@@ -695,15 +685,17 @@ export default function BusinessProfileScreen({ route, navigation }) {
         {/* Shopping Cart Button - Only show if there are reviews */}
         {!isOwner && allReviews.length > 0 && (
           <View style={styles.card}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.shoppingCartButton}
-              onPress={() => navigation.navigate('ReviewDetail', {
-                business_uid: business_uid,
-                business_name: business.business_name,
-                reviewer_profile_id: 'Charity'
-              })}
+              onPress={() =>
+                navigation.navigate("ReviewDetail", {
+                  business_uid: business_uid,
+                  business_name: business.business_name,
+                  reviewer_profile_id: "Charity",
+                })
+              }
             >
-              <Ionicons name="cart" size={24} color="#9C45F7" />
+              <Ionicons name='cart' size={24} color='#9C45F7' />
               <Text style={styles.shoppingCartButtonText}>Shopping Cart</Text>
             </TouchableOpacity>
           </View>
@@ -712,51 +704,32 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
       <BottomNavBar navigation={navigation} />
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={quantityModalVisible}
-        onRequestClose={() => setQuantityModalVisible(false)}
-      >
+      <Modal animationType='slide' transparent={true} visible={quantityModalVisible} onRequestClose={() => setQuantityModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Quantity</Text>
             <Text style={styles.serviceName}>{selectedService?.bs_service_name}</Text>
-            
+
             <View style={styles.quantityContainer}>
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
-              >
-                <Ionicons name="remove" size={24} color="#9C45F7" />
+              <TouchableOpacity style={styles.quantityButton} onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}>
+                <Ionicons name='remove' size={24} color='#9C45F7' />
               </TouchableOpacity>
-              
+
               <Text style={styles.quantityText}>{quantity}</Text>
-              
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => setQuantity(prev => prev + 1)}
-              >
-                <Ionicons name="add" size={24} color="#9C45F7" />
+
+              <TouchableOpacity style={styles.quantityButton} onPress={() => setQuantity((prev) => prev + 1)}>
+                <Ionicons name='add' size={24} color='#9C45F7' />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.totalPrice}>
-              Total: ${selectedService ? (parseFloat(selectedService.bs_cost) * quantity).toFixed(2) : '0.00'}
-            </Text>
+            <Text style={styles.totalPrice}>Total: ${selectedService ? (parseFloat(selectedService.bs_cost) * quantity).toFixed(2) : "0.00"}</Text>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setQuantityModalVisible(false)}
-              >
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setQuantityModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleQuantityConfirm}
-              >
+
+              <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={handleQuantityConfirm}>
                 <Text style={styles.confirmButtonText}>Add to Cart</Text>
               </TouchableOpacity>
             </View>
@@ -916,78 +889,78 @@ const styles = StyleSheet.create({
     height: 20,
   },
   servicesHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 15,
   },
   cartButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
     padding: 8,
     borderRadius: 20,
   },
   cartCount: {
     marginLeft: 5,
-    color: '#9C45F7',
-    fontWeight: 'bold',
+    color: "#9C45F7",
+    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 20,
-    width: '80%',
-    alignItems: 'center',
+    width: "80%",
+    alignItems: "center",
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    color: '#333',
+    color: "#333",
   },
   serviceName: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   quantityButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     padding: 10,
     borderRadius: 10,
     width: 44,
     height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   quantityText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginHorizontal: 20,
-    color: '#333',
+    color: "#333",
   },
   totalPrice: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#9C45F7',
+    fontWeight: "bold",
+    color: "#9C45F7",
     marginBottom: 20,
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
   modalButton: {
     flex: 1,
@@ -996,162 +969,162 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
   },
   confirmButton: {
-    backgroundColor: '#9C45F7',
+    backgroundColor: "#9C45F7",
   },
   cancelButtonText: {
-    color: '#666',
-    textAlign: 'center',
-    fontWeight: 'bold',
+    color: "#666",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   confirmButtonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontWeight: 'bold',
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
   },
   reviewButton: {
-    backgroundColor: '#9C45F7',
+    backgroundColor: "#9C45F7",
     padding: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 20,
   },
   reviewButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
   },
   userReviewContainer: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 10,
     padding: 16,
     marginVertical: 20,
   },
   userReviewTitle: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 16,
     marginBottom: 10,
   },
   userReviewRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 6,
   },
   userReviewLabel: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginRight: 8,
   },
   userReviewValue: {
     flex: 1,
   },
   editReviewButton: {
-    backgroundColor: '#FFA500',
+    backgroundColor: "#FFA500",
     padding: 10,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   editReviewButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   reviewCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 15,
     marginBottom: 10,
     borderRadius: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
   reviewCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   reviewProfileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   reviewProfileAvatar: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   reviewProfileInitial: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   reviewProfileDetails: {
     marginLeft: 10,
   },
   reviewProfileName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   reviewDate: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginTop: 2,
   },
   reviewRatingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 'auto',
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: "auto",
   },
   reviewRatingText: {
     marginLeft: 5,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   reviewContent: {
     marginBottom: 10,
   },
   reviewDescription: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   reviewFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   reviewMetadata: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   reviewMetadataText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   starCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
   starCircleFilled: {
-    backgroundColor: '#FFCD3C',
-    borderColor: '#FFCD3C',
+    backgroundColor: "#FFCD3C",
+    borderColor: "#FFCD3C",
   },
   shoppingCartButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
     padding: 8,
     borderRadius: 20,
   },
   shoppingCartButtonText: {
     marginLeft: 5,
-    color: '#9C45F7',
-    fontWeight: 'bold',
+    color: "#9C45F7",
+    fontWeight: "bold",
   },
 });

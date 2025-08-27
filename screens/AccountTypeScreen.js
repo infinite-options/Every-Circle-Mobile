@@ -7,7 +7,7 @@ import { Dimensions } from "react-native";
 
 const { width } = Dimensions.get("window");
 
-const userProfileAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/";
+const userProfileAPI = `${API_BASE_URL}/api/v1/userprofileinfo/`;
 
 const AccountTypeScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState(route.params?.email || "");

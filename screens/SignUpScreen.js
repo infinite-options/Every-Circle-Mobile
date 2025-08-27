@@ -3,7 +3,8 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, M
 import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
+const { API_BASE_URL } = require("../apiConfig");
 // import CryptoJS from "react-native-crypto-js";
 // import * as CryptoJS from "react-native-crypto-js";
 import * as Crypto from "expo-crypto";
@@ -11,10 +12,9 @@ import * as Crypto from "expo-crypto";
 const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
 const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
-const REFERRAL_API = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/";
+const REFERRAL_API = `${API_BASE_URL}/api/v1/userprofileinfo/`;
 
 export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation, route }) {
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -234,16 +234,9 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
         {!isGoogleSignUp && (
           <>
             <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder='Password'
-                value={password}
-                onChangeText={handlePasswordChange}
-                secureTextEntry={!isPasswordVisible}
-                autoCapitalize='none'
-              />
+              <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry={!isPasswordVisible} autoCapitalize='none' />
               <TouchableOpacity style={styles.passwordVisibilityToggle} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-                <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#666" />
+                <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={24} color='#666' />
               </TouchableOpacity>
             </View>
             <View style={styles.passwordInputContainer}>
@@ -256,7 +249,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
                 autoCapitalize='none'
               />
               <TouchableOpacity style={styles.passwordVisibilityToggle} onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}>
-                <Ionicons name={isConfirmPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#666" />
+                <Ionicons name={isConfirmPasswordVisible ? "eye-off" : "eye"} size={24} color='#666' />
               </TouchableOpacity>
             </View>
           </>
@@ -291,20 +284,20 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
         </Text>
       </View>
 
-      <Modal visible={showReferralModal} transparent animationType="fade">
+      <Modal visible={showReferralModal} transparent animationType='fade'>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <View style={{ backgroundColor: "#fff", padding: 24, borderRadius: 12, width: 300 }}>
             <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}>Who referred you to Every Circle?</Text>
             <TextInput
               style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 8 }}
-              placeholder="Enter referral email (optional)"
+              placeholder='Enter referral email (optional)'
               value={referralId}
               onChangeText={setReferralId}
-              keyboardType="email-address"
-              autoCapitalize="none"
+              keyboardType='email-address'
+              autoCapitalize='none'
               editable={!isCheckingReferral}
             />
-            {!!referralError && <Text style={{ color: 'red', marginBottom: 8 }}>{referralError}</Text>}
+            {!!referralError && <Text style={{ color: "red", marginBottom: 8 }}>{referralError}</Text>}
             <TouchableOpacity style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center", marginBottom: 8 }} onPress={handleReferralSubmit} disabled={isCheckingReferral}>
               <Text style={{ color: "#fff", fontWeight: "bold" }}>{isCheckingReferral ? "Checking..." : "Continue"}</Text>
             </TouchableOpacity>
@@ -351,10 +344,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   passwordInputContainer: {
-    position: 'relative',
+    position: "relative",
   },
   passwordVisibilityToggle: {
-    position: 'absolute',
+    position: "absolute",
     right: 15,
     top: 15,
     zIndex: 1,

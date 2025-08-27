@@ -6,7 +6,7 @@ import { useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import BottomNavBar from "../components/BottomNavBar";
-import QRCode from "react-native-qrcode-svg";
+// import QRCode from "react-native-qrcode-svg";
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
@@ -19,7 +19,7 @@ export default function SettingsScreen() {
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
 
-  console.log('In SettingsScreen');
+  console.log("In SettingsScreen");
 
   // on mount, pull saved values
   useEffect(() => {
@@ -53,38 +53,38 @@ export default function SettingsScreen() {
 
             // Get all keys to clear Apple authentication data
             const allKeys = await AsyncStorage.getAllKeys();
-            const appleKeys = allKeys.filter(key => key.startsWith('apple_'));
-            
+            const appleKeys = allKeys.filter((key) => key.startsWith("apple_"));
+
             // Clear all stored data - comprehensive cleanup
             const keysToRemove = [
               // User authentication data
-              "user_uid", 
+              "user_uid",
               "user_email_id",
               "profile_uid",
               "user_id",
               "user_name",
-              
+
               // User profile data
               "user_email",
-              "user_first_name", 
+              "user_first_name",
               "user_last_name",
               "user_phone_number",
-              
+
               // Settings
-              "displayEmail", 
+              "displayEmail",
               "displayPhone",
-              
+
               // Business data
               "businessFormData",
-              
+
               // Cart data (all cart keys)
-              ...allKeys.filter(key => key.startsWith('cart_')),
-              
+              ...allKeys.filter((key) => key.startsWith("cart_")),
+
               // Ratings data
               "user_ratings_info",
-              
+
               // Apple authentication data
-              ...appleKeys
+              ...appleKeys,
             ];
 
             console.log("SettingsScreen.js - Clearing AsyncStorage keys:", keysToRemove);
@@ -206,12 +206,9 @@ export default function SettingsScreen() {
             <Text style={styles.qrModalTitle}>QR Code</Text>
             <Text style={styles.qrModalSubtitle}>Scan to visit Infinite Options</Text>
             <View style={styles.qrCodeContainer}>
-              <QRCode
-                value="https://infiniteoptions.com/"
-                size={200}
-                color="#000"
-                backgroundColor="#fff"
-              />
+              {/* QR Code temporarily disabled due to package resolution issue */}
+              <Text style={styles.qrCodePlaceholder}>QR Code</Text>
+              <Text style={styles.qrCodePlaceholder}>(Temporarily Disabled)</Text>
             </View>
             <TouchableOpacity onPress={() => setQrModalVisible(false)} style={styles.closeModalButton}>
               <Text style={styles.closeButtonText}>Close</Text>
@@ -297,6 +294,12 @@ const styles = StyleSheet.create({
   modalText: { fontSize: 18, fontWeight: "bold" },
   closeModalButton: { marginTop: 15, backgroundColor: "#8b58f9", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 },
   closeButtonText: { color: "#fff", fontWeight: "bold" },
+  qrCodePlaceholder: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginVertical: 5,
+  },
   logoutButton: {
     backgroundColor: "#fff",
     borderRadius: 8,

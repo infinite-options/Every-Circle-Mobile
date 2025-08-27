@@ -1,13 +1,19 @@
 import "./polyfills";
 import React, { useEffect, useState, useCallback } from "react";
 
+console.log("📱 APP.JS - Starting execution...");
+
 import { StyleSheet, Text, View, Alert, ActivityIndicator, TouchableOpacity, Image } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import config from "./config";
+
+console.log("📱 APP.JS - About to import appConfig.js...");
+const config = require("./appConfig");
+console.log("📱 APP.JS - appConfig.js imported successfully:", config ? "config object exists" : "config is null/undefined");
+console.log("📱 APP.JS - config.api:", config?.api);
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import HowItWorksScreen from "./screens/HowItWorksScreen";
@@ -30,17 +36,19 @@ import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 //import SearchResults from './screens/SearchResults';
 import EditBusinessProfileScreen from "./screens/EditBusinessProfileScreen";
 import ShoppingCartScreen from "./screens/ShoppingCartScreen";
-import ReviewBusinessScreen from './screens/ReviewBusinessScreen';
-import ReviewDetailScreen from './screens/ReviewDetailScreen';
+import ReviewBusinessScreen from "./screens/ReviewBusinessScreen";
+import ReviewDetailScreen from "./screens/ReviewDetailScreen";
 
 const Stack = createNativeStackNavigator();
 
-const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
-const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
-const APPLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
+// Endpoints are now centralized in config.api
+// const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
+// const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
+// const APPLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
 
 export const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
+console.log("In App.js");
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState("Home");
@@ -99,7 +107,7 @@ export default function App() {
       const userInfo = await GoogleSignin.signIn();
       console.log("App.js - Google Sign In successful:", userInfo);
 
-      const response = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userInfo.user.email}`);
+      const response = await fetch(`${config.api.baseUrl}/api/v2/UserSocialLogin/EVERY-CIRCLE/${userInfo.user.email}`);
       const result = await response.json();
       console.log("App.js - Google Sign In result:", result);
 
@@ -108,10 +116,9 @@ export default function App() {
         console.log("App.js - User UID (from IO Login API):", user_uid);
         await AsyncStorage.setItem("user_uid", user_uid);
 
-        // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
-        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
+        // const profileResponse = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${user_uid}`);
         const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
-        const endpoint = baseURI + endpointPath;
+        const endpoint = config.api.baseUrl + endpointPath;
         console.log(`App.js - Full endpoint 1: ${endpoint}`);
 
         const profileResponse = await fetch(endpoint);
@@ -257,7 +264,7 @@ export default function App() {
 
       // Make the sign-up request
       console.log("App.js - Making sign-up request");
-      const response = await fetch(GOOGLE_SIGNUP_ENDPOINT, {
+      const response = await fetch(`${config.api.baseUrl}/api/v2/UserSocialSignUp/EVERY-CIRCLE`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -277,11 +284,11 @@ export default function App() {
         // }
       } else if (result.message === "User already exists") {
         console.log("App.js - User already exists, treating as successful login");
-        
+
         // Store user data as if it was a successful login
         await AsyncStorage.setItem("user_uid", result.user_uid || userInfo.user.id);
         await AsyncStorage.setItem("user_email_id", userInfo.user.email);
-        
+
         // Fetch user profile data
         const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
         const endpointPath = `/api/v1/userprofileinfo/${result.user_uid || userInfo.user.id}`;
@@ -294,7 +301,7 @@ export default function App() {
 
         if (fullUser && fullUser.personal_info?.profile_personal_uid) {
           await AsyncStorage.setItem("profile_uid", fullUser.personal_info.profile_personal_uid);
-          
+
           // Navigate to Profile page as if it was a successful login
           navigation.navigate("Profile", {
             user: {
@@ -361,8 +368,8 @@ export default function App() {
         userEmail = payload?.email || `apple_user_${user.id}@example.com`;
         // console.log("App.js - handleAppleSignIn - userEmail:", userEmail);
       }
-      console.log("App.js - handleAppleSignIn - before APPLE_SIGNIN_ENDPOINT:", APPLE_SIGNIN_ENDPOINT);
-      const response = await fetch(APPLE_SIGNIN_ENDPOINT, {
+      console.log("App.js - handleAppleSignIn - before APPLE_SIGNIN_ENDPOINT:", config.api.baseUrl + "/api/v2/AppleLogin/EVERY-CIRCLE");
+      const response = await fetch(config.api.baseUrl + "/api/v2/AppleLogin/EVERY-CIRCLE", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -381,10 +388,9 @@ export default function App() {
         // console.log("Success", userUid);
 
         // Get full user profile data
-        // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
-        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
+        // const profileResponse = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${userUid}`);
         const endpointPath = `/api/v1/userprofileinfo/${userUid}`;
-        const endpoint = baseURI + endpointPath;
+        const endpoint = config.api.baseUrl + endpointPath;
         console.log(`App.js - Full endpoint 2: ${endpoint}`);
 
         const profileResponse = await fetch(endpoint);
@@ -425,7 +431,7 @@ export default function App() {
         profile_picture: "",
         login_type: "apple",
       };
-      const response = await fetch(GOOGLE_SIGNUP_ENDPOINT, {
+      const response = await fetch(`${config.api.baseUrl}/api/v2/UserSocialSignUp/EVERY-CIRCLE`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -466,11 +472,7 @@ export default function App() {
     return (
       <View style={styles.container}>
         <View style={styles.circleMain}>
-          <Image
-            source={require('./assets/everycirclelogonew_1024x1024.png')}
-            style={{ width: 200, height: 200, resizeMode: 'contain' }}
-            accessibilityLabel="Every Circle Logo"
-          />
+          <Image source={require("./assets/everycirclelogonew_1024x1024.png")} style={{ width: 200, height: 200, resizeMode: "contain" }} accessibilityLabel='Every Circle Logo' />
           <Text style={styles.title}>
             <Text style={styles.italicText}>every</Text>Circle
           </Text>
@@ -486,10 +488,13 @@ export default function App() {
               <Text style={styles.circleText}>How It Works</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.circleBox} onPress={() => {
-            console.log("App.js - Login Button Pressed");
-            navigation.navigate("Login");
-          }}>
+          <TouchableOpacity
+            style={styles.circleBox}
+            onPress={() => {
+              console.log("App.js - Login Button Pressed");
+              navigation.navigate("Login");
+            }}
+          >
             <View style={[styles.circle, { backgroundColor: "#AF52DE" }]}>
               <Text style={styles.circleText}>Login</Text>
             </View>
@@ -536,8 +541,8 @@ export default function App() {
         <Stack.Screen name='PrivacyPolicy' component={PrivacyPolicyScreen} options={{ title: "Privacy Policy" }} />
         <Stack.Screen name='EditBusinessProfile' component={EditBusinessProfileScreen} />
         <Stack.Screen name='ShoppingCart' component={ShoppingCartScreen} />
-        <Stack.Screen name="ReviewBusiness" component={ReviewBusinessScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name='ReviewBusiness' component={ReviewBusinessScreen} options={{ headerShown: false }} />
+        <Stack.Screen name='ReviewDetail' component={ReviewDetailScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

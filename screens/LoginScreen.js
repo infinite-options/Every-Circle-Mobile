@@ -8,14 +8,14 @@ import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Constants from "expo-constants";
-import config from "../config";
-import { Ionicons } from '@expo/vector-icons';
+import config from "../appConfig";
+import { Ionicons } from "@expo/vector-icons";
 // import SignUpScreen from "./screens/SignUpScreen";
 
 // Endpoints
 const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
 const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
-const PROFILE_ENDPOINT = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
+const PROFILE_ENDPOINT = `${API_BASE_URL}/api/v1/userprofileinfo`;
 
 // Helper function to extract the last two digits before .apps.googleusercontent.com
 const getLastTwoDigits = (clientId) => {
@@ -143,7 +143,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       // console.log("profileResponse", response);
       // const profileResponse = await fetch(`${PROFILE_ENDPOINT}/${user_uid}`);
 
-      const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`, {
+      const profileResponse = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${user_uid}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -192,16 +192,9 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       <View style={styles.inputContainer}>
         <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' />
         <View style={styles.passwordInputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder='Password'
-            value={password}
-            onChangeText={handlePasswordChange}
-            secureTextEntry={!isPasswordVisible}
-            autoCapitalize='none'
-          />
+          <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry={!isPasswordVisible} autoCapitalize='none' />
           <TouchableOpacity style={styles.passwordVisibilityToggle} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#666" />
+            <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={24} color='#666' />
           </TouchableOpacity>
         </View>
       </View>
@@ -291,10 +284,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   passwordInputContainer: {
-    position: 'relative',
+    position: "relative",
   },
   passwordVisibilityToggle: {
-    position: 'absolute',
+    position: "absolute",
     right: 15,
     top: 15,
     zIndex: 1,

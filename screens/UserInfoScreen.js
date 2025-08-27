@@ -14,7 +14,7 @@ export default function UserInfoScreen({ navigation, route }) {
 
   useEffect(() => {
     console.log("UserInfoScreen - route.params:", route.params);
-    
+
     // Pre-populate from Google user info if present
     if (route?.params?.googleUserInfo) {
       const { firstName: gFirst, lastName: gLast, email: gEmail } = route.params.googleUserInfo;
@@ -25,7 +25,7 @@ export default function UserInfoScreen({ navigation, route }) {
         storeUserEmail(gEmail);
       }
     }
-    
+
     // Pre-populate from Apple user info if present
     if (route?.params?.appleUserInfo) {
       const { firstName: aFirst, lastName: aLast, email: aEmail } = route.params.appleUserInfo;
@@ -36,7 +36,7 @@ export default function UserInfoScreen({ navigation, route }) {
         storeUserEmail(aEmail);
       }
     }
-    
+
     // Load saved first and last name if they exist (only if not already set by social login)
     const loadSavedData = async () => {
       try {
@@ -59,7 +59,7 @@ export default function UserInfoScreen({ navigation, route }) {
         // Check if profile exists
         if (userUid) {
           console.log("Checking for existing profile with userUid:", userUid);
-          const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+          const response = await fetch(`${API_BASE_URL}/api/v1/userprofileinfo/${userUid}`);
           const data = await response.json();
           console.log("Profile check response:", JSON.stringify(data, null, 2));
 
@@ -79,7 +79,7 @@ export default function UserInfoScreen({ navigation, route }) {
 
             // After fetching the user profile (e.g., fullUser)
             if (data.ratings_info) {
-              await AsyncStorage.setItem('user_ratings_info', JSON.stringify(data.ratings_info));
+              await AsyncStorage.setItem("user_ratings_info", JSON.stringify(data.ratings_info));
             }
           } else {
             console.log("No existing profile found for user");
@@ -172,7 +172,7 @@ export default function UserInfoScreen({ navigation, route }) {
         console.log(`profile_uid: ${profilePersonalUid}`);
       }
 
-      const endpoint = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
+      const endpoint = `${API_BASE_URL}/api/v1/userprofileinfo`;
       const method = profileExists ? "PUT" : "POST";
 
       console.log("Making API request:", {

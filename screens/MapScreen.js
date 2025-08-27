@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { StyleSheet, View, Dimensions, TouchableOpacity, Text, KeyboardAvoidingView, Platform } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
-import config from "../config";
+import config from "../appConfig";
 
 const { width, height } = Dimensions.get("window");
 const ASPECT_RATIO = width / height;

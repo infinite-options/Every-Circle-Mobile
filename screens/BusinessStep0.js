@@ -1,18 +1,19 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import config from "../config";
-import { Dropdown } from 'react-native-element-dropdown';
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import config from "../appConfig";
+import { Dropdown } from "react-native-element-dropdown";
+const { API_BASE_URL } = require("../apiConfig");
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 export default function BusinessStep0({ formData, setFormData, navigation }) {
   const [loading, setLoading] = useState(false);
   const googlePlacesRef = useRef();
 
   useEffect(() => {
-    console.log('In BusinessStep0');
+    console.log("In BusinessStep0");
     // Don't load saved form data - start fresh for new business
     // const loadSavedForm = async () => {
     //   try {
@@ -31,7 +32,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
   const updateFormData = (field, value) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);
-    AsyncStorage.setItem('businessFormData', JSON.stringify(updated)).catch(err => console.error('Save error', err));
+    AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
   };
 
   const handleGooglePlaceSelect = async (data, details = null) => {
@@ -41,8 +42,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
     // console.log("handleGooglePlaceSelect Details: ", details);
 
     const addressComponents = details.address_components || [];
-    const getComponent = (type) =>
-      addressComponents.find(comp => comp.types.includes(type))?.long_name || "";
+    const getComponent = (type) => addressComponents.find((comp) => comp.types.includes(type))?.long_name || "";
 
     const addressLine1 = `${getComponent("street_number")} ${getComponent("route")}`.trim();
     const addressLine2 = getComponent("subpremise");
@@ -56,10 +56,8 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
     const latitude = typeof latFn === "function" ? latFn() : latFn ?? "";
     const longitude = typeof lngFn === "function" ? lngFn() : lngFn ?? "";
 
-    const photoReferences = details.photos?.map(photo => photo.photo_reference) || [];
-    const photoUrls = photoReferences.map(ref =>
-      `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${ref}&key=${config.googleMapsApiKey}`
-    );
+    const photoReferences = details.photos?.map((photo) => photo.photo_reference) || [];
+    const photoUrls = photoReferences.map((ref) => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${ref}&key=${config.googleMapsApiKey}`);
 
     const updated = {
       ...formData,
@@ -84,7 +82,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
     };
 
     setFormData(updated);
-    await AsyncStorage.setItem('businessFormData', JSON.stringify(updated)).catch(err => console.error('Save error', err));
+    await AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
 
     fetchProfile(details.place_id);
   };
@@ -93,11 +91,11 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
     try {
       console.log("Fetching business for Place ID:", googlePlaceId);
       setLoading(true);
-      const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/${googlePlaceId}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/businessinfo/${googlePlaceId}`);
       console.log("Business Fetch Response:", response);
       if (response.ok) {
         const result = await response.json();
-        console.log("here 3")
+        console.log("here 3");
         console.log("Business Fetch Result:", result);
         const business = result?.result?.[0];
         if (business) {
@@ -114,36 +112,27 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
   };
 
   const businessRoles = [
-    { label: 'Owner', value: 'owner' },
-    { label: 'Employee', value: 'employee' },
-    { label: 'Partner', value: 'partner' },
-    { label: 'Admin', value: 'admin' },
-    { label: 'Other', value: 'other' },
+    { label: "Owner", value: "owner" },
+    { label: "Employee", value: "employee" },
+    { label: "Partner", value: "partner" },
+    { label: "Admin", value: "admin" },
+    { label: "Other", value: "other" },
   ];
-  
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={90}
-        >
-          <ScrollView
-            style={{ flex: 1, width: '100%' }}
-            contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 20, alignItems: 'center', paddingBottom: 40 }}
-            keyboardShouldPersistTaps="handled"
-          >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
+          <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 20, alignItems: "center", paddingBottom: 40 }} keyboardShouldPersistTaps='handled'>
             <View style={styles.formCard}>
               <Text style={styles.title}>Welcome to Every Circle!</Text>
               <Text style={styles.subtitle}>Let's Start Building Your Business Page!</Text>
 
               <Text style={styles.label}>Search for Existing Business</Text>
-              <View style={{ width: '100%', marginBottom: 20, zIndex: 1000 }}>
+              <View style={{ width: "100%", marginBottom: 20, zIndex: 1000 }}>
                 <GooglePlacesAutocomplete
                   ref={googlePlacesRef}
-                  placeholder="Search for a business"
+                  placeholder='Search for a business'
                   fetchDetails={true}
                   onPress={handleGooglePlaceSelect}
                   query={{
@@ -158,7 +147,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
                       padding: 12,
                       fontSize: 16,
                       borderWidth: 1,
-                      borderColor: '#ddd',
+                      borderColor: "#ddd",
                     },
                     listView: {
                       backgroundColor: "#fff",
@@ -167,7 +156,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
                       top: 60,
                       borderRadius: 10,
                       elevation: 3,
-                      shadowColor: '#000',
+                      shadowColor: "#000",
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 0.1,
                       shadowRadius: 4,
@@ -177,33 +166,16 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
                 />
               </View>
 
-              <Text style={{ textAlign: 'center', width: '100%' }}>--- OR ---</Text>
-
+              <Text style={{ textAlign: "center", width: "100%" }}>--- OR ---</Text>
 
               <Text style={styles.label}>EnterBusiness Name</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.businessName || ''}
-                placeholder="Enter business name"
-                onChangeText={(text) => updateFormData("businessName", text)}
-              />
+              <TextInput style={styles.input} value={formData.businessName || ""} placeholder='Enter business name' onChangeText={(text) => updateFormData("businessName", text)} />
 
               <Text style={styles.label}>Location</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.addressLine1 || ''}
-                placeholder="Enter business address"
-                onChangeText={(text) => updateFormData("addressLine1", text)}
-              />
+              <TextInput style={styles.input} value={formData.addressLine1 || ""} placeholder='Enter business address' onChangeText={(text) => updateFormData("addressLine1", text)} />
 
               <Text style={styles.label}>Phone Number</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="phone-pad"
-                value={formData.phoneNumber || ''}
-                placeholder="(000) 000-0000"
-                onChangeText={(text) => updateFormData("phoneNumber", text)}
-              />
+              <TextInput style={styles.input} keyboardType='phone-pad' value={formData.phoneNumber || ""} placeholder='(000) 000-0000' onChangeText={(text) => updateFormData("phoneNumber", text)} />
 
               {/* <Text style={styles.label}>Business Role</Text>
               <Dropdown
@@ -226,9 +198,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
                 onChangeText={text => updateFormData('einNumber', text)}
               /> */}
 
-              {loading && (
-                <ActivityIndicator size="large" color="#00C721" style={styles.loadingIndicator} />
-              )}
+              {loading && <ActivityIndicator size='large' color='#00C721' style={styles.loadingIndicator} />}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -239,7 +209,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: width * 1.3,
     flex: 1,
     // borderRadius: width,
@@ -247,51 +217,51 @@ const styles = StyleSheet.create({
     borderTopRightRadius: width,
     padding: 90,
     paddingTop: 80,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 30,
   },
   label: {
-    alignSelf: 'flex-start',
-    color: '#333',
-    fontWeight: 'bold',
+    alignSelf: "flex-start",
+    color: "#333",
+    fontWeight: "bold",
     marginBottom: 4,
     marginTop: 10,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 12,
-    width: '100%',
+    width: "100%",
     marginBottom: 15,
   },
   loadingIndicator: {
     marginTop: 20,
   },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 30,
     padding: 24,
-    width: '90%',
+    width: "90%",
     maxWidth: 420,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 16,
   },
   helperText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginBottom: 10,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
-}); 
+});

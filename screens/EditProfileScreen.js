@@ -9,9 +9,9 @@ import ExpertiseSection from "../components/ExpertiseSection";
 import BusinessSection from "../components/BusinessSection";
 import BottomNavBar from "../components/BottomNavBar";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from "expo-file-system";
 
-const ProfileScreenAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
+const ProfileScreenAPI = `${API_BASE_URL}/api/v1/userprofileinfo`;
 const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
 
 const EditProfileScreen = ({ route, navigation }) => {
@@ -110,44 +110,43 @@ const EditProfileScreen = ({ route, navigation }) => {
   const [isChanged, setIsChanged] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => {
       const newValue = !prev[fieldName];
       const updated = { ...prev, [fieldName]: newValue };
-      
+
       // Update all items in the section when the section toggle is changed
       if (fieldName === "experienceIsPublic") {
-        updated.experience = prev.experience.map(item => ({
+        updated.experience = prev.experience.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "educationIsPublic") {
-        updated.education = prev.education.map(item => ({
+        updated.education = prev.education.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "wishesIsPublic") {
-        updated.wishes = prev.wishes.map(item => ({
+        updated.wishes = prev.wishes.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "expertiseIsPublic") {
-        updated.expertise = prev.expertise.map(item => ({
+        updated.expertise = prev.expertise.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "businessIsPublic") {
-        updated.businesses = prev.businesses.map(item => ({
+        updated.businesses = prev.businesses.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
-      
+
       return updated;
     });
   };
@@ -419,7 +418,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       if (profileImageUri && !imageError && profileImageUri !== originalProfileImage) {
         const fileInfo = await FileSystem.getInfoAsync(profileImageUri);
         imageFileSize = fileInfo.size || 0;
-        console.log('Image file size (bytes):', imageFileSize);
+        console.log("Image file size (bytes):", imageFileSize);
 
         const uriParts = profileImageUri.split(".");
         const fileType = uriParts[uriParts.length - 1];
@@ -464,7 +463,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       console.log("Payload being sent to API:", payload);
 
       console.log("Sending payload to server... PUT");
-      await new Promise(res => setTimeout(res, 2000)); // Add this line to simulate a 2s delay
+      await new Promise((res) => setTimeout(res, 2000)); // Add this line to simulate a 2s delay
       const response = await axios({
         method: "put",
         url: `${ProfileScreenAPI}?profile_uid=${trimmedProfileUID}`,
@@ -547,7 +546,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     wishesIsPublic: formData.wishesIsPublic,
     businessIsPublic: formData.businessIsPublic,
     // Only show the image in MiniCard if imageIsPublic is true
-    profileImage: formData.imageIsPublic ? (profileImageUri || "") : "",
+    profileImage: formData.imageIsPublic ? profileImageUri || "" : "",
   };
 
   // Profile Image Public/Private Toggle Handler
@@ -561,56 +560,56 @@ const EditProfileScreen = ({ route, navigation }) => {
   return (
     <View style={{ flex: 1, backgroundColor: "#fff", position: "relative" }}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-      <Text style={styles.header}>Edit Profile</Text>
-      {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
-      {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
+        <Text style={styles.header}>Edit Profile</Text>
+        {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
+        {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
         {/* Profile Image Upload Section */}
         <View style={styles.imageSection}>
           <Text style={styles.label}>Profile Image</Text>
-          <Image 
-            source={profileImageUri && !imageError ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} 
-            style={styles.profileImage}
-            onError={handleImageError}
-          />
+          <Image source={profileImageUri && !imageError ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} style={styles.profileImage} onError={handleImageError} />
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
             <TouchableOpacity onPress={toggleProfileImageVisibility}>
-              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>
-                {formData.imageIsPublic ? "Public" : "Private"}
-              </Text>
+              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>{formData.imageIsPublic ? "Public" : "Private"}</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={handlePickImage}>
             <Text style={styles.uploadLink}>Upload Image</Text>
           </TouchableOpacity>
         </View>
-      {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
-      {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
-      {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
+        {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
+        {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
+        {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
 
-      {/* MiniCard Live Preview Section */}
-      <View style={styles.previewSection}>
-        <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
-        <View style={styles.previewCard}>
-          <MiniCard user={previewUser} />
+        {/* MiniCard Live Preview Section */}
+        <View style={styles.previewSection}>
+          <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
+          <View style={styles.previewCard}>
+            <MiniCard user={previewUser} />
+          </View>
         </View>
-      </View>
 
-      {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
+        {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
 
-      <ExperienceSection
-        experience={formData.experience}
-        setExperience={(e) => { setFormData({ ...formData, experience: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("experienceIsPublic")}
-        isPublic={formData.experienceIsPublic}
+        <ExperienceSection
+          experience={formData.experience}
+          setExperience={(e) => {
+            setFormData({ ...formData, experience: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("experienceIsPublic")}
+          isPublic={formData.experienceIsPublic}
           handleDelete={handleDeleteExperience}
-      />
-      <EducationSection
-        education={formData.education}
-        setEducation={(e) => { setFormData({ ...formData, education: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("educationIsPublic")}
-        isPublic={formData.educationIsPublic}
+        />
+        <EducationSection
+          education={formData.education}
+          setEducation={(e) => {
+            setFormData({ ...formData, education: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("educationIsPublic")}
+          isPublic={formData.educationIsPublic}
           handleDelete={handleDeleteEducation}
-      />
+        />
         {/* Temporarily hiding Business Section
       <BusinessSection
         businesses={formData.businesses}
@@ -620,25 +619,31 @@ const EditProfileScreen = ({ route, navigation }) => {
           handleDelete={handleDeleteBusiness}
       />
         */}
-      <ExpertiseSection
-        expertise={formData.expertise}
-        setExpertise={(e) => { setFormData({ ...formData, expertise: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("expertiseIsPublic")}
-        isPublic={formData.expertiseIsPublic}
+        <ExpertiseSection
+          expertise={formData.expertise}
+          setExpertise={(e) => {
+            setFormData({ ...formData, expertise: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("expertiseIsPublic")}
+          isPublic={formData.expertiseIsPublic}
           handleDelete={handleDeleteExpertise}
-      />
+        />
 
-      <WishesSection
-        wishes={formData.wishes}
-        setWishes={(e) => { setFormData({ ...formData, wishes: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("wishesIsPublic")}
-        isPublic={formData.wishesIsPublic}
+        <WishesSection
+          wishes={formData.wishes}
+          setWishes={(e) => {
+            setFormData({ ...formData, wishes: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("wishesIsPublic")}
+          isPublic={formData.wishesIsPublic}
           handleDelete={handleDeleteWish}
-      />
+        />
 
-      <TouchableOpacity style={[styles.saveButton, !isChanged && styles.disabledButton]} onPress={handleSave} disabled={!isChanged || isLoading}>
-        {isLoading ? <ActivityIndicator size="large" color="#fff" /> : <Text style={styles.saveText}>Save</Text>}
-      </TouchableOpacity>
+        <TouchableOpacity style={[styles.saveButton, !isChanged && styles.disabledButton]} onPress={handleSave} disabled={!isChanged || isLoading}>
+          {isLoading ? <ActivityIndicator size='large' color='#fff' /> : <Text style={styles.saveText}>Save</Text>}
+        </TouchableOpacity>
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 10 }}>
         <BottomNavBar navigation={navigation} />

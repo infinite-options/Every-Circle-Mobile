@@ -5,9 +5,10 @@ import { Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+const { API_BASE_URL } = require("../apiConfig");
 
-const BusinessProfileApi = "https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/";
+const BusinessProfileApi = `${API_BASE_URL}/api/v1/businessinfo/`;
 
 export default function ReviewDetailScreen({ route, navigation }) {
   const { business_uid, business_name, reviewer_profile_id } = route.params;
@@ -28,7 +29,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
           setCartItems(cartData.items || []);
         }
       } catch (error) {
-        console.error('Error loading cart items:', error);
+        console.error("Error loading cart items:", error);
       }
     };
 
@@ -37,8 +38,8 @@ export default function ReviewDetailScreen({ route, navigation }) {
 
   // Add focus listener to refresh cart data when returning to this screen
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      console.log('ReviewDetailScreen focused - refreshing cart data');
+    const unsubscribe = navigation.addListener("focus", () => {
+      console.log("ReviewDetailScreen focused - refreshing cart data");
       const loadCartItems = async () => {
         try {
           const storedCartData = await AsyncStorage.getItem(`cart_${business_uid}`);
@@ -47,7 +48,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
             setCartItems(cartData.items || []);
           }
         } catch (error) {
-          console.error('Error loading cart items:', error);
+          console.error("Error loading cart items:", error);
         }
       };
       loadCartItems();
@@ -60,7 +61,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
     try {
       setLoading(true);
       const endpoint = `${BusinessProfileApi}${business_uid}`;
-      console.log('ReviewDetailScreen GET endpoint:', endpoint);
+      console.log("ReviewDetailScreen GET endpoint:", endpoint);
       const response = await fetch(endpoint);
       const result = await response.json();
 
@@ -109,30 +110,26 @@ export default function ReviewDetailScreen({ route, navigation }) {
       }
 
       // Filter out problematic URLs that won't work in React Native
-      businessImages = businessImages.filter(uri => {
+      businessImages = businessImages.filter((uri) => {
         // Check if URI is valid
         if (!uri || typeof uri !== "string" || uri.trim() === "" || uri === "null" || uri === "undefined") {
           return false;
         }
-        
+
         // Filter out Google Maps API URLs that don't work in React Native
-        if (uri.includes('maps.googleapis.com/maps/api/place/js/PhotoService') || 
-            uri.includes('PhotoService.GetPhoto') ||
-            uri.includes('callback=none')) {
+        if (uri.includes("maps.googleapis.com/maps/api/place/js/PhotoService") || uri.includes("PhotoService.GetPhoto") || uri.includes("callback=none")) {
           console.log("Filtering out Google API URL that won't work in React Native:", uri.substring(0, 100) + "...");
           return false;
         }
-        
+
         // Only allow direct image URLs or valid http/https URLs
-        const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || 
-                               uri.startsWith('http://') || 
-                               uri.startsWith('https://');
-        
+        const isValidImageUrl = uri.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || uri.startsWith("http://") || uri.startsWith("https://");
+
         if (!isValidImageUrl) {
           console.log("Filtering out invalid image URL:", uri.substring(0, 100));
           return false;
         }
-        
+
         return true;
       });
 
@@ -165,11 +162,11 @@ export default function ReviewDetailScreen({ route, navigation }) {
         shortBioIsPublic: rawBusiness.short_bio_is_public === "1",
         business_services: (() => {
           if (rawBusiness.business_services) {
-            if (typeof rawBusiness.business_services === 'string') {
+            if (typeof rawBusiness.business_services === "string") {
               try {
                 return JSON.parse(rawBusiness.business_services);
               } catch (e) {
-                console.log('Failed to parse business_services as JSON');
+                console.log("Failed to parse business_services as JSON");
                 return [];
               }
             } else if (Array.isArray(rawBusiness.business_services)) {
@@ -205,12 +202,12 @@ export default function ReviewDetailScreen({ route, navigation }) {
       const serviceWithQuantity = {
         ...selectedService,
         quantity: quantity,
-        totalPrice: (parseFloat(selectedService.bs_cost) * quantity).toFixed(2)
+        totalPrice: (parseFloat(selectedService.bs_cost) * quantity).toFixed(2),
       };
 
       // Check if the item already exists in the cart
-      const existingItemIndex = cartItems.findIndex(item => item.bs_uid === selectedService.bs_uid);
-      
+      const existingItemIndex = cartItems.findIndex((item) => item.bs_uid === selectedService.bs_uid);
+
       let newCartItems;
       if (existingItemIndex !== -1) {
         // Item exists, update its quantity
@@ -220,7 +217,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
         newCartItems[existingItemIndex] = {
           ...existingItem,
           quantity: newQuantity,
-          totalPrice: (parseFloat(existingItem.bs_cost) * newQuantity).toFixed(2)
+          totalPrice: (parseFloat(existingItem.bs_cost) * newQuantity).toFixed(2),
         };
         console.log(`Updated quantity for existing item ${selectedService.bs_service_name} to ${newQuantity}`);
       } else {
@@ -228,18 +225,21 @@ export default function ReviewDetailScreen({ route, navigation }) {
         newCartItems = [...cartItems, serviceWithQuantity];
         console.log(`Added new item ${selectedService.bs_service_name} with quantity ${quantity}`);
       }
-      
+
       setCartItems(newCartItems);
-      
+
       // Save to AsyncStorage
-      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
-        items: newCartItems
-      }));
-      
+      await AsyncStorage.setItem(
+        `cart_${business_uid}`,
+        JSON.stringify({
+          items: newCartItems,
+        })
+      );
+
       setQuantityModalVisible(false);
     } catch (error) {
-      console.error('Error adding item to cart:', error);
-      Alert.alert('Error', 'Failed to add item to cart');
+      console.error("Error adding item to cart:", error);
+      Alert.alert("Error", "Failed to add item to cart");
     }
   };
 
@@ -247,24 +247,27 @@ export default function ReviewDetailScreen({ route, navigation }) {
     try {
       const newCartItems = cartItems.filter((_, i) => i !== index);
       setCartItems(newCartItems);
-      
+
       // Update AsyncStorage
-      await AsyncStorage.setItem(`cart_${business_uid}`, JSON.stringify({
-        items: newCartItems
-      }));
+      await AsyncStorage.setItem(
+        `cart_${business_uid}`,
+        JSON.stringify({
+          items: newCartItems,
+        })
+      );
     } catch (error) {
-      console.error('Error removing item from cart:', error);
-      Alert.alert('Error', 'Failed to remove item from cart');
+      console.error("Error removing item from cart:", error);
+      Alert.alert("Error", "Failed to remove item from cart");
     }
   };
 
   const handleViewCart = () => {
-    navigation.navigate('ShoppingCart', {
+    navigation.navigate("ShoppingCart", {
       cartItems,
       onRemoveItem: handleRemoveItem,
       businessName: business.business_name,
       business_uid: business_uid,
-      recommender_profile_id: reviewer_profile_id // Pass the referral profile ID
+      recommender_profile_id: reviewer_profile_id, // Pass the referral profile ID
     });
   };
 
@@ -288,11 +291,8 @@ export default function ReviewDetailScreen({ route, navigation }) {
     <View style={styles.pageContainer}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name='arrow-back' size={24} color='#fff' />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Review Details</Text>
         <View style={styles.headerSpacer} />
@@ -304,17 +304,11 @@ export default function ReviewDetailScreen({ route, navigation }) {
           <Text style={styles.cardTitle}>Reviewer Information</Text>
           <View style={styles.reviewerInfo}>
             <View style={styles.reviewerAvatar}>
-              <Text style={styles.reviewerInitial}>
-                {reviewer_profile_id === 'Charity' ? 'C' : (reviewer_profile_id ? reviewer_profile_id.charAt(0).toUpperCase() : 'U')}
-              </Text>
+              <Text style={styles.reviewerInitial}>{reviewer_profile_id === "Charity" ? "C" : reviewer_profile_id ? reviewer_profile_id.charAt(0).toUpperCase() : "U"}</Text>
             </View>
             <View style={styles.reviewerDetails}>
-              <Text style={styles.reviewerName}>
-                {reviewer_profile_id === 'Charity' ? 'Charity' : `User ${reviewer_profile_id}`}
-              </Text>
-              <Text style={styles.reviewerLabel}>
-                {reviewer_profile_id === 'Charity' ? 'Charity Organization' : `Profile ID: ${reviewer_profile_id}`}
-              </Text>
+              <Text style={styles.reviewerName}>{reviewer_profile_id === "Charity" ? "Charity" : `User ${reviewer_profile_id}`}</Text>
+              <Text style={styles.reviewerLabel}>{reviewer_profile_id === "Charity" ? "Charity Organization" : `Profile ID: ${reviewer_profile_id}`}</Text>
             </View>
           </View>
         </View>
@@ -337,7 +331,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
         {/* Contact Information Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          
+
           <View style={styles.infoRow}>
             <Text style={styles.label}>Location:</Text>
             <Text style={styles.value}>
@@ -378,7 +372,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
         </View>
 
         {/* Business Details Card */}
-        {(business.taglineIsPublic && business.tagline) && (
+        {business.taglineIsPublic && business.tagline && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Tagline</Text>
             <Text style={styles.bioText}>{business.tagline}</Text>
@@ -414,7 +408,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
             {business.price_level && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Price Level:</Text>
-                <Text style={styles.value}>{'$'.repeat(parseInt(business.price_level) || 1)}</Text>
+                <Text style={styles.value}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
               </View>
             )}
           </View>
@@ -461,7 +455,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
                     }}
                     onLoad={() => console.log(`Business image ${index} loaded successfully`)}
                     defaultSource={require("../assets/profile.png")}
-                    resizeMode="cover"
+                    resizeMode='cover'
                   />
                 </View>
               ))}
@@ -475,22 +469,14 @@ export default function ReviewDetailScreen({ route, navigation }) {
             <View style={styles.servicesHeader}>
               <Text style={styles.cardTitle}>Products & Services</Text>
               {cartItems.length > 0 && (
-                <TouchableOpacity 
-                  style={styles.cartButton}
-                  onPress={handleViewCart}
-                >
-                  <Ionicons name="cart" size={24} color="#9C45F7" />
+                <TouchableOpacity style={styles.cartButton} onPress={handleViewCart}>
+                  <Ionicons name='cart' size={24} color='#9C45F7' />
                   <Text style={styles.cartCount}>{cartItems.length}</Text>
                 </TouchableOpacity>
               )}
             </View>
             {business.business_services.map((service, idx) => (
-              <ProductCard 
-                key={idx} 
-                service={service} 
-                showEditButton={false}
-                onPress={() => handleProductPress(service)}
-              />
+              <ProductCard key={idx} service={service} showEditButton={false} onPress={() => handleProductPress(service)} />
             ))}
           </View>
         )}
@@ -498,51 +484,32 @@ export default function ReviewDetailScreen({ route, navigation }) {
 
       <BottomNavBar navigation={navigation} />
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={quantityModalVisible}
-        onRequestClose={() => setQuantityModalVisible(false)}
-      >
+      <Modal animationType='slide' transparent={true} visible={quantityModalVisible} onRequestClose={() => setQuantityModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Quantity</Text>
             <Text style={styles.serviceName}>{selectedService?.bs_service_name}</Text>
-            
+
             <View style={styles.quantityContainer}>
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
-              >
-                <Ionicons name="remove" size={24} color="#9C45F7" />
+              <TouchableOpacity style={styles.quantityButton} onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}>
+                <Ionicons name='remove' size={24} color='#9C45F7' />
               </TouchableOpacity>
-              
+
               <Text style={styles.quantityText}>{quantity}</Text>
-              
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => setQuantity(prev => prev + 1)}
-              >
-                <Ionicons name="add" size={24} color="#9C45F7" />
+
+              <TouchableOpacity style={styles.quantityButton} onPress={() => setQuantity((prev) => prev + 1)}>
+                <Ionicons name='add' size={24} color='#9C45F7' />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.totalPrice}>
-              Total: ${selectedService ? (parseFloat(selectedService.bs_cost) * quantity).toFixed(2) : '0.00'}
-            </Text>
+            <Text style={styles.totalPrice}>Total: ${selectedService ? (parseFloat(selectedService.bs_cost) * quantity).toFixed(2) : "0.00"}</Text>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setQuantityModalVisible(false)}
-              >
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setQuantityModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={handleQuantityConfirm}
-              >
+
+              <TouchableOpacity style={[styles.modalButton, styles.confirmButton]} onPress={handleQuantityConfirm}>
                 <Text style={styles.confirmButtonText}>Add to Cart</Text>
               </TouchableOpacity>
             </View>
@@ -613,33 +580,33 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   reviewerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   reviewerAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   reviewerInitial: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   reviewerDetails: {
     marginLeft: 15,
   },
   reviewerName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   reviewerLabel: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginTop: 2,
   },
   infoRow: {
@@ -708,94 +675,94 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   servicesHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 15,
   },
   cartButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
     padding: 8,
     borderRadius: 20,
   },
   cartCount: {
     marginLeft: 5,
-    color: '#9C45F7',
-    fontWeight: 'bold',
+    color: "#9C45F7",
+    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
     borderRadius: 10,
-    width: '80%',
-    maxHeight: '80%',
+    width: "80%",
+    maxHeight: "80%",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 15,
-    color: '#333',
+    color: "#333",
   },
   serviceName: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     marginBottom: 15,
   },
   quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
   },
   quantityButton: {
     padding: 8,
     borderRadius: 20,
-    backgroundColor: '#E8F4FD',
+    backgroundColor: "#E8F4FD",
   },
   quantityText: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     marginHorizontal: 10,
   },
   totalPrice: {
     fontSize: 16,
-    color: '#333',
-    fontWeight: 'bold',
+    color: "#333",
+    fontWeight: "bold",
     marginBottom: 15,
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 10,
     gap: 12,
   },
   cancelButton: {
-    backgroundColor: '#fff',
-    borderColor: '#9C45F7',
+    backgroundColor: "#fff",
+    borderColor: "#9C45F7",
     borderWidth: 2,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 12,
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     marginRight: 6,
   },
   confirmButton: {
-    backgroundColor: '#9C45F7',
+    backgroundColor: "#9C45F7",
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 12,
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     marginLeft: 6,
-    shadowColor: '#9C45F7',
+    shadowColor: "#9C45F7",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 4,
@@ -803,12 +770,12 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#9C45F7',
+    fontWeight: "bold",
+    color: "#9C45F7",
   },
   confirmButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
-}); 
+});

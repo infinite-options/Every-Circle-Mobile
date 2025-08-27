@@ -6,13 +6,13 @@ import * as FileSystem from "expo-file-system";
 import { Dropdown } from "react-native-element-dropdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavBar from "../components/BottomNavBar";
-import ContinueButton from '../components/ContinueButton';
+import ContinueButton from "../components/ContinueButton";
 
 const { width } = Dimensions.get("window");
 
 export default function BusinessStep2({ formData, setFormData, navigation }) {
   useEffect(() => {
-    console.log('\nIn BusinessStep2', formData);
+    console.log("\nIn BusinessStep2", formData);
   }, []);
   const [allCategories, setAllCategories] = useState([]);
   const [mainCategories, setMainCategories] = useState([]);
@@ -33,7 +33,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
     // console.log('In BusinessStep2');
     const fetchCategories = async () => {
       try {
-        const res = await fetch("https://ioec2ecaspm.infiniteoptions.com/category_list/all");
+        const res = await fetch(`${API_BASE_URL}/category_list/all`);
         const json = await res.json();
         setAllCategories(json.result);
         setMainCategories(json.result.filter((cat) => cat.category_parent_id === null));
@@ -153,18 +153,10 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#00C721' }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={90}
-      >
-        <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 20, alignItems: 'center' }}>
-          <ScrollView
-            style={{ flex: 1, width: '100%' }}
-            contentContainerStyle={{  justifyContent: 'center', alignItems: 'center', paddingBottom: 120 }}
-            keyboardShouldPersistTaps="handled"
-          >
+    <View style={{ flex: 1, backgroundColor: "#00C721" }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
+        <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 20, alignItems: "center" }}>
+          <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={{ justifyContent: "center", alignItems: "center", paddingBottom: 120 }} keyboardShouldPersistTaps='handled'>
             <View style={styles.formCard}>
               <Text style={styles.title}>Select Category</Text>
               <Text style={styles.subtitle}>Select Tags for your business</Text>
@@ -263,13 +255,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
 
               <Text style={styles.label}>Custom Tags</Text>
               <View style={styles.tagRow}>
-                <TextInput
-                  style={styles.tagInput}
-                  placeholder='Add tag'
-                  value={customTag}
-                  onChangeText={setCustomTag}
-                  onSubmitEditing={addTag}
-                />
+                <TextInput style={styles.tagInput} placeholder='Add tag' value={customTag} onChangeText={setCustomTag} onSubmitEditing={addTag} />
                 <TouchableOpacity onPress={addTag} style={styles.tagButton}>
                   <Text style={styles.tagButtonText}>Add</Text>
                 </TouchableOpacity>
@@ -304,7 +290,7 @@ const styles = StyleSheet.create({
   //   paddingRight: 80,
   // },
   container: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: width * 1.3,
     flex: 1,
     // borderRadius: width,
@@ -312,7 +298,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: width,
     padding: 90,
     paddingTop: 80,
-    alignItems: 'center',
+    alignItems: "center",
   },
   scrollContent: {
     borderBottomLeftRadius: width,
@@ -322,44 +308,44 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 30,
   },
   label: {
-    alignSelf: 'flex-start',
-    color: '#333',
-    fontWeight: 'bold',
+    alignSelf: "flex-start",
+    color: "#333",
+    fontWeight: "bold",
     marginBottom: 4,
     marginTop: 10,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 12,
-    width: '100%',
+    width: "100%",
     marginBottom: 15,
   },
   textarea: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 12,
     height: 100,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     marginBottom: 20,
-    width: '100%',
+    width: "100%",
   },
   tagRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
   tagInput: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 10,
     marginRight: 10,
@@ -454,12 +440,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 30,
     padding: 24,
-    width: '90%',
+    width: "90%",
     maxWidth: 420,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 16,
     // shadowColor: '#000',
     // shadowOffset: { width: 0, height: 2 },
