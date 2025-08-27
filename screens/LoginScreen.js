@@ -10,7 +10,7 @@ import axios from "axios";
 import Constants from "expo-constants";
 import config from "../config";
 import { Ionicons } from '@expo/vector-icons';
-import { SALT_ENDPOINT, LOGIN_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
+import { ACCOUNT_SALT_ENDPOINT, LOGIN_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 // import SignUpScreen from "./screens/SignUpScreen";
 
 // Helper function to extract the last two digits before .apps.googleusercontent.com
@@ -85,7 +85,8 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       // console.log("LoginScreen - handleContinue", email, password);
 
       // 1. Get salt
-      const saltResponse = await fetch(SALT_ENDPOINT, {
+      console.log("LoginScreen - ACCOUNT_SALT_ENDPOINT", ACCOUNT_SALT_ENDPOINT);
+      const saltResponse = await fetch(ACCOUNT_SALT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -99,6 +100,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       }
 
       // 2. Hash password
+      console.log("LoginScreen - saltObject", saltObject);
       const salt = saltObject.result[0].password_salt;
       // const hashedPassword = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, password + salt);
       const value = password + salt;
@@ -110,6 +112,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       // console.log("LoginScreen - hashedPassword", hashedPassword);
 
       // 3. Login
+      console.log("LoginScreen - LOGIN_ENDPOINT", LOGIN_ENDPOINT);
       const loginResponse = await fetch(LOGIN_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
