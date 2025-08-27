@@ -4,6 +4,9 @@
 // Production/Development Environment
 export const API_BASE_URL = "https://o7t5ikn907.execute-api.us-west-1.amazonaws.com/dev";
 
+// Legacy API Base URL (infiniteoptions domain)
+// export const API_BASE_URL = "https://ioec2ecaspm.infiniteoptions.com";
+
 // Local Development (commented out by default)
 // export const API_BASE_URL = "http://localhost:4090";
 
@@ -12,8 +15,7 @@ export const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.
 export const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
 export const APPLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
 
-// Legacy API Base URL (infiniteoptions domain)
-export const LEGACY_API_BASE_URL = "https://ioec2ecaspm.infiniteoptions.com";
+
 
 // Account Management Endpoints
 export const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
@@ -26,27 +28,27 @@ export const STRIPE_KEY_ENDPOINT = 'https://l0h6a9zi1e.execute-api.us-west-1.ama
 export const CREATE_PAYMENT_INTENT_ENDPOINT = 'https://huo8rhh76i.execute-api.us-west-1.amazonaws.com/dev/api/v2/createPaymentIntent';
 
 // User Profile Endpoints
-export const USER_PROFILE_INFO_ENDPOINT = `${LEGACY_API_BASE_URL}/api/v1/userprofileinfo`;
-export const REFERRAL_API_ENDPOINT = `${LEGACY_API_BASE_URL}/api/v1/userprofileinfo/`;
+export const USER_PROFILE_INFO_ENDPOINT = `${API_BASE_URL}/api/v1/userprofileinfo`;
+export const REFERRAL_API_ENDPOINT = `${API_BASE_URL}/api/v1/userprofileinfo/`;
 
 // Business Endpoints
-export const BUSINESS_INFO_ENDPOINT = `${LEGACY_API_BASE_URL}/api/v1/businessinfo`;
-export const BUSINESSES_ENDPOINT = `${LEGACY_API_BASE_URL}/businesses`;
-export const CATEGORY_LIST_ENDPOINT = `${LEGACY_API_BASE_URL}/category_list/all`;
+export const BUSINESS_INFO_ENDPOINT = `${API_BASE_URL}/api/v1/businessinfo`;
+export const BUSINESSES_ENDPOINT = `${API_BASE_URL}/businesses`;
+export const CATEGORY_LIST_ENDPOINT = `${API_BASE_URL}/category_list/all`;
 
 // Search and Network Endpoints
-export const BUSINESS_RESULTS_ENDPOINT = `${LEGACY_API_BASE_URL}/api/businessresults`;
-export const BOUNTY_RESULTS_ENDPOINT = `${LEGACY_API_BASE_URL}/api/bountyresults`;
-export const TAG_SEARCH_DISTINCT_ENDPOINT = `${LEGACY_API_BASE_URL}/api/tagsearchdistinct`;
-export const TAG_CATEGORY_DISTINCT_ENDPOINT = `${LEGACY_API_BASE_URL}/api/tagcategorydistinct`;
+export const BUSINESS_RESULTS_ENDPOINT = `${API_BASE_URL}/api/businessresults`;
+export const BOUNTY_RESULTS_ENDPOINT = `${API_BASE_URL}/api/bountyresults`;
+export const TAG_SEARCH_DISTINCT_ENDPOINT = `${API_BASE_URL}/api/tagsearchdistinct`;
+export const TAG_CATEGORY_DISTINCT_ENDPOINT = `${API_BASE_URL}/api/tagcategorydistinct`;
 
 // Transaction and Rating Endpoints
-export const TRANSACTIONS_ENDPOINT = `${LEGACY_API_BASE_URL}/api/v1/transactions`;
-export const RATINGS_ENDPOINT = `${LEGACY_API_BASE_URL}/ratings`;
+export const TRANSACTIONS_ENDPOINT = `${API_BASE_URL}/api/v1/transactions`;
+export const RATINGS_ENDPOINT = `${API_BASE_URL}/ratings`;
 
 console.log("API Configuration loaded:");
 console.log("Base URL:", API_BASE_URL);
-console.log("Legacy Base URL:", LEGACY_API_BASE_URL);
+console.log("Legacy Base URL:", API_BASE_URL);
 console.log("Google Signup:", GOOGLE_SIGNUP_ENDPOINT);
 console.log("Google Signin:", GOOGLE_SIGNIN_ENDPOINT);
 console.log("Apple Signin:", APPLE_SIGNIN_ENDPOINT);
