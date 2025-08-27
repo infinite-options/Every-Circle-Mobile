@@ -4,6 +4,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BOUNTY_RESULTS_ENDPOINT } from '../apiConfig';
 
 const NetworkScreen = ({ navigation }) => {
   const [storageData, setStorageData] = useState([]);
@@ -16,7 +17,7 @@ const NetworkScreen = ({ navigation }) => {
       setBountyLoading(true);
       const profileId = await AsyncStorage.getItem('profile_uid');
       if (profileId) {
-        const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/bountyresults/${profileId}`);
+        const response = await fetch(`${BOUNTY_RESULTS_ENDPOINT}/${profileId}`);
         const result = await response.json();
         console.log('Bounty results:', result);
         setBountyData(result);

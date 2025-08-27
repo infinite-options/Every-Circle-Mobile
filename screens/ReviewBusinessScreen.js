@@ -4,8 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import BottomNavBar from '../components/BottomNavBar';
-
-const RATINGS_ENDPOINT = 'https://ioec2ecaspm.infiniteoptions.com/ratings';
+import { RATINGS_ENDPOINT } from '../apiConfig';
 
 export default function ReviewBusinessScreen({ route, navigation }) {
   const { business_uid, business_name, reviewData, isEdit } = route.params;

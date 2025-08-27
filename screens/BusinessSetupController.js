@@ -9,8 +9,9 @@ import BusinessStep3 from './BusinessStep3';
 import BusinessStep4 from './BusinessStep4';
 import ContinueButton from '../components/ContinueButton';
 import BottomNavBar from '../components/BottomNavBar';
+import { BUSINESS_INFO_ENDPOINT } from '../apiConfig';
 
-const BusinessProfileApi = 'https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo';
+const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
 
 export default function BusinessSetupController({ navigation }) {
   const [activeStep, setActiveStep] = useState(0);

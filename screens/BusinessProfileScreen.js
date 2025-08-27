@@ -6,9 +6,10 @@ import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BUSINESS_INFO_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 
-const BusinessProfileApi = "https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/";
-const ProfileScreenAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
+const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
+const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 
 export default function BusinessProfileScreen({ route, navigation }) {
   const { business_uid } = route.params;

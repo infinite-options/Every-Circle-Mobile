@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { storeUserEmail, getUserEmail } from "../utils/emailStorage";
+import { USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 
 export default function UserInfoScreen({ navigation, route }) {
   // console.log("UserInfoScreen - route.params:", route.params);
@@ -59,7 +60,7 @@ export default function UserInfoScreen({ navigation, route }) {
         // Check if profile exists
         if (userUid) {
           console.log("Checking for existing profile with userUid:", userUid);
-          const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
+          const response = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${userUid}`);
           const data = await response.json();
           console.log("Profile check response:", JSON.stringify(data, null, 2));
 
@@ -172,7 +173,7 @@ export default function UserInfoScreen({ navigation, route }) {
         console.log(`profile_uid: ${profilePersonalUid}`);
       }
 
-      const endpoint = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
+              const endpoint = USER_PROFILE_INFO_ENDPOINT;
       const method = profileExists ? "PUT" : "POST";
 
       console.log("Making API request:", {

@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import * as Crypto from "expo-crypto";
 import BottomNavBar from "../components/BottomNavBar";
+import { USER_PROFILE_INFO_ENDPOINT, ACCOUNT_SALT_ENDPOINT, LOGIN_ENDPOINT, UPDATE_EMAIL_PASSWORD_ENDPOINT } from "../apiConfig";
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation();
@@ -37,7 +38,7 @@ export default function ChangePasswordScreen() {
 
           // Fetch user details to get email if not in AsyncStorage
           try {
-            const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${uid}`);
+            const response = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${uid}`);
             const userData = await response.json();
             console.log("User data fetched:", userData);
 
@@ -98,7 +99,7 @@ export default function ChangePasswordScreen() {
 
       // Get the password salt first
       console.log("Fetching password salt...");
-      const saltResponse = await fetch(`https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE`, {
+      const saltResponse = await fetch(ACCOUNT_SALT_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -130,7 +131,7 @@ export default function ChangePasswordScreen() {
 
       // Verify current password by attempting login
       console.log("Verifying current password...");
-      const verifyResponse = await fetch(`https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE`, {
+      const verifyResponse = await fetch(LOGIN_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -163,7 +164,7 @@ export default function ChangePasswordScreen() {
       console.log("Sending update request:", JSON.stringify(updateRequest));
 
       // Updated endpoint: using UpdateEmailPassword instead of UpdatePassword.
-      const updateResponse = await fetch(`https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UpdateEmailPassword/EVERY-CIRCLE`, {
+      const updateResponse = await fetch(UPDATE_EMAIL_PASSWORD_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
