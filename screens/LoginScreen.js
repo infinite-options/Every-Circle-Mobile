@@ -10,12 +10,8 @@ import axios from "axios";
 import Constants from "expo-constants";
 import config from "../config";
 import { Ionicons } from '@expo/vector-icons';
+import { SALT_ENDPOINT, LOGIN_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 // import SignUpScreen from "./screens/SignUpScreen";
-
-// Endpoints
-const SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
-const LOGIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/Login/EVERY-CIRCLE";
-const PROFILE_ENDPOINT = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
 
 // Helper function to extract the last two digits before .apps.googleusercontent.com
 const getLastTwoDigits = (clientId) => {
@@ -135,7 +131,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       // 4. Fetch user profile
       // console.log("user_uid", user_uid);
       // console.log("PROFILE_ENDPOINT", PROFILE_ENDPOINT);
-      console.log("LoginScreen - Profile Endpoint call: ", `${PROFILE_ENDPOINT}/${user_uid}`);
+      console.log("LoginScreen - Profile Endpoint call: ", `${USER_PROFILE_INFO_ENDPOINT}/${user_uid}`);
       // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`);
       // const response = await axios.get(
       //   `https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`
@@ -143,7 +139,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       // console.log("profileResponse", response);
       // const profileResponse = await fetch(`${PROFILE_ENDPOINT}/${user_uid}`);
 
-      const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`, {
+      const profileResponse = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${user_uid}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });

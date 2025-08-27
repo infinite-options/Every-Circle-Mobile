@@ -6,8 +6,9 @@ import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BUSINESS_INFO_ENDPOINT } from "../apiConfig";
 
-const BusinessProfileApi = "https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/";
+const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
 
 export default function ReviewDetailScreen({ route, navigation }) {
   const { business_uid, business_name, reviewer_profile_id } = route.params;

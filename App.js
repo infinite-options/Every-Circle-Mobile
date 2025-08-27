@@ -8,6 +8,12 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import config from "./config";
+import { 
+  GOOGLE_SIGNUP_ENDPOINT, 
+  GOOGLE_SIGNIN_ENDPOINT, 
+  APPLE_SIGNIN_ENDPOINT,
+  LEGACY_API_BASE_URL 
+} from "./apiConfig";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import HowItWorksScreen from "./screens/HowItWorksScreen";
@@ -34,10 +40,6 @@ import ReviewBusinessScreen from './screens/ReviewBusinessScreen';
 import ReviewDetailScreen from './screens/ReviewDetailScreen';
 
 const Stack = createNativeStackNavigator();
-
-const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
-const GOOGLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialLogin/EVERY-CIRCLE";
-const APPLE_SIGNIN_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AppleLogin/EVERY-CIRCLE";
 
 export const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const mapsApiKeyDisplay = mapsApiKey ? "..." + mapsApiKey.slice(-4) : "Not set";
@@ -109,7 +111,7 @@ export default function App() {
         await AsyncStorage.setItem("user_uid", user_uid);
 
         // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
-        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
+        const baseURI = LEGACY_API_BASE_URL;
         const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Full endpoint 1: ${endpoint}`);
@@ -283,7 +285,7 @@ export default function App() {
         await AsyncStorage.setItem("user_email_id", userInfo.user.email);
         
         // Fetch user profile data
-        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
+        const baseURI = LEGACY_API_BASE_URL;
         const endpointPath = `/api/v1/userprofileinfo/${result.user_uid || userInfo.user.id}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Fetching profile for existing user: ${endpoint}`);
@@ -382,7 +384,7 @@ export default function App() {
 
         // Get full user profile data
         // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
-        const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
+        const baseURI = LEGACY_API_BASE_URL;
         const endpointPath = `/api/v1/userprofileinfo/${userUid}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Full endpoint 2: ${endpoint}`);

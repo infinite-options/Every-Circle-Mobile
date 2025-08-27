@@ -6,8 +6,9 @@ import axios from "axios";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import ProductCard from "../components/ProductCard";
+import { BUSINESS_INFO_ENDPOINT } from "../apiConfig";
 
-const BusinessProfileAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo";
+const BusinessProfileAPI = BUSINESS_INFO_ENDPOINT;
 
 export default function EditBusinessProfileScreen({ route, navigation }) {
   console.log("Edit Button Pressed: EditBusinessProfileScreen", route.params.services);

@@ -1,5 +1,5 @@
 // SearchScreen.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,16 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  FlatList,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BUSINESS_RESULTS_ENDPOINT, TAG_SEARCH_DISTINCT_ENDPOINT, TAG_CATEGORY_DISTINCT_ENDPOINT } from "../apiConfig";
 
 export default function SearchScreen({ route }) {
   const navigation = useNavigation();
@@ -115,9 +120,9 @@ export default function SearchScreen({ route }) {
     setLoading(true);
     try {
       // Try the v1 API endpoint to match other endpoints in the app
-      const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/businessresults/${encodeURIComponent(q)}`;
-      // const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/v1/tagsplitsearchdistinct/${encodeURIComponent(q)}`;
-      // const apiUrl = `https://ioec2ecaspm.infiniteoptions.com/api/tagcategorydistinct/${encodeURIComponent(q)}`;
+      const apiUrl = `${BUSINESS_RESULTS_ENDPOINT}/${encodeURIComponent(q)}`;
+      // const apiUrl = `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
+      // const apiUrl = `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
       console.log("🌐 API URL:", apiUrl);
       
@@ -180,12 +185,11 @@ export default function SearchScreen({ route }) {
 
   const tryAlternativeEndpoints = async (query) => {
     const alternativeEndpoints = [
-      // `https://ioec2ecaspm.infiniteoptions.com/api/businessresults/${encodeURIComponent(query)}`,
-      // `https://ioec2ecaspm.infiniteoptions.com/api/v1/business_search/${encodeURIComponent(query)}`,
-      // `https://ioec2ecaspm.infiniteoptions.com/api/search/${encodeURIComponent(query)}`,
-      // `https://ioec2ecaspm.infiniteoptions.com/api/v1/search/${encodeURIComponent(query)}`
-      `https://ioec2ecaspm.infiniteoptions.com/api/tagsearchdistinct/${encodeURIComponent(query)}`
-      `https://ioec2ecaspm.infiniteoptions.com/api/tagcategorydistinct/${encodeURIComponent(query)}`
+      // `${BUSINESS_RESULTS_ENDPOINT}/${encodeURIComponent(query)}`,
+      // `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(query)}`,
+      // `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(query)}`
+      `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(query)}`,
+      `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(query)}`
     ];
 
     for (const endpoint of alternativeEndpoints) {

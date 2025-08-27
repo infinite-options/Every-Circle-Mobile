@@ -10,8 +10,9 @@ import BusinessSection from "../components/BusinessSection";
 import BottomNavBar from "../components/BottomNavBar";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from 'expo-file-system';
+import { USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 
-const ProfileScreenAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
+const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
 
 const EditProfileScreen = ({ route, navigation }) => {

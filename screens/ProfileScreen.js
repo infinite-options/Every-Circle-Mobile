@@ -5,11 +5,9 @@ import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from '@react-navigation/native';
+import { LEGACY_API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 
-// const ProfileScreenAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo";
-const baseURI = "https://ioec2ecaspm.infiniteoptions.com";
-const endpointPath = `/api/v1/userprofileinfo`;
-const ProfileScreenAPI = baseURI + endpointPath;
+const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
 
 const ProfileScreen = ({ route, navigation }) => {

@@ -4,14 +4,15 @@ import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
 import AppleSignIn from "../AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from '@expo/vector-icons';
+import { 
+  ACCOUNT_SALT_ENDPOINT, 
+  CREATE_ACCOUNT_ENDPOINT, 
+  GOOGLE_SIGNUP_ENDPOINT, 
+  REFERRAL_API_ENDPOINT 
+} from "../apiConfig";
 // import CryptoJS from "react-native-crypto-js";
 // import * as CryptoJS from "react-native-crypto-js";
 import * as Crypto from "expo-crypto";
-
-const ACCOUNT_SALT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/AccountSalt/EVERY-CIRCLE";
-const CREATE_ACCOUNT_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/CreateAccount/EVERY-CIRCLE";
-const GOOGLE_SIGNUP_ENDPOINT = "https://mrle52rri4.execute-api.us-west-1.amazonaws.com/dev/api/v2/UserSocialSignUp/EVERY-CIRCLE";
-const REFERRAL_API = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/";
 
 export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, navigation, route }) {
   
@@ -96,7 +97,7 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
     setIsCheckingReferral(true);
     try {
       console.log("Referral Modal: Checking referral for email:", referralId);
-      const response = await fetch(REFERRAL_API + encodeURIComponent(referralId));
+      const response = await fetch(REFERRAL_API_ENDPOINT + encodeURIComponent(referralId));
       const data = await response.json();
       console.log("Referral Modal: Backend response:", data);
       if (data.user_uid && data.user_uid !== "unknown") {

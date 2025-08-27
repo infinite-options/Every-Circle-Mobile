@@ -6,13 +6,10 @@ import BottomNavBar from '../components/BottomNavBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StripeProvider, useStripe } from '@stripe/stripe-react-native';
 import {REACT_APP_STRIPE_PUBLIC_KEY} from "@env";
+import { TRANSACTIONS_ENDPOINT, USER_PROFILE_INFO_ENDPOINT, STRIPE_KEY_ENDPOINT, CREATE_PAYMENT_INTENT_ENDPOINT } from '../apiConfig';
 
 // Use the publishable key from environment variables
 const STRIPE_PUBLISHABLE_KEY = REACT_APP_STRIPE_PUBLIC_KEY;
-const STRIPE_KEY_ENDPOINT = 'https://l0h6a9zi1e.execute-api.us-west-1.amazonaws.com/dev/stripe_key/ECTEST';
-const CREATE_PAYMENT_INTENT_ENDPOINT = 'https://huo8rhh76i.execute-api.us-west-1.amazonaws.com/dev/api/v2/createPaymentIntent';
-const TRANSACTIONS_ENDPOINT = 'https://ioec2ecaspm.infiniteoptions.com/api/v1/transactions';
-const PROFILE_API = 'https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo';
 
 const ShoppingCartScreen = ({ route, navigation }) => {
   const { cartItems: initialCartItems, onRemoveItem, businessName, business_uid, recommender_profile_id } = route.params;
@@ -221,7 +218,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
   const getProfileId = async (userUid) => {
     try {
       console.log('Fetching profile ID for user:', userUid);
-      const response = await fetch(`${PROFILE_API}/${userUid}`);
+              const response = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${userUid}`);
       const data = await response.json();
       console.log('Profile data received:', data);
       

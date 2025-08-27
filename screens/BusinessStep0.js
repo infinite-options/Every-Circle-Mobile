@@ -4,6 +4,7 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import config from "../config";
 import { Dropdown } from 'react-native-element-dropdown';
+import { BUSINESS_INFO_ENDPOINT } from "../apiConfig";
 
 const { width } = Dimensions.get('window');
 
@@ -93,7 +94,7 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
     try {
       console.log("Fetching business for Place ID:", googlePlaceId);
       setLoading(true);
-      const response = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/businessinfo/${googlePlaceId}`);
+      const response = await fetch(`${BUSINESS_INFO_ENDPOINT}/${googlePlaceId}`);
       console.log("Business Fetch Response:", response);
       if (response.ok) {
         const result = await response.json();

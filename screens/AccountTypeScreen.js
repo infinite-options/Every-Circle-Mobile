@@ -4,10 +4,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUserEmail } from "../utils/emailStorage";
 import axios from "axios";
 import { Dimensions } from "react-native";
+import { REFERRAL_API_ENDPOINT } from "../apiConfig";
 
 const { width } = Dimensions.get("window");
 
-const userProfileAPI = "https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/";
+const userProfileAPI = REFERRAL_API_ENDPOINT;
 
 const AccountTypeScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState(route.params?.email || "");

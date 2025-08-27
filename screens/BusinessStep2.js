@@ -7,6 +7,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavBar from "../components/BottomNavBar";
 import ContinueButton from '../components/ContinueButton';
+import { CATEGORY_LIST_ENDPOINT } from "../apiConfig";
 
 const { width } = Dimensions.get("window");
 
@@ -33,7 +34,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
     // console.log('In BusinessStep2');
     const fetchCategories = async () => {
       try {
-        const res = await fetch("https://ioec2ecaspm.infiniteoptions.com/category_list/all");
+        const res = await fetch(CATEGORY_LIST_ENDPOINT);
         const json = await res.json();
         setAllCategories(json.result);
         setMainCategories(json.result.filter((cat) => cat.category_parent_id === null));
