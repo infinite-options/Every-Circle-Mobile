@@ -9,7 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import Constants from "expo-constants";
 import config from "../config";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 import { ACCOUNT_SALT_ENDPOINT, LOGIN_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 // import SignUpScreen from "./screens/SignUpScreen";
 
@@ -131,16 +131,37 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       console.log("LoginScreen - user_uid", user_uid);
       // console.log("LoginScreen - User Email", user_email);
 
+      // Handle case where no use_uid is returned
+      if (!user_uid) {
+        console.log("LoginScreen - No user data returned, redirecting to sign up");
+
+        // Clear all user-related data from AsyncStorage
+        await AsyncStorage.multiRemove(["user_uid", "user_email_id", "profile_uid", "user_first_name", "user_last_name", "user_phone_number"]);
+        console.log("LoginScreen - Cleared AsyncStorage for no user_uid case");
+
+        Alert.alert("Account Not Found", "This email is not registered. Please sign up to create an account.", [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              setShowSpinner(false);
+            },
+          },
+          {
+            text: "Sign Up",
+            onPress: () => {
+              setShowSpinner(false);
+              navigation.navigate("SignUp");
+            },
+          },
+        ]);
+        return;
+      }
+
       // 4. Fetch user profile
       // console.log("user_uid", user_uid);
       // console.log("PROFILE_ENDPOINT", PROFILE_ENDPOINT);
       console.log("LoginScreen - Profile Endpoint call: ", `${USER_PROFILE_INFO_ENDPOINT}/${user_uid}`);
-      // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`);
-      // const response = await axios.get(
-      //   `https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/100-000356`
-      // );
-      // console.log("profileResponse", response);
-      // const profileResponse = await fetch(`${PROFILE_ENDPOINT}/${user_uid}`);
 
       const profileResponse = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${user_uid}`, {
         method: "GET",
@@ -152,8 +173,27 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       const fullUser = await profileResponse.json();
       console.log("LoginScreen - user profile info", fullUser);
 
-      if (!fullUser || fullUser.message === "Profile not found for this user") {
-        Alert.alert("Error", "Profile not found.");
+      // Handle case where profile is not found for existing user
+      if (fullUser.message === "Profile not found for this user") {
+        console.log("LoginScreen - Profile not found for existing user, redirecting to UserInfo");
+
+        // Clear any existing profile data but keep the new user credentials
+        await AsyncStorage.multiRemove(["profile_uid", "user_first_name", "user_last_name", "user_phone_number"]);
+        console.log("LoginScreen - Cleared profile data from AsyncStorage for incomplete profile case");
+
+        // Store the user_uid so UserInfo screen can use it
+        await AsyncStorage.setItem("user_uid", user_uid);
+        await AsyncStorage.setItem("user_email_id", user_email);
+
+        Alert.alert("Complete Your Profile", "Your account exists but your profile is incomplete. Please complete your profile information.", [
+          {
+            text: "Continue",
+            onPress: () => {
+              setShowSpinner(false);
+              navigation.navigate("UserInfo");
+            },
+          },
+        ]);
         return;
       }
 
@@ -191,16 +231,9 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       <View style={styles.inputContainer}>
         <TextInput style={styles.input} placeholder='Email' value={email} onChangeText={handleEmailChange} keyboardType='email-address' autoCapitalize='none' />
         <View style={styles.passwordInputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder='Password'
-            value={password}
-            onChangeText={handlePasswordChange}
-            secureTextEntry={!isPasswordVisible}
-            autoCapitalize='none'
-          />
+          <TextInput style={styles.input} placeholder='Password' value={password} onChangeText={handlePasswordChange} secureTextEntry={!isPasswordVisible} autoCapitalize='none' />
           <TouchableOpacity style={styles.passwordVisibilityToggle} onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-            <Ionicons name={isPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#666" />
+            <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={24} color='#666' />
           </TouchableOpacity>
         </View>
       </View>
@@ -290,10 +323,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   passwordInputContainer: {
-    position: 'relative',
+    position: "relative",
   },
   passwordVisibilityToggle: {
-    position: 'absolute',
+    position: "absolute",
     right: 15,
     top: 15,
     zIndex: 1,
