@@ -6,6 +6,7 @@ import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
@@ -14,6 +15,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [profileUID, setProfileUID] = useState("");
+  const { darkMode } = useDarkMode();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -169,13 +171,17 @@ const ProfileScreen = ({ route, navigation }) => {
   };
 
   if (loading) {
-    return <ActivityIndicator size='large' color='#007BFF' style={{ marginTop: 50 }} />;
+    return (
+      <View style={[styles.pageContainer, darkMode && styles.darkPageContainer, { flex: 1, justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size='large' color={darkMode ? "#ffffff" : "#007BFF"} style={{ marginTop: 50 }} />
+      </View>
+    );
   }
 
   if (!user) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ fontSize: 18, color: "red", textAlign: "center", marginBottom: 20 }}>No user data available. Please try again.</Text>
+      <View style={[styles.pageContainer, darkMode && styles.darkPageContainer, { flex: 1, justifyContent: "center", alignItems: "center" }]}>
+        <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>No user data available. Please try again.</Text>
         <TouchableOpacity onPress={() => navigation.navigate("Home")} style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8 }}>
           <Text style={{ color: "#fff", fontWeight: "bold" }}>Go Home</Text>
         </TouchableOpacity>
@@ -184,16 +190,16 @@ const ProfileScreen = ({ route, navigation }) => {
   }
 
   return (
-    <View style={styles.pageContainer}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+    <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
+      <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.headerContainer}>
-          <Text style={styles.header}>Your Profile</Text>
+          <Text style={[styles.header, darkMode && styles.darkHeader]}>Your Profile</Text>
           <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate("EditProfile", { user: user, profile_uid: profileUID })}>
-            <Image source={require("../assets/Edit.png")} style={styles.editIcon} />
+            <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.cardContainer}>
+        <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
           {/* This is the Profile Image */}
           <Image
             source={user.profileImage && user.profileImage !== "" && String(user.profileImage).trim() !== "" ? { uri: String(user.profileImage) } : require("../assets/profile.png")}
@@ -204,13 +210,13 @@ const ProfileScreen = ({ route, navigation }) => {
             }}
             defaultSource={require("../assets/profile.png")}
           />
-          <Text style={styles.nameText}>
+          <Text style={[styles.nameText, darkMode && styles.darkNameText]}>
             {user.firstName} {user.lastName}
           </Text>
-          {user.tagLine && user.tagLineIsPublic && <Text style={styles.tagline}>{user.tagLine}</Text>}
-          {user.shortBio && user.shortBioIsPublic && <Text style={styles.bio}>{user.shortBio}</Text>}
-          {user.phoneNumber && user.phoneIsPublic && <Text style={styles.contact}>{user.phoneNumber}</Text>}
-          {user.email && user.emailIsPublic && <Text style={styles.contact}>{user.email}</Text>}
+          {user.tagLine && user.tagLineIsPublic && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
+          {user.shortBio && user.shortBioIsPublic && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
+          {user.phoneNumber && user.phoneIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.phoneNumber}</Text>}
+          {user.email && user.emailIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.email}</Text>}
         </View>
 
         {/* This is the MiniCard */}
@@ -223,32 +229,36 @@ const ProfileScreen = ({ route, navigation }) => {
         />
 
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Experience:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>Experience:</Text>
           {user.experience
             ?.filter((exp) => exp.isPublic)
             .map((exp, index, arr) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
                 {exp.startDate || exp.endDate ? (
-                  <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                    {(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}
+                  </Text>
                 ) : null}
-                <Text style={styles.inputText}>{exp.company || ""}</Text>
-                <Text style={styles.inputText}>{exp.title || ""}</Text>
-                {exp.description && <Text style={styles.inputText}>{exp.description}</Text>}
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.company || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.title || ""}</Text>
+                {exp.description && <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description}</Text>}
               </View>
             ))}
         </View>
 
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Education:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>Education:</Text>
           {user.education
             ?.filter((edu) => edu.isPublic)
             .map((edu, index) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
                 {edu.startDate || edu.endDate ? (
-                  <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                    {(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}
+                  </Text>
                 ) : null}
-                <Text style={styles.inputText}>{edu.school || ""}</Text>
-                <Text style={styles.inputText}>{edu.degree || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.school || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.degree || ""}</Text>
               </View>
             ))}
         </View>
@@ -256,11 +266,11 @@ const ProfileScreen = ({ route, navigation }) => {
         {/* Only show Businesses section if there are businesses */}
         {user.businesses && user.businesses.length > 0 && (
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Businesses:</Text>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Businesses:</Text>
             {user.businesses.map((bus, index) => (
               <TouchableOpacity
                 key={index}
-                style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
+                style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}
                 onPress={() => {
                   if (bus.profile_business_uid) {
                     navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
@@ -269,24 +279,24 @@ const ProfileScreen = ({ route, navigation }) => {
                   }
                 }}
               >
-                <Text style={styles.inputText}>{bus.name || ""}</Text>
-                <Text style={styles.inputText}>{bus.role || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{bus.name || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{bus.role || ""}</Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
 
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Expertise:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>Expertise:</Text>
           {user.expertise
             ?.filter((exp) => exp.isPublic)
             .map((exp, index) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={styles.inputText}>{exp.name || ""}</Text>
-                <Text style={styles.inputText}>{exp.description || ""}</Text>
+              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={styles.inputText}>{exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}</Text>
-                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}</Text>
+                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
                     {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
                   </Text>
                 </View>
@@ -295,15 +305,15 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Wishes:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>Wishes:</Text>
           {user.wishes
             ?.filter((wish) => wish.isPublic)
             .map((wish, index) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={styles.inputText}>{wish.helpNeeds || ""}</Text>
-                <Text style={styles.inputText}>{wish.details || ""}</Text>
+              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
                 <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
                 </View>
               </View>
             ))}
@@ -385,6 +395,48 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 10,
     backgroundColor: "#eee",
+  },
+
+  // Dark mode styles
+  darkPageContainer: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkContainer: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkHeader: {
+    color: "#ffffff",
+  },
+  darkCardContainer: {
+    backgroundColor: "#2d2d2d",
+  },
+  darkNameText: {
+    color: "#ffffff",
+  },
+  darkTagline: {
+    color: "#cccccc",
+  },
+  darkBio: {
+    color: "#cccccc",
+  },
+  darkContact: {
+    color: "#cccccc",
+  },
+  darkLabel: {
+    color: "#ffffff",
+  },
+  darkInputContainer: {
+    backgroundColor: "#2d2d2d",
+    borderColor: "#404040",
+  },
+  darkInputText: {
+    color: "#ffffff",
+  },
+  darkErrorText: {
+    color: "#ff6b6b",
+  },
+  darkEditIcon: {
+    tintColor: "#ffffff",
   },
 });
 

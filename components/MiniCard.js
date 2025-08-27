@@ -1,7 +1,9 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 const MiniCard = ({ user, business }) => {
+  const { darkMode } = useDarkMode();
   // console.log(" Received user data in MiniCard:", JSON.stringify(user, null, 2));
 
   // Handle business data if provided
@@ -26,11 +28,11 @@ const MiniCard = ({ user, business }) => {
     }
 
     return (
-      <View style={styles.cardContainer}>
+      <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
         {/* Business Image */}
-        <Image 
-          source={businessImage && businessImage.trim() !== "" ? { uri: businessImage } : require("../assets/profile.png")} 
-          style={styles.profileImage}
+        <Image
+          source={businessImage && businessImage.trim() !== "" ? { uri: businessImage } : require("../assets/profile.png")}
+          style={[styles.profileImage, darkMode && styles.darkProfileImage]}
           onError={(error) => {
             console.log("MiniCard business image failed to load:", error.nativeEvent.error);
             console.log("Problematic business image URI:", businessImage);
@@ -41,21 +43,21 @@ const MiniCard = ({ user, business }) => {
         {/* Business Info */}
         <View style={styles.textContainer}>
           {/* Business name is always visible */}
-          <Text style={styles.name}>{businessName}</Text>
+          <Text style={[styles.name, darkMode && styles.darkName]}>{businessName}</Text>
 
           {/* Show location */}
           {location && (
-            <Text style={styles.location}>
+            <Text style={[styles.location, darkMode && styles.darkText]}>
               {location}
               {zipCode && `, ${zipCode}`}
             </Text>
           )}
 
           {/* Show phone if public */}
-          {phoneIsPublic && phone && <Text style={styles.phone}>{phone}</Text>}
+          {phoneIsPublic && phone && <Text style={[styles.phone, darkMode && styles.darkText]}>{phone}</Text>}
 
           {/* Show website */}
-          {website && <Text style={styles.website}>{website}</Text>}
+          {website && <Text style={[styles.website, darkMode && styles.darkText]}>{website}</Text>}
         </View>
       </View>
     );
@@ -76,11 +78,11 @@ const MiniCard = ({ user, business }) => {
   const imageIsPublic = user?.personal_info?.profile_personal_image_is_public == 1 || user?.imageIsPublic;
 
   return (
-    <View style={styles.cardContainer}>
+    <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
       {/* Profile Image */}
-      <Image 
-        source={profileImage && profileImage !== "" && String(profileImage).trim() !== "" ? { uri: String(profileImage) } : require("../assets/profile.png")} 
-        style={styles.profileImage}
+      <Image
+        source={profileImage && profileImage !== "" && String(profileImage).trim() !== "" ? { uri: String(profileImage) } : require("../assets/profile.png")}
+        style={[styles.profileImage, darkMode && styles.darkProfileImage]}
         onError={(error) => {
           console.log("MiniCard user image failed to load:", error.nativeEvent.error);
           console.log("Problematic user image URI:", profileImage);
@@ -91,18 +93,18 @@ const MiniCard = ({ user, business }) => {
       {/* User Info */}
       <View style={styles.textContainer}>
         {/* Name is always visible */}
-        <Text style={styles.name}>
+        <Text style={[styles.name, darkMode && styles.darkName]}>
           {firstName} {lastName}
         </Text>
 
         {/* Show tagline if public */}
-        {tagLineIsPublic && tagLine && <Text style={styles.tagline}>{tagLine}</Text>}
+        {tagLineIsPublic && tagLine && <Text style={[styles.tagline, darkMode && styles.darkText]}>{tagLine}</Text>}
 
         {/* Show email if public */}
-        {emailIsPublic && email && <Text style={styles.email}>{email}</Text>}
+        {emailIsPublic && email && <Text style={[styles.email, darkMode && styles.darkText]}>{email}</Text>}
 
         {/* Show phone if public */}
-        {phoneIsPublic && phone && <Text style={styles.phone}>{phone}</Text>}
+        {phoneIsPublic && phone && <Text style={[styles.phone, darkMode && styles.darkText]}>{phone}</Text>}
       </View>
     </View>
   );
@@ -158,6 +160,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#1a73e8",
     marginBottom: 2,
+  },
+
+  // Dark mode styles
+  darkCardContainer: {
+    backgroundColor: "#2d2d2d",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+  },
+  darkName: {
+    color: "#ffffff",
+  },
+  darkText: {
+    color: "#cccccc",
+  },
+  darkProfileImage: {
+    tintColor: "#ffffff",
   },
 });
 

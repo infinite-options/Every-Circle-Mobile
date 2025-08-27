@@ -7,19 +7,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import BottomNavBar from "../components/BottomNavBar";
 import QRCode from "react-native-qrcode-svg";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { user, profile_uid } = route.params || {};
   const [allowNotifications, setAllowNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const { darkMode, toggleDarkMode } = useDarkMode();
   const [allowCookies, setAllowCookies] = useState(false);
   const [displayEmail, setDisplayEmail] = useState(true);
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
 
-  console.log('In SettingsScreen');
+  console.log("In SettingsScreen");
 
   // on mount, pull saved values
   useEffect(() => {
@@ -53,43 +54,47 @@ export default function SettingsScreen() {
 
             // Get all keys to clear Apple authentication data
             const allKeys = await AsyncStorage.getAllKeys();
-            const appleKeys = allKeys.filter(key => key.startsWith('apple_'));
-            
+            const appleKeys = allKeys.filter((key) => key.startsWith("apple_"));
+
             // Clear all stored data - comprehensive cleanup
             const keysToRemove = [
               // User authentication data
-              "user_uid", 
+              "user_uid",
               "user_email_id",
               "profile_uid",
               "user_id",
               "user_name",
-              
+
               // User profile data
               "user_email",
-              "user_first_name", 
+              "user_first_name",
               "user_last_name",
               "user_phone_number",
-              
+
               // Settings
-              "displayEmail", 
+              "displayEmail",
               "displayPhone",
-              
+              "darkMode",
+
               // Business data
               "businessFormData",
-              
+
               // Cart data (all cart keys)
-              ...allKeys.filter(key => key.startsWith('cart_')),
-              
+              ...allKeys.filter((key) => key.startsWith("cart_")),
+
               // Ratings data
               "user_ratings_info",
-              
+
               // Apple authentication data
-              ...appleKeys
+              ...appleKeys,
             ];
 
             console.log("SettingsScreen.js - Clearing AsyncStorage keys:", keysToRemove);
             await AsyncStorage.multiRemove(keysToRemove);
             console.log("SettingsScreen.js - AsyncStorage cleared successfully");
+
+            // Reset dark mode to light mode when logging out
+            toggleDarkMode(false);
 
             // Navigate to Home screen
             navigation.reset({
@@ -139,7 +144,7 @@ export default function SettingsScreen() {
               <MaterialIcons name='brightness-2' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
               <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Dark mode</Text>
             </View>
-            <Switch value={darkMode} onValueChange={setDarkMode} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={darkMode ? "#fff" : "#f4f3f4"} />
+            <Switch value={darkMode} onValueChange={toggleDarkMode} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={darkMode ? "#fff" : "#f4f3f4"} />
           </View>
 
           {/* Allow Cookies */}
@@ -206,12 +211,7 @@ export default function SettingsScreen() {
             <Text style={styles.qrModalTitle}>QR Code</Text>
             <Text style={styles.qrModalSubtitle}>Scan to visit Infinite Options</Text>
             <View style={styles.qrCodeContainer}>
-              <QRCode
-                value="https://infiniteoptions.com/"
-                size={200}
-                color="#000"
-                backgroundColor="#fff"
-              />
+              <QRCode value='https://infiniteoptions.com/' size={200} color='#000' backgroundColor='#fff' />
             </View>
             <TouchableOpacity onPress={() => setQrModalVisible(false)} style={styles.closeModalButton}>
               <Text style={styles.closeButtonText}>Close</Text>
