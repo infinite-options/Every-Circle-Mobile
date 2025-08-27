@@ -6,14 +6,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import config from "./config";
-import { 
-  GOOGLE_SIGNUP_ENDPOINT, 
-  GOOGLE_SIGNIN_ENDPOINT, 
-  APPLE_SIGNIN_ENDPOINT,
-  LEGACY_API_BASE_URL 
-} from "./apiConfig";
+import { GOOGLE_SIGNUP_ENDPOINT, GOOGLE_SIGNIN_ENDPOINT, APPLE_SIGNIN_ENDPOINT, API_BASE_URL } from "./apiConfig";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import HowItWorksScreen from "./screens/HowItWorksScreen";
@@ -36,8 +31,8 @@ import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 //import SearchResults from './screens/SearchResults';
 import EditBusinessProfileScreen from "./screens/EditBusinessProfileScreen";
 import ShoppingCartScreen from "./screens/ShoppingCartScreen";
-import ReviewBusinessScreen from './screens/ReviewBusinessScreen';
-import ReviewDetailScreen from './screens/ReviewDetailScreen';
+import ReviewBusinessScreen from "./screens/ReviewBusinessScreen";
+import ReviewDetailScreen from "./screens/ReviewDetailScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -64,7 +59,7 @@ export default function App() {
         console.log("App.js - Checking if user in AsyncStorage...");
         const uid = await AsyncStorage.getItem("user_uid");
         console.log("App.js - User UID:", uid);
-        if (uid) setInitialRoute("App");
+        if (uid) setInitialRoute("Profile");
 
         // Configure Google Sign-In
         console.log("App.js - Configuring Google Sign-In...");
@@ -111,7 +106,7 @@ export default function App() {
         await AsyncStorage.setItem("user_uid", user_uid);
 
         // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${user_uid}`);
-        const baseURI = LEGACY_API_BASE_URL;
+        const baseURI = API_BASE_URL;
         const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Full endpoint 1: ${endpoint}`);
@@ -152,6 +147,34 @@ export default function App() {
           ]);
           return;
         }
+
+        // Store additional user data in AsyncStorage for ProfileScreen
+        if (fullUser.personal_info?.profile_personal_uid) {
+          await AsyncStorage.setItem("profile_uid", fullUser.personal_info.profile_personal_uid);
+          console.log("App.js - Stored profile_uid in AsyncStorage:", fullUser.personal_info.profile_personal_uid);
+        } else {
+          console.log("App.js - Warning: No profile_personal_uid found in fullUser:", fullUser);
+        }
+        if (userInfo.user.email) {
+          await AsyncStorage.setItem("user_email_id", userInfo.user.email);
+          console.log("App.js - Stored user_email_id in AsyncStorage:", userInfo.user.email);
+        } else {
+          console.log("App.js - Warning: No email found in userInfo:", userInfo);
+        }
+
+        // Log all AsyncStorage values for debugging
+        const storedUid = await AsyncStorage.getItem("user_uid");
+        const storedProfileUid = await AsyncStorage.getItem("profile_uid");
+        const storedEmail = await AsyncStorage.getItem("user_email_id");
+        console.log("App.js - AsyncStorage after update - user_uid:", storedUid, "profile_uid:", storedProfileUid, "user_email_id:", storedEmail);
+
+        console.log("App.js - Navigating to Profile with user data:", {
+          user: {
+            ...fullUser,
+            user_email: userInfo.user.email,
+          },
+          profile_uid: fullUser.personal_info?.profile_personal_uid || "",
+        });
 
         navigation.navigate("Profile", {
           user: {
@@ -279,13 +302,13 @@ export default function App() {
         // }
       } else if (result.message === "User already exists") {
         console.log("App.js - User already exists, treating as successful login");
-        
+
         // Store user data as if it was a successful login
         await AsyncStorage.setItem("user_uid", result.user_uid || userInfo.user.id);
         await AsyncStorage.setItem("user_email_id", userInfo.user.email);
-        
+
         // Fetch user profile data
-        const baseURI = LEGACY_API_BASE_URL;
+        const baseURI = API_BASE_URL;
         const endpointPath = `/api/v1/userprofileinfo/${result.user_uid || userInfo.user.id}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Fetching profile for existing user: ${endpoint}`);
@@ -296,7 +319,7 @@ export default function App() {
 
         if (fullUser && fullUser.personal_info?.profile_personal_uid) {
           await AsyncStorage.setItem("profile_uid", fullUser.personal_info.profile_personal_uid);
-          
+
           // Navigate to Profile page as if it was a successful login
           navigation.navigate("Profile", {
             user: {
@@ -384,7 +407,7 @@ export default function App() {
 
         // Get full user profile data
         // const profileResponse = await fetch(`https://ioec2ecaspm.infiniteoptions.com/api/v1/userprofileinfo/${userUid}`);
-        const baseURI = LEGACY_API_BASE_URL;
+        const baseURI = API_BASE_URL;
         const endpointPath = `/api/v1/userprofileinfo/${userUid}`;
         const endpoint = baseURI + endpointPath;
         console.log(`App.js - Full endpoint 2: ${endpoint}`);
@@ -468,11 +491,7 @@ export default function App() {
     return (
       <View style={styles.container}>
         <View style={styles.circleMain}>
-          <Image
-            source={require('./assets/everycirclelogonew_1024x1024.png')}
-            style={{ width: 200, height: 200, resizeMode: 'contain' }}
-            accessibilityLabel="Every Circle Logo"
-          />
+          <Image source={require("./assets/everycirclelogonew_1024x1024.png")} style={{ width: 200, height: 200, resizeMode: "contain" }} accessibilityLabel='Every Circle Logo' />
           <Text style={styles.title}>
             <Text style={styles.italicText}>every</Text>Circle
           </Text>
@@ -488,10 +507,13 @@ export default function App() {
               <Text style={styles.circleText}>How It Works</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.circleBox} onPress={() => {
-            console.log("App.js - Login Button Pressed");
-            navigation.navigate("Login");
-          }}>
+          <TouchableOpacity
+            style={styles.circleBox}
+            onPress={() => {
+              console.log("App.js - Login Button Pressed");
+              navigation.navigate("Login");
+            }}
+          >
             <View style={[styles.circle, { backgroundColor: "#AF52DE" }]}>
               <Text style={styles.circleText}>Login</Text>
             </View>
@@ -538,8 +560,8 @@ export default function App() {
         <Stack.Screen name='PrivacyPolicy' component={PrivacyPolicyScreen} options={{ title: "Privacy Policy" }} />
         <Stack.Screen name='EditBusinessProfile' component={EditBusinessProfileScreen} />
         <Stack.Screen name='ShoppingCart' component={ShoppingCartScreen} />
-        <Stack.Screen name="ReviewBusiness" component={ReviewBusinessScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="ReviewDetail" component={ReviewDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name='ReviewBusiness' component={ReviewBusinessScreen} options={{ headerShown: false }} />
+        <Stack.Screen name='ReviewDetail' component={ReviewDetailScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
