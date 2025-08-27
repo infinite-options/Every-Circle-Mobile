@@ -9,13 +9,15 @@ import ExpertiseSection from "../components/ExpertiseSection";
 import BusinessSection from "../components/BusinessSection";
 import BottomNavBar from "../components/BottomNavBar";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from "expo-file-system";
 import { USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 const DEFAULT_PROFILE_IMAGE = require("../assets/profile.png");
 
 const EditProfileScreen = ({ route, navigation }) => {
+  const { darkMode } = useDarkMode();
   const { user, profile_uid: routeProfileUID } = route.params || {};
   const [profileUID, setProfileUID] = useState(routeProfileUID || user?.profile_uid || "");
 
@@ -111,44 +113,43 @@ const EditProfileScreen = ({ route, navigation }) => {
   const [isChanged, setIsChanged] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => {
       const newValue = !prev[fieldName];
       const updated = { ...prev, [fieldName]: newValue };
-      
+
       // Update all items in the section when the section toggle is changed
       if (fieldName === "experienceIsPublic") {
-        updated.experience = prev.experience.map(item => ({
+        updated.experience = prev.experience.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "educationIsPublic") {
-        updated.education = prev.education.map(item => ({
+        updated.education = prev.education.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "wishesIsPublic") {
-        updated.wishes = prev.wishes.map(item => ({
+        updated.wishes = prev.wishes.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "expertiseIsPublic") {
-        updated.expertise = prev.expertise.map(item => ({
+        updated.expertise = prev.expertise.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
       if (fieldName === "businessIsPublic") {
-        updated.businesses = prev.businesses.map(item => ({
+        updated.businesses = prev.businesses.map((item) => ({
           ...item,
-          isPublic: newValue
+          isPublic: newValue,
         }));
       }
-      
+
       return updated;
     });
   };
@@ -420,7 +421,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       if (profileImageUri && !imageError && profileImageUri !== originalProfileImage) {
         const fileInfo = await FileSystem.getInfoAsync(profileImageUri);
         imageFileSize = fileInfo.size || 0;
-        console.log('Image file size (bytes):', imageFileSize);
+        console.log("Image file size (bytes):", imageFileSize);
 
         const uriParts = profileImageUri.split(".");
         const fileType = uriParts[uriParts.length - 1];
@@ -465,7 +466,7 @@ const EditProfileScreen = ({ route, navigation }) => {
       console.log("Payload being sent to API:", payload);
 
       console.log("Sending payload to server... PUT");
-      await new Promise(res => setTimeout(res, 2000)); // Add this line to simulate a 2s delay
+      await new Promise((res) => setTimeout(res, 2000)); // Add this line to simulate a 2s delay
       const response = await axios({
         method: "put",
         url: `${ProfileScreenAPI}?profile_uid=${trimmedProfileUID}`,
@@ -515,17 +516,18 @@ const EditProfileScreen = ({ route, navigation }) => {
     <View style={styles.fieldContainer}>
       {/* Row: Label and Toggle */}
       <View style={styles.labelRow}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, darkMode && styles.darkLabel]}>{label}</Text>
         <TouchableOpacity onPress={() => handleToggleVisibility(visibilityFieldName)}>
-          <Text style={[styles.toggleText, { color: isPublic ? "green" : "red" }]}>{isPublic ? "Public" : "Private"}</Text>
+          <Text style={[styles.toggleText, { color: isPublic ? (darkMode ? "#4ade80" : "green") : darkMode ? "#f87171" : "red" }]}>{isPublic ? "Public" : "Private"}</Text>
         </TouchableOpacity>
       </View>
       <TextInput
-        style={[styles.input, !editable && styles.disabledInput]}
+        style={[styles.input, !editable && (darkMode ? styles.darkDisabledInput : styles.disabledInput), darkMode && editable && styles.darkInput]}
         value={value}
         onChangeText={(text) => handleFieldChange(fieldName, text)}
         editable={editable}
         placeholder={`Enter ${label.toLowerCase()}`}
+        placeholderTextColor={darkMode ? "#cccccc" : "#999999"}
       />
     </View>
   );
@@ -548,7 +550,7 @@ const EditProfileScreen = ({ route, navigation }) => {
     wishesIsPublic: formData.wishesIsPublic,
     businessIsPublic: formData.businessIsPublic,
     // Only show the image in MiniCard if imageIsPublic is true
-    profileImage: formData.imageIsPublic ? (profileImageUri || "") : "",
+    profileImage: formData.imageIsPublic ? profileImageUri || "" : "",
   };
 
   // Profile Image Public/Private Toggle Handler
@@ -560,58 +562,64 @@ const EditProfileScreen = ({ route, navigation }) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff", position: "relative" }}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-      <Text style={styles.header}>Edit Profile</Text>
-      {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
-      {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
+    <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#ffffff" }}>
+      <ScrollView style={{ flex: 1, padding: 20, backgroundColor: darkMode ? "#1a1a1a" : "#ffffff" }} contentContainerStyle={{ paddingBottom: 100 }}>
+        <Text style={{ fontSize: 24, fontWeight: "bold", color: darkMode ? "#ffffff" : "#000000", marginTop: 20, marginBottom: 20 }}>Edit Profile</Text>
+        {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
+        {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
         {/* Profile Image Upload Section */}
-        <View style={styles.imageSection}>
-          <Text style={styles.label}>Profile Image</Text>
-          <Image 
-            source={profileImageUri && !imageError ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE} 
-            style={styles.profileImage}
+        <View style={[styles.imageSection, darkMode && styles.darkImageSection]}>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>Profile Image</Text>
+          <Image
+            source={profileImageUri && !imageError ? { uri: profileImageUri } : DEFAULT_PROFILE_IMAGE}
+            style={[styles.profileImage, darkMode && styles.darkProfileImage]}
             onError={handleImageError}
           />
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
             <TouchableOpacity onPress={toggleProfileImageVisibility}>
-              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? "green" : "red" }]}>
+              <Text style={[styles.toggleText, { fontWeight: "bold", color: formData.imageIsPublic ? (darkMode ? "#4ade80" : "green") : darkMode ? "#f87171" : "red" }]}>
                 {formData.imageIsPublic ? "Public" : "Private"}
               </Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={handlePickImage}>
-            <Text style={styles.uploadLink}>Upload Image</Text>
+            <Text style={[styles.uploadLink, darkMode && styles.darkUploadLink]}>Upload Image</Text>
           </TouchableOpacity>
         </View>
-      {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
-      {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
-      {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
+        {renderField("Phone Number", formData.phoneNumber, formData.phoneIsPublic, "phoneNumber", "phoneIsPublic")}
+        {renderField("Email", formData.email, formData.emailIsPublic, "email", "emailIsPublic")}
+        {renderField("Tag Line", formData.tagLine, formData.tagLineIsPublic, "tagLine", "tagLineIsPublic")}
 
-      {/* MiniCard Live Preview Section */}
-      <View style={styles.previewSection}>
-        <Text style={styles.label}>Mini Card (how you'll appear in searches):</Text>
-        <View style={styles.previewCard}>
-          <MiniCard user={previewUser} />
+        {/* MiniCard Live Preview Section */}
+        <View style={[styles.previewSection, darkMode && styles.darkPreviewSection]}>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>Mini Card (how you'll appear in searches):</Text>
+          <View style={[styles.previewCard, darkMode && styles.darkPreviewCard]}>
+            <MiniCard user={previewUser} />
+          </View>
         </View>
-      </View>
 
-      {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
+        {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
 
-      <ExperienceSection
-        experience={formData.experience}
-        setExperience={(e) => { setFormData({ ...formData, experience: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("experienceIsPublic")}
-        isPublic={formData.experienceIsPublic}
+        <ExperienceSection
+          experience={formData.experience}
+          setExperience={(e) => {
+            setFormData({ ...formData, experience: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("experienceIsPublic")}
+          isPublic={formData.experienceIsPublic}
           handleDelete={handleDeleteExperience}
-      />
-      <EducationSection
-        education={formData.education}
-        setEducation={(e) => { setFormData({ ...formData, education: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("educationIsPublic")}
-        isPublic={formData.educationIsPublic}
+        />
+        <EducationSection
+          education={formData.education}
+          setEducation={(e) => {
+            setFormData({ ...formData, education: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("educationIsPublic")}
+          isPublic={formData.educationIsPublic}
           handleDelete={handleDeleteEducation}
-      />
+        />
         {/* Temporarily hiding Business Section
       <BusinessSection
         businesses={formData.businesses}
@@ -621,25 +629,35 @@ const EditProfileScreen = ({ route, navigation }) => {
           handleDelete={handleDeleteBusiness}
       />
         */}
-      <ExpertiseSection
-        expertise={formData.expertise}
-        setExpertise={(e) => { setFormData({ ...formData, expertise: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("expertiseIsPublic")}
-        isPublic={formData.expertiseIsPublic}
+        <ExpertiseSection
+          expertise={formData.expertise}
+          setExpertise={(e) => {
+            setFormData({ ...formData, expertise: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("expertiseIsPublic")}
+          isPublic={formData.expertiseIsPublic}
           handleDelete={handleDeleteExpertise}
-      />
+        />
 
-      <WishesSection
-        wishes={formData.wishes}
-        setWishes={(e) => { setFormData({ ...formData, wishes: e }); setIsChanged(true); }}
-        toggleVisibility={() => handleToggleVisibility("wishesIsPublic")}
-        isPublic={formData.wishesIsPublic}
+        <WishesSection
+          wishes={formData.wishes}
+          setWishes={(e) => {
+            setFormData({ ...formData, wishes: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("wishesIsPublic")}
+          isPublic={formData.wishesIsPublic}
           handleDelete={handleDeleteWish}
-      />
+        />
 
-      <TouchableOpacity style={[styles.saveButton, !isChanged && styles.disabledButton]} onPress={handleSave} disabled={!isChanged || isLoading}>
-        {isLoading ? <ActivityIndicator size="large" color="#fff" /> : <Text style={styles.saveText}>Save</Text>}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveButton, !isChanged && (darkMode ? styles.darkDisabledButton : styles.disabledButton), darkMode && styles.darkSaveButton]}
+          onPress={handleSave}
+          disabled={!isChanged || isLoading}
+        >
+          {isLoading ? <ActivityIndicator size='large' color={darkMode ? "#ffffff" : "#fff"} /> : <Text style={[styles.saveText, darkMode && styles.darkSaveText]}>Save</Text>}
+        </TouchableOpacity>
       </ScrollView>
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 10 }}>
         <BottomNavBar navigation={navigation} />
@@ -647,20 +665,20 @@ const EditProfileScreen = ({ route, navigation }) => {
       {/* Business Approval Modal */}
       <Modal visible={showBusinessModal} transparent={true} animationType='fade' onRequestClose={() => setShowBusinessModal(false)}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" }}>
-          <View style={{ backgroundColor: "#fff", borderRadius: 10, padding: 24, width: "85%", maxWidth: 400, alignItems: "center" }}>
+          <View style={[styles.modalContainer, darkMode && styles.darkModalContainer]}>
             {pendingBusinessNames.map((name, idx) => (
-              <Text key={idx} style={{ fontSize: 16, marginBottom: 16, textAlign: "center" }}>
+              <Text key={idx} style={[styles.modalText, darkMode && styles.darkModalText]}>
                 {`We've sent an email to the Owner of ${name}.\nAs soon as they approve your request, we will add your business to your Profile.`}
               </Text>
             ))}
             <TouchableOpacity
-              style={{ marginTop: 10, backgroundColor: "#007AFF", borderRadius: 6, paddingVertical: 10, paddingHorizontal: 24 }}
+              style={[styles.modalButton, darkMode && styles.darkModalButton]}
               onPress={() => {
                 setShowBusinessModal(false);
                 navigation.replace("Profile");
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>Continue</Text>
+              <Text style={[styles.modalButtonText, darkMode && styles.darkModalButtonText]}>Continue</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -670,11 +688,12 @@ const EditProfileScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  header: { fontSize: 24, fontWeight: "bold", marginTop: 20, marginBottom: 20 },
+  pageContainer: { flex: 1, backgroundColor: "#fff", minHeight: "100%" },
+  container: { flex: 1, padding: 20, minHeight: "100%" },
+  header: { fontSize: 24, fontWeight: "bold", marginTop: 20, marginBottom: 20, color: "#000" },
   fieldContainer: { marginBottom: 15 },
-  label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
-  input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5 },
+  label: { fontSize: 16, fontWeight: "bold", marginBottom: 5, color: "#000" },
+  input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5, backgroundColor: "#fff" },
   disabledInput: { backgroundColor: "#eee", color: "#999" },
   saveButton: {
     backgroundColor: "#FFA500",
@@ -706,6 +725,94 @@ const styles = StyleSheet.create({
   uploadLink: { color: "#007AFF", textDecorationLine: "underline", marginBottom: 10 },
   previewSection: { marginBottom: 20 },
   previewCard: { padding: 10, borderWidth: 1, borderColor: "#ccc", borderRadius: 5 },
+
+  // Dark mode styles
+  darkPageContainer: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkContainer: {
+    backgroundColor: "#1a1a1a",
+    padding: 20,
+  },
+  darkHeader: {
+    color: "#ffffff",
+  },
+  darkLabel: {
+    color: "#ffffff",
+  },
+  darkInput: {
+    backgroundColor: "#2d2d2d",
+    color: "#ffffff",
+    borderColor: "#404040",
+  },
+  darkProfileImage: {
+    tintColor: "#ffffff",
+    backgroundColor: "#404040",
+  },
+  darkUploadLink: {
+    color: "#4a9eff",
+  },
+  darkPreviewCard: {
+    backgroundColor: "#2d2d2d",
+    borderColor: "#404040",
+  },
+  darkDisabledInput: {
+    backgroundColor: "#404040",
+    color: "#666666",
+  },
+  darkSaveButton: {
+    backgroundColor: "#ff8c00", // Slightly darker orange for dark mode
+  },
+  darkSaveText: {
+    color: "#ffffff",
+  },
+  darkImageSection: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkPreviewSection: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkDisabledButton: {
+    backgroundColor: "#404040",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 24,
+    width: "85%",
+    maxWidth: 400,
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: "center",
+    color: "#000",
+  },
+  modalButton: {
+    marginTop: 10,
+    backgroundColor: "#007AFF",
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  darkModalContainer: {
+    backgroundColor: "#2d2d2d",
+  },
+  darkModalText: {
+    color: "#ffffff",
+  },
+  darkModalButton: {
+    backgroundColor: "#4a9eff",
+  },
+  darkModalButtonText: {
+    color: "#ffffff",
+  },
 });
 
 export default EditProfileScreen;
