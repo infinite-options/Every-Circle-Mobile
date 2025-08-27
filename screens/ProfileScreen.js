@@ -4,8 +4,8 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from '@react-navigation/native';
-import { LEGACY_API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
+import { useFocusEffect } from "@react-navigation/native";
+import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
@@ -54,13 +54,13 @@ const ProfileScreen = ({ route, navigation }) => {
 
   async function fetchUserData(profileUID) {
     try {
-      console.log('Fetching user data for profile UID:', profileUID);
+      console.log("Fetching user data for profile UID:", profileUID);
       const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
       const apiUser = await response.json();
-      console.log('Profile API Response:', JSON.stringify(apiUser, null, 2));
-      
+      console.log("Profile API Response:", JSON.stringify(apiUser, null, 2));
+
       if (!apiUser || apiUser.message === "Profile not found for this user") {
-        console.log('No profile data found for user');
+        console.log("No profile data found for user");
         setUser(null);
         setLoading(false);
         return;
@@ -176,9 +176,8 @@ const ProfileScreen = ({ route, navigation }) => {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text style={{ fontSize: 18, color: "red", textAlign: "center", marginBottom: 20 }}>No user data available. Please try again.</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Home")}
-          style={{ backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}>
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Go Home</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")} style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8 }}>
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>Go Home</Text>
         </TouchableOpacity>
       </View>
     );
@@ -196,11 +195,8 @@ const ProfileScreen = ({ route, navigation }) => {
 
         <View style={styles.cardContainer}>
           {/* This is the Profile Image */}
-          <Image 
-            source={user.profileImage && user.profileImage !== "" && String(user.profileImage).trim() !== "" 
-              ? { uri: String(user.profileImage) } 
-              : require("../assets/profile.png")
-            } 
+          <Image
+            source={user.profileImage && user.profileImage !== "" && String(user.profileImage).trim() !== "" ? { uri: String(user.profileImage) } : require("../assets/profile.png")}
             style={styles.profileImage}
             onError={(error) => {
               console.log("ProfileScreen image failed to load:", error.nativeEvent.error);
@@ -218,19 +214,21 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         {/* This is the MiniCard */}
-        <MiniCard user={{
-          ...user,
-          imageIsPublic: user.imageIsPublic,
-          profileImage: user.imageIsPublic ? user.profileImage : ""
-        }} />
+        <MiniCard
+          user={{
+            ...user,
+            imageIsPublic: user.imageIsPublic,
+            profileImage: user.imageIsPublic ? user.profileImage : "",
+          }}
+        />
 
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Experience:</Text>
           {user.experience
             ?.filter((exp) => exp.isPublic)
             .map((exp, index, arr) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}> 
-                {(exp.startDate || exp.endDate) ? (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                {exp.startDate || exp.endDate ? (
                   <Text style={styles.inputText}>{(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}</Text>
                 ) : null}
                 <Text style={styles.inputText}>{exp.company || ""}</Text>
@@ -245,8 +243,8 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.education
             ?.filter((edu) => edu.isPublic)
             .map((edu, index) => (
-              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}> 
-                {(edu.startDate || edu.endDate) ? (
+              <View key={index} style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}>
+                {edu.startDate || edu.endDate ? (
                   <Text style={styles.inputText}>{(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}</Text>
                 ) : null}
                 <Text style={styles.inputText}>{edu.school || ""}</Text>
@@ -259,23 +257,22 @@ const ProfileScreen = ({ route, navigation }) => {
         {user.businesses && user.businesses.length > 0 && (
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Businesses:</Text>
-            {user.businesses
-              .map((bus, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
-                  onPress={() => {
-                    if (bus.profile_business_uid) {
-                      navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
-                    } else {
-                      Alert.alert("Error", "Business profile not found.");
-                    }
-                  }}
-                >
-                  <Text style={styles.inputText}>{bus.name || ""}</Text>
-                  <Text style={styles.inputText}>{bus.role || ""}</Text>
-                </TouchableOpacity>
-              ))}
+            {user.businesses.map((bus, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.inputContainer, index > 0 && { marginTop: 4 }]}
+                onPress={() => {
+                  if (bus.profile_business_uid) {
+                    navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
+                  } else {
+                    Alert.alert("Error", "Business profile not found.");
+                  }
+                }}
+              >
+                <Text style={styles.inputText}>{bus.name || ""}</Text>
+                <Text style={styles.inputText}>{bus.role || ""}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
