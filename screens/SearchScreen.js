@@ -110,7 +110,9 @@ export default function SearchScreen({ route }) {
     setLoading(true);
     try {
       // Try the v1 API endpoint to match other endpoints in the app
-      const apiUrl = `${BUSINESS_RESULTS_ENDPOINT}/${encodeURIComponent(q)}`;
+      // const apiUrl = `${BUSINESS_RESULTS_ENDPOINT}/${encodeURIComponent(q)}`;
+      // const apiUrl = `${BUSINESS_RESULTS_ENDPOINT}/${encodeURIComponent(q)}`;
+      const apiUrl = 'http://ioec2ecaspm.infiniteoptions.com:5001/search?q=${encodeURIComponent(q)}'
       // const apiUrl = `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       // const apiUrl = `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
