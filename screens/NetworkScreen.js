@@ -13,6 +13,8 @@ const NetworkScreen = ({ navigation }) => {
   const [bountyData, setBountyData] = useState(null);
   const [bountyLoading, setBountyLoading] = useState(true);
 
+  console.log("In NetworkScreen");
+
   // Refactored bounty data loader
   const refreshBountyData = async () => {
     try {
