@@ -6,14 +6,17 @@ import * as FileSystem from "expo-file-system";
 import { Dropdown } from "react-native-element-dropdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavBar from "../components/BottomNavBar";
-import ContinueButton from '../components/ContinueButton';
+import ContinueButton from "../components/ContinueButton";
 import { CATEGORY_LIST_ENDPOINT } from "../apiConfig";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 const { width } = Dimensions.get("window");
 
 export default function BusinessStep2({ formData, setFormData, navigation }) {
+  const { darkMode } = useDarkMode();
+  console.log("BusinessStep2 - darkMode value:", darkMode);
   useEffect(() => {
-    console.log('\nIn BusinessStep2', formData);
+    console.log("\nIn BusinessStep2", formData);
   }, []);
   const [allCategories, setAllCategories] = useState([]);
   const [mainCategories, setMainCategories] = useState([]);
@@ -154,42 +157,36 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#00C721' }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={90}
-      >
-        <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 20, alignItems: 'center' }}>
-          <ScrollView
-            style={{ flex: 1, width: '100%' }}
-            contentContainerStyle={{  justifyContent: 'center', alignItems: 'center', paddingBottom: 120 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.formCard}>
-              <Text style={styles.title}>Select Category</Text>
-              <Text style={styles.subtitle}>Select Tags for your business</Text>
+    <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#f5f5f5" }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
+        <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 20, alignItems: "center" }}>
+          <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={{ justifyContent: "center", alignItems: "center", paddingBottom: 120 }} keyboardShouldPersistTaps='handled'>
+            <View style={[styles.formCard, darkMode && styles.darkFormCard]}>
+              <Text style={[styles.title, darkMode && styles.darkTitle]}>Select Category</Text>
+              <Text style={[styles.subtitle, darkMode && styles.darkSubtitle]}>Select Tags for your business</Text>
 
-              <Text style={styles.label}>Main Categories</Text>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Main Categories *</Text>
               <Dropdown
-                style={styles.input}
+                style={[styles.input, darkMode && styles.darkInput]}
                 data={mainCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
                 labelField='label'
                 valueField='value'
                 placeholder='Select Main Category'
+                placeholderTextColor={darkMode ? "#ffffff" : "#666"}
                 value={selectedMain}
                 onChange={(item) => setSelectedMain(item.value)}
               />
 
               {subCategories.length > 0 && (
                 <>
-                  <Text style={styles.label}>Sub Categories (Optional)</Text>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Sub Categories (Optional)</Text>
                   <Dropdown
-                    style={styles.input}
+                    style={[styles.input, darkMode && styles.darkInput]}
                     data={subCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
                     labelField='label'
                     valueField='value'
                     placeholder='Select Sub Category'
+                    placeholderTextColor={darkMode ? "#ffffff" : "#666"}
                     value={selectedSub}
                     onChange={(item) => setSelectedSub(item.value)}
                   />
@@ -198,23 +195,25 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
 
               {subSubCategories.length > 0 && (
                 <>
-                  <Text style={styles.label}>Sub-Sub Categories (Optional)</Text>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Sub-Sub Categories (Optional)</Text>
                   <Dropdown
-                    style={styles.input}
+                    style={[styles.input, darkMode && styles.darkInput]}
                     data={subSubCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
                     labelField='label'
                     valueField='value'
                     placeholder='Select Sub-Sub Category'
+                    placeholderTextColor={darkMode ? "#ffffff" : "#666"}
                     value={selectedSubSub}
                     onChange={(item) => setSelectedSubSub(item.value)}
                   />
                 </>
               )}
 
-              <Text style={styles.label}>Brief Description</Text>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Brief Description</Text>
               <TextInput
-                style={styles.textarea}
+                style={[styles.textarea, darkMode && styles.darkTextarea]}
                 placeholder='Describe your business...'
+                placeholderTextColor={darkMode ? "#ffffff" : "#666"}
                 value={formData.shortBio}
                 multiline
                 numberOfLines={4}
@@ -225,13 +224,13 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
                 }}
               />
 
-              <Text style={styles.label}>Images</Text>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Images</Text>
               <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={true} style={styles.carousel}>
                 <View style={styles.imageRow}>
                   {combinedImages.map((img, index) => {
                     // console.log("BS2 Image URI at index", index, ":", img);
                     return (
-                      <View key={index} style={styles.imageWrapper}>
+                      <View key={index} style={[styles.imageWrapper, darkMode && styles.darkImageWrapper]}>
                         <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
                         <TouchableOpacity
                           style={styles.deleteIcon}
@@ -256,17 +255,18 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
                     );
                   })}
 
-                  <TouchableOpacity style={styles.uploadBox} onPress={() => handleImagePick(userUploadedImages.length)}>
-                    <Text style={styles.uploadText}>Upload Image</Text>
+                  <TouchableOpacity style={[styles.uploadBox, darkMode && styles.darkUploadBox]} onPress={() => handleImagePick(userUploadedImages.length)}>
+                    <Text style={[styles.uploadText, darkMode && styles.darkUploadText]}>Upload Image</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
 
-              <Text style={styles.label}>Custom Tags</Text>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Custom Tags</Text>
               <View style={styles.tagRow}>
                 <TextInput
-                  style={styles.tagInput}
+                  style={[styles.tagInput, darkMode && styles.darkTagInput]}
                   placeholder='Add tag'
+                  placeholderTextColor={darkMode ? "#ffffff" : "#666"}
                   value={customTag}
                   onChangeText={setCustomTag}
                   onSubmitEditing={addTag}
@@ -278,8 +278,8 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
 
               <View style={styles.tagList}>
                 {customTags.map((tag, i) => (
-                  <TouchableOpacity key={i} onPress={() => removeTag(tag)} style={styles.tagItem}>
-                    <Text>{tag} ✕</Text>
+                  <TouchableOpacity key={i} onPress={() => removeTag(tag)} style={[styles.tagItem, darkMode && styles.darkTagItem]}>
+                    <Text style={darkMode && styles.darkTagItemText}>{tag} ✕</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   //   paddingRight: 80,
   // },
   container: {
-    alignSelf: 'center',
+    alignSelf: "center",
     width: width * 1.3,
     flex: 1,
     // borderRadius: width,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: width,
     padding: 90,
     paddingTop: 80,
-    alignItems: 'center',
+    alignItems: "center",
   },
   scrollContent: {
     borderBottomLeftRadius: width,
@@ -323,44 +323,44 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 30,
   },
   label: {
-    alignSelf: 'flex-start',
-    color: '#333',
-    fontWeight: 'bold',
+    alignSelf: "flex-start",
+    color: "#333",
+    fontWeight: "bold",
     marginBottom: 4,
     marginTop: 10,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 12,
-    width: '100%',
+    width: "100%",
     marginBottom: 15,
   },
   textarea: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 12,
     height: 100,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     marginBottom: 20,
-    width: '100%',
+    width: "100%",
   },
   tagRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
   tagInput: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 10,
     marginRight: 10,
@@ -455,17 +455,61 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 30,
     padding: 24,
-    width: '90%',
+    width: "90%",
     maxWidth: 420,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 16,
     // shadowColor: '#000',
     // shadowOffset: { width: 0, height: 2 },
     // shadowOpacity: 0.08,
     // shadowRadius: 8,
     // elevation: 4,
+  },
+
+  // Dark mode styles
+  darkFormCard: {
+    backgroundColor: "#2d2d2d",
+  },
+  darkTitle: {
+    color: "#ffffff",
+  },
+  darkSubtitle: {
+    color: "#cccccc",
+  },
+  darkLabel: {
+    color: "#ffffff",
+  },
+  darkInput: {
+    backgroundColor: "#404040",
+    color: "#ffffff",
+    borderColor: "#555",
+  },
+  darkTextarea: {
+    backgroundColor: "#404040",
+    color: "#ffffff",
+    borderColor: "#555",
+  },
+  darkImageWrapper: {
+    backgroundColor: "#404040",
+  },
+  darkUploadBox: {
+    backgroundColor: "#404040",
+    borderColor: "#555",
+  },
+  darkUploadText: {
+    color: "#cccccc",
+  },
+  darkTagInput: {
+    backgroundColor: "#404040",
+    color: "#ffffff",
+  },
+  darkTagItem: {
+    backgroundColor: "#404040",
+  },
+  darkTagItemText: {
+    color: "#ffffff",
   },
 });
