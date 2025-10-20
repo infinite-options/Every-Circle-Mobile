@@ -20,11 +20,13 @@ const ProfileScreen = ({ route, navigation }) => {
   useFocusEffect(
     React.useCallback(() => {
       async function loadProfile() {
+        console.log("ProfileScreen - useFocusEffect triggered, reloading profile data");
         setLoading(true);
         let profileId = await AsyncStorage.getItem("profile_uid");
-        console.log("ProfileScreen - profileId:", profileId);
+        console.log("ProfileScreen - profileId from AsyncStorage:", profileId);
         if (profileId) {
           setProfileUID(profileId);
+          console.log("ProfileScreen - Setting profileUID state to:", profileId);
           await fetchUserData(profileId);
           return;
         }
@@ -150,6 +152,8 @@ const ProfileScreen = ({ route, navigation }) => {
       userData.twitter = socialLinks.twitter || "";
       userData.linkedin = socialLinks.linkedin || "";
       userData.youtube = socialLinks.youtube || "";
+      console.log("ProfileScreen - Setting user data:", userData);
+      console.log("ProfileScreen - Profile UID in userData:", userData.profile_uid);
       setUser(userData);
       setLoading(false);
     } catch (error) {
@@ -213,6 +217,8 @@ const ProfileScreen = ({ route, navigation }) => {
           <Text style={[styles.nameText, darkMode && styles.darkNameText]}>
             {user.firstName} {user.lastName}
           </Text>
+          {/* Display Profile ID */}
+          <Text style={[styles.profileId, darkMode && styles.darkProfileId]}>Profile ID: {profileUID}</Text>
           {user.tagLine && user.tagLineIsPublic && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
           {user.shortBio && user.shortBioIsPublic && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
           {user.phoneNumber && user.phoneIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.phoneNumber}</Text>}
@@ -369,6 +375,12 @@ const styles = StyleSheet.create({
     color: "#000",
     marginBottom: 8,
   },
+  profileId: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+    fontStyle: "italic",
+  },
 
   tagline: {
     fontSize: 18,
@@ -412,6 +424,9 @@ const styles = StyleSheet.create({
   },
   darkNameText: {
     color: "#ffffff",
+  },
+  darkProfileId: {
+    color: "#cccccc",
   },
   darkTagline: {
     color: "#cccccc",

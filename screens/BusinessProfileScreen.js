@@ -627,6 +627,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
                     business_uid: business_uid,
                     business_name: business.business_name,
                     reviewer_profile_id: review.rating_profile_id,
+                    business_data: business, // Pass the entire business object
                   })
                 }
                 activeOpacity={0.7}

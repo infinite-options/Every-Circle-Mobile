@@ -13,7 +13,7 @@ const BottomNavBar = ({ navigation, onSharePress, businessStep, onBack, onContin
     <SafeAreaView edges={["bottom"]} style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
       <View style={[styles.navContainer, darkMode && styles.darkNavContainer]}>
         {businessStep ? (
-          // Business Step Navigation: Back, Profile, Home, Settings, Continue
+          // Business Step Navigation: Back, Profile, Account, Settings, Continue
           <>
             <TouchableOpacity style={styles.navButton} onPress={onBack}>
               <Ionicons name='chevron-back' size={28} color={darkMode ? "#ffffff" : "#007AFF"} style={styles.navIcon} />
@@ -25,9 +25,9 @@ const BottomNavBar = ({ navigation, onSharePress, businessStep, onBack, onContin
               <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Profile</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Account")}>
               <Image source={require("../assets/pillar.png")} style={[styles.navIcon, darkMode && styles.darkNavIcon]} />
-              <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Home</Text>
+              <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Account</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
@@ -41,7 +41,7 @@ const BottomNavBar = ({ navigation, onSharePress, businessStep, onBack, onContin
             </TouchableOpacity>
           </>
         ) : (
-          // Regular Navigation: Share, Profile, Home, Settings, Search
+          // Regular Navigation: Connect, Profile, Account, Settings, Search
           <>
             <TouchableOpacity
               style={styles.navButton}
@@ -50,8 +50,8 @@ const BottomNavBar = ({ navigation, onSharePress, businessStep, onBack, onContin
                 navigation.navigate("Network");
               }}
             >
-              <Image source={require("../assets/share.png")} style={[styles.navIcon, darkMode && styles.darkNavIcon]} />
-              <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Share</Text>
+              <Image source={require("../assets/connect.png")} style={[styles.navIcon, darkMode && styles.darkNavIcon]} />
+              <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Connect</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Profile")}>
@@ -59,9 +59,9 @@ const BottomNavBar = ({ navigation, onSharePress, businessStep, onBack, onContin
               <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Profile</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Home")}>
+            <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Account")}>
               <Image source={require("../assets/pillar.png")} style={[styles.navIcon, darkMode && styles.darkNavIcon]} />
-              <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Home</Text>
+              <Text style={[styles.navLabel, darkMode && styles.darkNavLabel]}>Account</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate("Settings")}>
