@@ -5,7 +5,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BUSINESS_RESULTS_ENDPOINT, TAG_SEARCH_DISTINCT_ENDPOINT, TAG_CATEGORY_DISTINCT_ENDPOINT } from "../apiConfig";
+import { BUSINESS_RESULTS_ENDPOINT, TAG_SEARCH_DISTINCT_ENDPOINT, TAG_CATEGORY_DISTINCT_ENDPOINT, SEARCH_BASE_URL } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
 
 export default function SearchScreen({ route }) {
@@ -106,15 +106,19 @@ export default function SearchScreen({ route }) {
     if (!q) return;
 
     console.log("🔍 User searched for:", q);
+    console.log("🔍 Search query length:", q.length);
+    console.log("🔍 Search query type:", typeof q);
 
     setLoading(true);
     try {
       // Try the v1 API endpoint to match other endpoints in the app
-      const apiUrl = `${BUSINESS_RESULTS_ENDPOINT}/${encodeURIComponent(q)}`;
+      const apiUrl = `${BUSINESS_RESULTS_ENDPOINT}?q=${encodeURIComponent(q)}`;
       // const apiUrl = `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       // const apiUrl = `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
       console.log("🌐 API URL:", apiUrl);
+      console.log("🌐 BUSINESS_RESULTS_ENDPOINT:", BUSINESS_RESULTS_ENDPOINT);
+      console.log("🌐 SEARCH_BASE_URL:", SEARCH_BASE_URL);
 
       const res = await fetch(apiUrl);
 
@@ -140,10 +144,16 @@ export default function SearchScreen({ route }) {
       const json = JSON.parse(responseText);
 
       console.log("📡 Search API Response:", JSON.stringify(json, null, 2));
-      console.log("📊 Number of results returned:", json.results?.length || json.result?.length || 0);
+      console.log("📊 Number of results returned:", Array.isArray(json) ? json.length : json.results?.length || json.result?.length || 0);
 
       // Handle both possible response structures
-      const resultsArray = json.results || json.result || [];
+      console.log("🔍 Raw JSON response:", json);
+      console.log("🔍 JSON type:", typeof json);
+      console.log("🔍 Is array?", Array.isArray(json));
+
+      // The API returns an array directly, not wrapped in results/result
+      const resultsArray = Array.isArray(json) ? json : json.results || json.result || [];
+      console.log("🔍 Results array length:", resultsArray.length);
 
       const list = resultsArray.map((b, i) => ({
         id: `${b.business_uid || i}`,
@@ -153,10 +163,18 @@ export default function SearchScreen({ route }) {
         hasPriceTag: b.has_price_tag || false,
         hasX: b.has_x || false,
         hasDollar: b.has_dollar_sign || false,
+        // Add additional fields from the API response
+        business_short_bio: b.business_short_bio || "",
+        business_tag_line: b.business_tag_line || "",
+        tags: b.tags || [],
+        score: b.score || 0,
       }));
 
       console.log("✅ Processed search results:", list);
+      console.log("✅ Number of processed results:", list.length);
+      console.log("✅ Setting results state...");
       setResults(list);
+      console.log("✅ Results state updated");
     } catch (err) {
       console.warn("❌ Search failed for query:", q, "Error:", err);
       console.warn("❌ Error details:", err.message);
@@ -204,6 +222,11 @@ export default function SearchScreen({ route }) {
               hasPriceTag: b.has_price_tag || false,
               hasX: b.has_x || false,
               hasDollar: b.has_dollar_sign || false,
+              // Add additional fields from the API response
+              business_short_bio: b.business_short_bio || "",
+              business_tag_line: b.business_tag_line || "",
+              tags: b.tags || [],
+              score: b.score || 0,
             }));
 
             console.log("✅ Processed results from alternative endpoint:", list);
@@ -230,61 +253,65 @@ export default function SearchScreen({ route }) {
     );
   };
 
-  const renderResultItem = (item, idx) => (
-    <TouchableOpacity
-      key={`${item.id}-${idx}`}
-      style={[styles.resultItem, darkMode && styles.darkResultItem]}
-      activeOpacity={0.7}
-      onPress={() => {
-        console.log("🏢 Navigating to business profile for:", item.company, "ID:", item.id);
-        navigation.navigate("BusinessProfile", { business_uid: item.id });
-      }}
-    >
-      <View style={styles.resultContent}>
-        <Text style={[styles.companyName, darkMode && styles.darkCompanyName]}>{item.company}</Text>
-      </View>
-      <View style={styles.resultActions}>
-        <View style={styles.ratingContainer}>
-          <Ionicons name='star' size={16} color='#FFCD3C' />
-          <Text style={[styles.ratingText, darkMode && styles.darkRatingText]}>{typeof item.rating === "number" ? item.rating.toFixed(1) : item.rating}</Text>
+  const renderResultItem = (item, idx) => {
+    // console.log(`🎨 Rendering item ${idx}:`, item.company, "ID:", item.id);
+    return (
+      <TouchableOpacity
+        key={`${item.id}-${idx}`}
+        style={[styles.resultItem, darkMode && styles.darkResultItem]}
+        activeOpacity={0.7}
+        onPress={() => {
+          console.log("🏢 Navigating to business profile for:", item.company, "ID:", item.id);
+          navigation.navigate("BusinessProfile", { business_uid: item.id });
+        }}
+      >
+        <View style={styles.resultContent}>
+          <Text style={[styles.companyName, darkMode && styles.darkCompanyName]}>{item.company}</Text>
+          {item.business_tag_line && <Text style={[styles.businessTagLine, darkMode && styles.darkBusinessTagLine]}>{item.business_tag_line}</Text>}
         </View>
+        <View style={styles.resultActions}>
+          <View style={styles.ratingContainer}>
+            <Ionicons name='star' size={16} color='#FFCD3C' />
+            <Text style={[styles.ratingText, darkMode && styles.darkRatingText]}>{typeof item.rating === "number" ? item.rating.toFixed(1) : item.rating}</Text>
+          </View>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={(e) => {
-            e.stopPropagation(); // Prevent triggering the parent TouchableOpacity
-            navigation.navigate("SearchTab", {
-              centerCompany: {
-                id: item.id,
-                name: item.company,
-                rating: item.rating,
-              },
-            });
-          }}
-        >
-          <Ionicons name='share-social-outline' size={22} color={darkMode ? "#ffffff" : "#000000"} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={(e) => {
+              e.stopPropagation(); // Prevent triggering the parent TouchableOpacity
+              navigation.navigate("SearchTab", {
+                centerCompany: {
+                  id: item.id,
+                  name: item.company,
+                  rating: item.rating,
+                },
+              });
+            }}
+          >
+            <Ionicons name='share-social-outline' size={22} color={darkMode ? "#ffffff" : "#000000"} />
+          </TouchableOpacity>
 
-        {item.hasX && (
-          <TouchableOpacity style={styles.actionButton} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.xSymbol, darkMode && styles.darkXSymbol]}>X</Text>
-          </TouchableOpacity>
-        )}
-        {item.hasPriceTag && (
-          <TouchableOpacity style={styles.actionButton} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.percentSymbol, darkMode && styles.darkPercentSymbol]}>:%</Text>
-          </TouchableOpacity>
-        )}
-        {item.hasDollar && (
-          <TouchableOpacity style={styles.actionButton} onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.moneyBagContainer, darkMode && styles.darkMoneyBagContainer]}>
-              <Text style={[styles.dollarSymbol, darkMode && styles.darkDollarSymbol]}>$</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+          {item.hasX && (
+            <TouchableOpacity style={styles.actionButton} onPress={(e) => e.stopPropagation()}>
+              <Text style={[styles.xSymbol, darkMode && styles.darkXSymbol]}>X</Text>
+            </TouchableOpacity>
+          )}
+          {item.hasPriceTag && (
+            <TouchableOpacity style={styles.actionButton} onPress={(e) => e.stopPropagation()}>
+              <Text style={[styles.percentSymbol, darkMode && styles.darkPercentSymbol]}>:%</Text>
+            </TouchableOpacity>
+          )}
+          {item.hasDollar && (
+            <TouchableOpacity style={styles.actionButton} onPress={(e) => e.stopPropagation()}>
+              <View style={[styles.moneyBagContainer, darkMode && styles.darkMoneyBagContainer]}>
+                <Text style={[styles.dollarSymbol, darkMode && styles.darkDollarSymbol]}>$</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={[styles.container, darkMode && styles.darkContainer]}>
@@ -355,7 +382,15 @@ export default function SearchScreen({ route }) {
           </View>
 
           <ScrollView style={styles.resultsContainer}>
-            {loading ? <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading…</Text> : results.map((item, idx) => renderResultItem(item, idx))}
+            {loading ? (
+              <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading…</Text>
+            ) : (
+              (() => {
+                console.log("🎨 Rendering results:", results.length, "items");
+                console.log("🎨 Results array:", results);
+                return results.map((item, idx) => renderResultItem(item, idx));
+              })()
+            )}
           </ScrollView>
 
           <View style={[styles.bannerAd, darkMode && styles.darkBannerAd]}>
@@ -466,6 +501,7 @@ const styles = StyleSheet.create({
   },
   resultContent: { flex: 1 },
   companyName: { fontSize: 16, fontWeight: "500", color: "#333" },
+  businessTagLine: { fontSize: 12, color: "#666", marginTop: 2, fontStyle: "italic" },
   resultActions: { flexDirection: "row", alignItems: "center" },
   actionButton: { marginLeft: 15 },
 
@@ -535,6 +571,9 @@ const styles = StyleSheet.create({
   },
   darkCompanyName: {
     color: "#ffffff",
+  },
+  darkBusinessTagLine: {
+    color: "#cccccc",
   },
   darkRatingText: {
     color: "#cccccc",

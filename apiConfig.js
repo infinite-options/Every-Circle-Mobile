@@ -3,6 +3,10 @@
 
 // Production/Development Environment
 export const API_BASE_URL = "https://o7t5ikn907.execute-api.us-west-1.amazonaws.com/dev";
+// export const SEARCH_BASE_URL = "http://54.183.12.163:5001";
+// export const SEARCH_BASE_URL = "http://13.52.244.236:5001";
+// export const SEARCH_BASE_URL = "http://13.52.82.86:5001";
+export const SEARCH_BASE_URL = "http://ioec2vrecsearch.infiniteoptions.com";
 
 // Legacy API Base URL (infiniteoptions domain)
 // export const API_BASE_URL = "https://ioec2ecaspm.infiniteoptions.com";
@@ -35,7 +39,8 @@ export const BUSINESSES_ENDPOINT = `${API_BASE_URL}/businesses`;
 export const CATEGORY_LIST_ENDPOINT = `${API_BASE_URL}/category_list/all`;
 
 // Search and Network Endpoints
-export const BUSINESS_RESULTS_ENDPOINT = `${API_BASE_URL}/api/businessresults`;
+// export const BUSINESS_RESULTS_ENDPOINT = `${API_BASE_URL}/api/businessresults`;
+export const BUSINESS_RESULTS_ENDPOINT = `${SEARCH_BASE_URL}/search_business`;
 export const BOUNTY_RESULTS_ENDPOINT = `${API_BASE_URL}/api/bountyresults`;
 export const TAG_SEARCH_DISTINCT_ENDPOINT = `${API_BASE_URL}/api/tagsearchdistinct`;
 export const TAG_CATEGORY_DISTINCT_ENDPOINT = `${API_BASE_URL}/api/tagcategorydistinct`;
