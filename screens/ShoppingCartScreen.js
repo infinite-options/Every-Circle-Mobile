@@ -18,6 +18,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
   const [stripeInitialized, setStripeInitialized] = useState(false);
+  const [currentClientSecret, setCurrentClientSecret] = useState(null);
 
   useEffect(() => {
     console.log("ShoppingCartScreen mounted");
@@ -190,6 +191,9 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       const clientSecret = await createPaymentIntent();
       console.log("Initializing payment sheet with client secret", clientSecret);
 
+      // Store the client secret for later use
+      setCurrentClientSecret(clientSecret);
+
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: businessName,
         paymentIntentClientSecret: clientSecret,
@@ -274,7 +278,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
     return transactionData;
   };
 
-  const recordTransactions = async (buyerUid) => {
+  const recordTransactions = async (buyerUid, paymentIntent) => {
     try {
       console.log("Recording transactions for items:", cartItems);
 
@@ -288,7 +292,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       }
 
       // Prepare the transaction data
-      const transactionData = prepareTransactionData(buyerProfileId, "PAYMENT_INTENT_ID", calculateTotal());
+      const transactionData = prepareTransactionData(buyerProfileId, paymentIntent || "PAYMENT_INTENT_ID", calculateTotal());
 
       console.log("Sending transaction data:", JSON.stringify(transactionData, null, 2));
 
@@ -334,7 +338,13 @@ const ShoppingCartScreen = ({ route, navigation }) => {
 
       console.log("Presenting payment sheet...");
       const result = await presentPaymentSheet();
-      console.log("Full Stripe Result:", result);
+
+      // Log Stripe result structure for debugging
+      console.log("Stripe result structure:", {
+        hasError: "error" in result,
+        hasPaymentOption: "paymentOption" in result,
+        keys: Object.keys(result),
+      });
 
       if (result.error) {
         console.error("Payment error:", result.error);
@@ -343,7 +353,11 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       }
 
       console.log("Payment successful!");
-      console.log("Payment Intent:", result.paymentIntent);
+
+      // For successful payments, Stripe only returns { error: undefined }
+      // We need to use the original client secret which contains the payment intent ID
+      console.log("Using stored client secret as payment intent:", currentClientSecret);
+      const paymentIntent = currentClientSecret;
 
       // Get the buyer's ID
       const buyerUid = await AsyncStorage.getItem("profile_uid");
@@ -352,7 +366,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       }
 
       // Record the transactions
-      await recordTransactions(buyerUid);
+      await recordTransactions(buyerUid, paymentIntent);
 
       // Clear ALL cart data from AsyncStorage
       try {

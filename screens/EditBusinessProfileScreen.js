@@ -13,7 +13,7 @@ const BusinessProfileAPI = BUSINESS_INFO_ENDPOINT;
 
 export default function EditBusinessProfileScreen({ route, navigation }) {
   const { darkMode } = useDarkMode();
-  console.log("Edit Button Pressed: EditBusinessProfileScreen", route.params.services);
+  // console.log("Edit Button Pressed: EditBusinessProfileScreen", route.params.business);
   const { business } = route.params || {};
   const [businessUID, setBusinessUID] = useState(business?.business_uid || "");
 
