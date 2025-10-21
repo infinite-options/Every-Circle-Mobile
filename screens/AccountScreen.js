@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavBar from "../components/BottomNavBar";
-import { BOUNTY_RESULTS_ENDPOINT } from "../apiConfig";
+import { BOUNTY_RESULTS_ENDPOINT, TRANSACTIONS_ENDPOINT } from "../apiConfig";
 import { LineChart } from "react-native-chart-kit";
 import Svg, { Circle } from "react-native-svg";
 import { useCallback } from "react";
@@ -12,6 +12,8 @@ export default function AccountScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [bountyData, setBountyData] = useState(null);
   const [bountyLoading, setBountyLoading] = useState(true);
+  const [transactionData, setTransactionData] = useState([]);
+  const [transactionLoading, setTransactionLoading] = useState(true);
   // above your effect or focus logic
   const checkAuth = async () => {
     try {
@@ -21,6 +23,55 @@ export default function AccountScreen({ navigation }) {
       setUserUID("");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Transaction data loader
+  const refreshTransactionData = async () => {
+    try {
+      console.log("=== STARTING TRANSACTION DATA LOAD ===");
+      setTransactionLoading(true);
+      const profileId = await AsyncStorage.getItem("profile_uid");
+      console.log("Profile ID from AsyncStorage:", profileId);
+      if (profileId) {
+        console.log("Making request to:", TRANSACTIONS_ENDPOINT);
+        console.log("Request body:", JSON.stringify({ profile_id: profileId }));
+        const response = await fetch(TRANSACTIONS_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            profile_id: profileId,
+          }),
+        });
+        console.log("Response status:", response.status);
+        console.log("Response ok:", response.ok);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("=== TRANSACTION API RESPONSE ===");
+        console.log("Full API response:", result);
+        console.log("Response type:", typeof result);
+        console.log("Is array:", Array.isArray(result));
+        console.log("Length:", result?.length);
+        console.log("First item:", result?.[0]);
+        console.log("=== END TRANSACTION API RESPONSE ===");
+        console.log("Extracting data array from response:", result.data);
+        console.log("Data array length:", result.data?.length);
+        setTransactionData(result.data || []);
+      } else {
+        console.log("No profile ID found, skipping transaction data fetch");
+        setTransactionData([]);
+      }
+    } catch (error) {
+      console.error("Error loading transaction data:", error);
+      setTransactionData([]);
+    } finally {
+      setTransactionLoading(false);
     }
   };
 
@@ -61,17 +112,18 @@ export default function AccountScreen({ navigation }) {
     useCallback(() => {
       checkAuth();
       refreshBountyData();
+      refreshTransactionData();
     }, [])
   );
 
-  const transactions = [
-    { date: "1/10", description: "Santa Claus & ABC Plumbing", amount: "$0.10" },
-    { date: "1/10", description: "Santa Claus & ABC Plumbing", amount: "$0.10" },
-    { date: "1/10", description: "Santa Claus & ABC Plumbing", amount: "$0.10" },
-    { date: "1/10", description: "Santa Claus & ABC Plumbing", amount: "$0.10" },
-    { date: "1/10", description: "Santa Claus & ABC Plumbing", amount: "$0.10" },
-    { date: "1/10", description: "Santa Claus & ABC Plumbing", amount: "$0.10" },
-  ];
+  // Format date to dd/mm format
+  const formatTransactionDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${month}/${day}`;
+  };
 
   const budgetData = [
     { item: "per Impression", costPer: "$0.01", monthlyCap: "$10.00", currentSpend: "$0.50" },
@@ -209,15 +261,48 @@ export default function AccountScreen({ navigation }) {
               <Text style={styles.questionMark}>?</Text>
             </View>
           </View>
-          <View style={styles.transactionsContainer}>
-            {transactions.map((t, i) => (
-              <View key={i} style={styles.transactionRow}>
-                <Text style={styles.transactionDate}>{t.date}</Text>
-                <Text style={styles.transactionDesc}>{t.description}</Text>
-                <Text style={styles.transactionAmount}>{t.amount}</Text>
+          {transactionLoading ? (
+            <Text style={styles.loadingText}>Loading transaction data...</Text>
+          ) : transactionData.length > 0 ? (
+            <View style={styles.transactionsContainer}>
+              {/* Table Header */}
+              <View style={styles.transactionHeaderRow}>
+                <Text style={styles.transactionHeaderDate}>Date</Text>
+                <Text style={styles.transactionHeaderProfile}>Profile</Text>
+                <Text style={styles.transactionHeaderBusiness}>Business</Text>
+                <Text style={styles.transactionHeaderPercentage}>%</Text>
+                <Text style={styles.transactionHeaderAmount}>Amount</Text>
               </View>
-            ))}
-          </View>
+              {/* Table Rows */}
+              {transactionData.map((transaction, i) => {
+                console.log("=== RENDERING TRANSACTION ===");
+                console.log("Transaction index:", i);
+                console.log("Transaction object:", transaction);
+                console.log("Date:", transaction.transaction_datetime, "->", formatTransactionDate(transaction.transaction_datetime));
+                console.log("Profile ID:", transaction.tb_profile_id);
+                console.log("Business name:", transaction.business_name);
+                console.log("Percentage:", transaction.tb_percentage_sum);
+                console.log("Amount:", transaction.tb_amount_sum);
+                console.log("=== END RENDERING TRANSACTION ===");
+
+                return (
+                  <View key={transaction.transaction_uid || i} style={styles.transactionRow}>
+                    <Text style={styles.transactionDate}>{formatTransactionDate(transaction.transaction_datetime)}</Text>
+                    <Text style={styles.transactionProfile}>{transaction.tb_profile_id || "N/A"}</Text>
+                    <Text style={styles.transactionBusiness}>{transaction.business_name || "N/A"}</Text>
+                    <Text style={styles.transactionPercentage}>{(transaction.tb_percentage_sum * 100)?.toFixed(1) || "0.0"}%</Text>
+                    <Text style={styles.transactionAmount}>${transaction.tb_amount_sum?.toFixed(2) || "0.00"}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <View>
+              <Text style={styles.noDataText}>No transaction data available.</Text>
+              <Text style={styles.noDataText}>Transaction data length: {transactionData.length}</Text>
+              <Text style={styles.noDataText}>Transaction loading: {transactionLoading.toString()}</Text>
+            </View>
+          )}
         </View>
 
         {/* Net Earning */}
@@ -324,10 +409,25 @@ const styles = StyleSheet.create({
   tableRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6 },
   tableCell: { fontSize: 12 },
   transactionsContainer: { backgroundColor: "transparent", paddingVertical: 6 },
-  transactionRow: { flexDirection: "row", paddingVertical: 10 },
-  transactionDate: { width: 40, fontSize: 12, color: "#888" },
-  transactionDesc: { flex: 1, fontSize: 12 },
-  transactionAmount: { width: 50, fontSize: 12, textAlign: "right" },
+  transactionHeaderRow: {
+    flexDirection: "row",
+    paddingVertical: 8,
+    backgroundColor: "#9C45F7",
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  transactionRow: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  transactionDate: { width: 50, fontSize: 11, color: "#888" },
+  transactionProfile: { width: 60, fontSize: 11, color: "#333" },
+  transactionBusiness: { flex: 1, fontSize: 11, color: "#333", paddingHorizontal: 4 },
+  transactionPercentage: { width: 40, fontSize: 11, color: "#333", textAlign: "center" },
+  transactionAmount: { width: 60, fontSize: 11, color: "#333", textAlign: "right" },
+  // Header styles
+  transactionHeaderDate: { width: 50, fontSize: 11, color: "#fff", fontWeight: "bold" },
+  transactionHeaderProfile: { width: 60, fontSize: 11, color: "#fff", fontWeight: "bold" },
+  transactionHeaderBusiness: { flex: 1, fontSize: 11, color: "#fff", fontWeight: "bold", paddingHorizontal: 4 },
+  transactionHeaderPercentage: { width: 40, fontSize: 11, color: "#fff", fontWeight: "bold", textAlign: "center" },
+  transactionHeaderAmount: { width: 60, fontSize: 11, color: "#fff", fontWeight: "bold", textAlign: "right" },
   centeredContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   // Bounty Results styles
