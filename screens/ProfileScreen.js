@@ -5,7 +5,7 @@ import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
+import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT, BUSINESS_INFO_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
 
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
@@ -15,6 +15,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [profileUID, setProfileUID] = useState("");
+  const [businessesData, setBusinessesData] = useState([]);
   const { darkMode } = useDarkMode();
 
   useFocusEffect(
@@ -155,12 +156,98 @@ const ProfileScreen = ({ route, navigation }) => {
       console.log("ProfileScreen - Setting user data:", userData);
       console.log("ProfileScreen - Profile UID in userData:", userData.profile_uid);
       setUser(userData);
-      setLoading(false);
+
+      // Fetch business details for each business
+      if (userData.businesses && userData.businesses.length > 0) {
+        fetchBusinessesData(userData.businesses);
+      } else {
+        setBusinessesData([]);
+        setLoading(false);
+      }
     } catch (error) {
       setUser(null);
       setLoading(false);
     }
   }
+
+  const fetchBusinessesData = async (businesses) => {
+    try {
+      const businessPromises = businesses.map(async (bus) => {
+        if (!bus.profile_business_uid) return null;
+
+        try {
+          const response = await fetch(`${BUSINESS_INFO_ENDPOINT}/${bus.profile_business_uid}`);
+          const result = await response.json();
+
+          if (!result || !result.business) return null;
+
+          const rawBusiness = result.business;
+
+          // Process images similar to BusinessProfileScreen
+          let businessImages = [];
+          if (rawBusiness.business_google_photos) {
+            if (typeof rawBusiness.business_google_photos === "string") {
+              try {
+                businessImages = JSON.parse(rawBusiness.business_google_photos);
+              } catch (e) {
+                businessImages = [rawBusiness.business_google_photos];
+              }
+            } else if (Array.isArray(rawBusiness.business_google_photos)) {
+              businessImages = rawBusiness.business_google_photos;
+            }
+          }
+
+          // Handle business_images_url
+          if (rawBusiness.business_images_url) {
+            let uploadedImages = [];
+            if (typeof rawBusiness.business_images_url === "string") {
+              try {
+                uploadedImages = JSON.parse(rawBusiness.business_images_url);
+              } catch (e) {
+                uploadedImages = [];
+              }
+            } else if (Array.isArray(rawBusiness.business_images_url)) {
+              uploadedImages = rawBusiness.business_images_url;
+            }
+            uploadedImages = uploadedImages
+              .map((img) => {
+                if (img && typeof img === "string") {
+                  if (img.startsWith("http://") || img.startsWith("https://")) {
+                    return img;
+                  }
+                  return `https://s3-us-west-1.amazonaws.com/every-circle/business_personal/${rawBusiness.business_uid}/${img}`;
+                }
+                return null;
+              })
+              .filter(Boolean);
+            businessImages = [...uploadedImages, ...businessImages];
+          }
+
+          return {
+            business_name: rawBusiness.business_name || "",
+            business_address_line_1: rawBusiness.business_address_line_1 || "",
+            business_zip_code: rawBusiness.business_zip_code || "",
+            business_phone_number: rawBusiness.business_phone_number || "",
+            business_website: rawBusiness.business_website || "",
+            first_image: businessImages && businessImages.length > 0 ? businessImages[0] : null,
+            phoneIsPublic: rawBusiness.phone_is_public === "1",
+            business_uid: rawBusiness.business_uid || "",
+          };
+        } catch (error) {
+          console.error(`Error fetching business ${bus.profile_business_uid}:`, error);
+          return null;
+        }
+      });
+
+      const fetchedBusinesses = await Promise.all(businessPromises);
+      setBusinessesData(fetchedBusinesses.filter(Boolean));
+    } catch (error) {
+      console.error("Error fetching businesses data:", error);
+      setBusinessesData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderField = (label, value, isPublic) => {
     if (isPublic && value && value.trim() !== "") {
@@ -270,23 +357,20 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         {/* Only show Businesses section if there are businesses */}
-        {user.businesses && user.businesses.length > 0 && (
+        {businessesData && businessesData.length > 0 && (
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, darkMode && styles.darkLabel]}>Businesses:</Text>
-            {user.businesses.map((bus, index) => (
+            {businessesData.map((business, index) => (
               <TouchableOpacity
-                key={index}
-                style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}
+                key={business.business_uid || index}
                 onPress={() => {
-                  if (bus.profile_business_uid) {
-                    navigation.navigate("BusinessProfile", { business_uid: bus.profile_business_uid });
-                  } else {
-                    Alert.alert("Error", "Business profile not found.");
+                  if (business.business_uid) {
+                    navigation.navigate("BusinessProfile", { business_uid: business.business_uid });
                   }
                 }}
+                style={[styles.businessCardContainer, darkMode && styles.darkBusinessCardContainer]}
               >
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{bus.name || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{bus.role || ""}</Text>
+                <MiniCard business={business} />
               </TouchableOpacity>
             ))}
           </View>
@@ -452,6 +536,14 @@ const styles = StyleSheet.create({
   },
   darkEditIcon: {
     tintColor: "#ffffff",
+  },
+  businessCardContainer: {
+    marginBottom: 15,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  darkBusinessCardContainer: {
+    backgroundColor: "#2d2d2d",
   },
 });
 

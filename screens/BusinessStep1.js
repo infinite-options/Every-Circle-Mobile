@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { View, Text, TextInput, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image, Alert } from "react-native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "../config";
 import { Dropdown } from "react-native-element-dropdown";
 import { BUSINESS_INFO_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 
 const { width } = Dimensions.get("window");
 
@@ -14,6 +16,62 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
   console.log("BusinessStep1 - darkMode value:", darkMode);
   const [loading, setLoading] = useState(false);
   const googlePlacesRef = useRef();
+
+  const googlePhotos = formData.businessGooglePhotos || [];
+  const userUploadedImages = formData.images || [];
+  const combinedImages = [...googlePhotos, ...userUploadedImages];
+
+  const handleImagePick = async (index) => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission required", "Permission to access media library is required!");
+        return;
+      }
+      // Launch picker with new API
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        let fileSize = asset.fileSize;
+        if (!fileSize && asset.uri) {
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+            fileSize = fileInfo.size;
+          } catch (e) {
+            console.log("Could not get file size from FileSystem", e);
+          }
+        }
+        if (fileSize && fileSize > 2 * 1024 * 1024) {
+          Alert.alert("File not selectable", "Image size exceeds the 2MB upload limit.");
+          return;
+        }
+        const newImageUri = asset.uri;
+        const updated = [...userUploadedImages];
+        updated[index] = newImageUri;
+        const newFormData = { ...formData, images: updated };
+        setFormData(newFormData);
+        AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
+      }
+    } catch (error) {
+      let errorMessage = "Failed to pick image. ";
+      if (error.name === "PermissionDenied") {
+        errorMessage += "Permission was denied.";
+      } else if (error.name === "ImagePickerError") {
+        errorMessage += "There was an error with the image picker.";
+      } else if (error.message && error.message.includes("permission")) {
+        errorMessage += "Permission issue detected.";
+      } else if (error.message && error.message.includes("canceled")) {
+        errorMessage += "Operation was canceled.";
+      }
+      Alert.alert("Error", errorMessage);
+    }
+  };
 
   useEffect(() => {
     console.log("In BusinessStep1");
@@ -33,9 +91,12 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
   }, []);
 
   const updateFormData = (field, value) => {
-    const updated = { ...formData, [field]: value };
-    setFormData(updated);
-    AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+      // Save to AsyncStorage asynchronously without blocking
+      AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
+      return updated;
+    });
   };
 
   const handleGooglePlaceSelect = async (data, details = null) => {
@@ -126,50 +187,15 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
     <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#f5f5f5" }}>
       <View style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
-          <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 20, alignItems: "center", paddingBottom: 40 }} keyboardShouldPersistTaps='handled'>
+          <ScrollView
+            style={{ flex: 1, width: "100%" }}
+            contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 20, alignItems: "center", paddingBottom: 40 }}
+            keyboardShouldPersistTaps='handled'
+            nestedScrollEnabled={true}
+          >
             <View style={[styles.formCard, darkMode && styles.darkFormCard]}>
               <Text style={[styles.title, darkMode && styles.darkTitle]}>Welcome to Every Circle!</Text>
               <Text style={[styles.subtitle, darkMode && styles.darkSubtitle]}>Let's Build Your Business Page! Step 1</Text>
-
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Search Business</Text>
-              <View style={{ width: "100%", marginBottom: 20, zIndex: 1000 }}>
-                <GooglePlacesAutocomplete
-                  ref={googlePlacesRef}
-                  placeholder='Search for a business'
-                  placeholderTextColor={darkMode ? "#ffffff" : "#666"}
-                  fetchDetails={true}
-                  onPress={handleGooglePlaceSelect}
-                  query={{
-                    key: config.googleMapsApiKey,
-                    language: "en",
-                    types: "establishment",
-                  }}
-                  styles={{
-                    textInput: {
-                      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
-                      color: darkMode ? "#ffffff" : "#000",
-                      borderRadius: 10,
-                      padding: 12,
-                      fontSize: 16,
-                      borderWidth: 1,
-                      borderColor: darkMode ? "#404040" : "#ddd",
-                    },
-                    listView: {
-                      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
-                      zIndex: 9999,
-                      position: "absolute",
-                      top: 60,
-                      borderRadius: 10,
-                      elevation: 3,
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                    },
-                  }}
-                  enablePoweredByContainer={false}
-                />
-              </View>
 
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Name</Text>
               <TextInput
@@ -178,25 +204,6 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 placeholder='Enter business name'
                 placeholderTextColor={darkMode ? "#cccccc" : "#666"}
                 onChangeText={(text) => updateFormData("businessName", text)}
-              />
-
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Location</Text>
-              <TextInput
-                style={[styles.input, darkMode && styles.darkInput]}
-                value={formData.addressLine1 || ""}
-                placeholder='Enter business address'
-                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
-                onChangeText={(text) => updateFormData("addressLine1", text)}
-              />
-
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Phone Number</Text>
-              <TextInput
-                style={[styles.input, darkMode && styles.darkInput]}
-                keyboardType='phone-pad'
-                value={formData.phoneNumber || ""}
-                placeholder='(000) 000-0000'
-                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
-                onChangeText={(text) => updateFormData("phoneNumber", text)}
               />
 
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Role</Text>
@@ -209,8 +216,66 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 placeholderTextColor={darkMode ? "#ffffff" : "#666"}
                 value={formData.businessRole || ""}
                 onChange={(item) => updateFormData("businessRole", item.value)}
-                containerStyle={{ borderRadius: 10 }}
+                containerStyle={[{ borderRadius: 10, zIndex: 1000 }, darkMode && { backgroundColor: "#2d2d2d", borderColor: "#404040" }]}
+                itemTextStyle={{ color: darkMode ? "#ffffff" : "#000000" }}
+                selectedTextStyle={{ color: darkMode ? "#ffffff" : "#000000" }}
+                activeColor={darkMode ? "#404040" : "#f0f0f0"}
+                maxHeight={200}
+                flatListProps={{
+                  nestedScrollEnabled: true,
+                }}
               />
+
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Brief Description</Text>
+              <TextInput
+                style={[styles.textarea, darkMode && styles.darkTextarea]}
+                placeholder='Describe your business...'
+                placeholderTextColor={darkMode ? "#ffffff" : "#666"}
+                value={formData.shortBio}
+                multiline
+                numberOfLines={4}
+                onChangeText={(text) => {
+                  const updated = { ...formData, shortBio: text };
+                  setFormData(updated);
+                  AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
+                }}
+              />
+
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Images</Text>
+              <View style={styles.carousel}>
+                <View style={styles.imageRow}>
+                  {combinedImages.map((img, index) => {
+                    return (
+                      <View key={index} style={[styles.imageWrapper, darkMode && styles.darkImageWrapper]}>
+                        <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
+                        <TouchableOpacity
+                          style={styles.deleteIcon}
+                          onPress={() => {
+                            const isGoogle = index < googlePhotos.length;
+                            const updated = isGoogle
+                              ? [...googlePhotos.slice(0, index), ...googlePhotos.slice(index + 1)]
+                              : [...userUploadedImages.slice(0, index - googlePhotos.length), ...userUploadedImages.slice(index - googlePhotos.length + 1)];
+
+                            const newFormData = {
+                              ...formData,
+                              businessGooglePhotos: isGoogle ? updated : googlePhotos,
+                              images: !isGoogle ? updated : userUploadedImages,
+                            };
+                            setFormData(newFormData);
+                            AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
+                          }}
+                        >
+                          <Text style={styles.deleteText}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+
+                  <TouchableOpacity style={[styles.uploadBox, darkMode && styles.darkUploadBox]} onPress={() => handleImagePick(userUploadedImages.length)}>
+                    <Text style={[styles.uploadText, darkMode && styles.darkUploadText]}>Upload Image</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               <Text style={[styles.label, darkMode && styles.darkLabel]}>EIN Number (Optional)</Text>
               <Text style={[styles.helperText, darkMode && styles.darkHelperText]}>For verification purposes</Text>
@@ -221,11 +286,19 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 placeholderTextColor={darkMode ? "#cccccc" : "#666"}
                 onChangeText={(text) => updateFormData("einNumber", text)}
               />
-
-              {loading && <ActivityIndicator size='large' color='#00C721' style={styles.loadingIndicator} />}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        {/* Loading indicator positioned outside ScrollView to avoid flickering */}
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <View style={[styles.loadingContent, darkMode && styles.darkLoadingContent]}>
+              <ActivityIndicator size='large' color='#00C721' />
+              <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading...</Text>
+            </View>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -270,6 +343,40 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 15,
   },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  loadingContent: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+  },
+  darkLoadingContent: {
+    backgroundColor: "#2d2d2d",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#333",
+  },
+  darkLoadingText: {
+    color: "#ffffff",
+  },
+  loadingContainer: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    zIndex: 1000,
+  },
   loadingIndicator: {
     marginTop: 20,
   },
@@ -281,6 +388,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     alignSelf: "center",
     marginBottom: 16,
+    position: "relative",
   },
   helperText: {
     fontSize: 12,
@@ -309,5 +417,90 @@ const styles = StyleSheet.create({
   },
   darkHelperText: {
     color: "#cccccc",
+  },
+  textarea: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 12,
+    height: 100,
+    textAlignVertical: "top",
+    marginBottom: 20,
+    width: "100%",
+  },
+  carousel: {
+    marginVertical: 20,
+    width: "100%",
+    height: 120,
+  },
+  imageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    flexWrap: "wrap",
+  },
+  imageWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginRight: 10,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+    position: "relative",
+  },
+  darkImageWrapper: {
+    backgroundColor: "#404040",
+  },
+  deleteIcon: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    backgroundColor: "#ff3b30",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  deleteText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  uploadedImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 10,
+  },
+  uploadBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#ddd",
+    borderStyle: "dashed",
+  },
+  darkUploadBox: {
+    backgroundColor: "#404040",
+    borderColor: "#555",
+  },
+  uploadText: {
+    color: "#666",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  darkUploadText: {
+    color: "#cccccc",
+  },
+  darkTextarea: {
+    backgroundColor: "#404040",
+    color: "#ffffff",
+    borderColor: "#555",
   },
 });

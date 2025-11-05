@@ -1,7 +1,11 @@
 import "./polyfills";
 import React, { useEffect, useState, useCallback } from "react";
+import { LogBox } from "react-native";
 
 import { StyleSheet, Text, View, Alert, ActivityIndicator, TouchableOpacity, Image } from "react-native";
+
+// Suppress VirtualizedList nesting warning - we're using nestedScrollEnabled and proper configuration
+LogBox.ignoreLogs(["VirtualizedLists should never be nested inside plain ScrollViews"]);
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -26,7 +30,7 @@ import BusinessSetupController from "./screens/BusinessSetupController";
 import BusinessProfileScreen from "./screens/BusinessProfileScreen";
 import SearchTab from "./screens/SearchTab";
 import ChangePasswordScreen from "./screens/ChangePasswordScreen";
-import FilterScreen from "./screens/FilterScreen";
+import FilterScreen from "./screens/FilterScreen-DNU";
 import TermsAndConditionsScreen from "./screens/TermsAndConditionsScreen";
 import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 //import SearchResults from './screens/SearchResults';
