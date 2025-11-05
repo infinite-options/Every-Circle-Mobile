@@ -6,7 +6,7 @@ import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BUSINESS_INFO_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
+import { BUSINESS_INFO_ENDPOINT, USER_PROFILE_INFO_ENDPOINT, CATEGORY_LIST_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
 
 const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
@@ -147,6 +147,38 @@ export default function BusinessProfileScreen({ route, navigation }) {
         }
       }
 
+      // Handle business_images_url - user uploaded images from S3
+      if (rawBusiness.business_images_url) {
+        let uploadedImages = [];
+        if (typeof rawBusiness.business_images_url === "string") {
+          try {
+            uploadedImages = JSON.parse(rawBusiness.business_images_url);
+          } catch (e) {
+            console.log("Failed to parse business_images_url as JSON");
+            uploadedImages = [];
+          }
+        } else if (Array.isArray(rawBusiness.business_images_url)) {
+          uploadedImages = rawBusiness.business_images_url;
+        }
+        // URLs should already be full S3 URLs, but handle both cases
+        uploadedImages = uploadedImages
+          .map((img) => {
+            if (img && typeof img === "string") {
+              // If it's already a full URL, use it; otherwise construct it
+              if (img.startsWith("http://") || img.startsWith("https://")) {
+                return img;
+              }
+              // Construct full S3 URL if only filename is provided
+              return `https://s3-us-west-1.amazonaws.com/every-circle/business_personal/${rawBusiness.business_uid}/${img}`;
+            }
+            return null;
+          })
+          .filter(Boolean); // Remove any null values
+        // Merge uploaded images with Google photos (uploaded images first)
+        businessImages = [...uploadedImages, ...businessImages];
+        console.log("Combined business images (uploaded + Google):", businessImages);
+      }
+
       // Filter out problematic URLs that won't work in React Native
       businessImages = businessImages.filter((uri) => {
         // Check if URI is valid
@@ -188,6 +220,28 @@ export default function BusinessProfileScreen({ route, navigation }) {
         }
       }
 
+      // Fetch category name if business_category_id is present
+      let categoryName = rawBusiness.business_category || null;
+      if (rawBusiness.business_category_id && !categoryName) {
+        try {
+          const categoryResponse = await fetch(CATEGORY_LIST_ENDPOINT);
+          const categoryResult = await categoryResponse.json();
+          if (categoryResult && categoryResult.result) {
+            // business_category_id might be a single ID or comma-separated IDs
+            const categoryIds = rawBusiness.business_category_id.split(",").map((id) => id.trim());
+            const categoryNames = categoryIds
+              .map((id) => {
+                const category = categoryResult.result.find((cat) => cat.category_uid === id);
+                return category ? category.category_name : null;
+              })
+              .filter(Boolean);
+            categoryName = categoryNames.length > 0 ? categoryNames.join(", ") : null;
+          }
+        } catch (e) {
+          console.log("Failed to fetch category name:", e);
+        }
+      }
+
       // Store ratings in business object for later processing when profile ID is available
       const businessWithRatings = {
         ...rawBusiness,
@@ -197,6 +251,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
         youtube: socialLinksData.youtube || "",
         images: businessImages,
         customTags: customTags,
+        business_category: categoryName || rawBusiness.business_category || null,
         ratings: result.ratings, // Store ratings for later processing
         emailIsPublic: rawBusiness.email_is_public === "1",
         phoneIsPublic: rawBusiness.phone_is_public === "1",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList } from "react-native";
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavBar from "../components/BottomNavBar";
 import { useDarkMode } from "../contexts/DarkModeContext";
@@ -83,7 +83,7 @@ export default function BusinessStep4({ formData, setFormData, navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#f5f5f5" }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 40, alignItems: "center", paddingBottom: 120 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 40, alignItems: "center", paddingBottom: 120 }} nestedScrollEnabled={true}>
         <View style={[styles.formCard, darkMode && styles.darkFormCard]}>
           <Text style={[styles.title, darkMode && styles.darkTitle]}>Add Products or Services</Text>
 

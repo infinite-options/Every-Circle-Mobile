@@ -142,7 +142,12 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
     <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#fff" }}>
       <View style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
-          <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 20, alignItems: "center", paddingBottom: 40 }} keyboardShouldPersistTaps='handled'>
+          <ScrollView
+            style={{ flex: 1, width: "100%" }}
+            contentContainerStyle={{ paddingTop: 60, paddingHorizontal: 20, alignItems: "center", paddingBottom: 40 }}
+            keyboardShouldPersistTaps='handled'
+            nestedScrollEnabled={true}
+          >
             <View style={[styles.formCard, darkMode && styles.darkFormCard]}>
               <Text style={[styles.title, darkMode && styles.darkTitle]}>Welcome to Every Circle!</Text>
               <Text style={[styles.subtitle, darkMode && styles.darkSubtitle]}>Let's Start Building Your Business Page!</Text>
@@ -184,6 +189,9 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
                     },
                   }}
                   enablePoweredByContainer={false}
+                  flatListProps={{
+                    nestedScrollEnabled: true,
+                  }}
                 />
               </View>
 
@@ -198,79 +206,6 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
                 onChangeText={(text) => updateFormData("businessName", text)}
               />
 
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Location</Text>
-              <View style={{ width: "100%", marginBottom: 20, zIndex: 999 }}>
-                <GooglePlacesAutocomplete
-                  placeholder='Enter business address'
-                  placeholderTextColor={darkMode ? "#cccccc" : "#666"}
-                  fetchDetails={true}
-                  onPress={(data, details = null) => {
-                    if (details) {
-                      const addressComponents = details.address_components || [];
-                      const getComponent = (type) => addressComponents.find((comp) => comp.types.includes(type))?.long_name || "";
-
-                      const addressLine1 = `${getComponent("street_number")} ${getComponent("route")}`.trim();
-                      const addressLine2 = getComponent("subpremise");
-                      const city = getComponent("locality");
-                      const state = getComponent("administrative_area_level_1");
-                      const country = getComponent("country");
-                      const zip = getComponent("postal_code");
-
-                      const latFn = details.geometry?.location?.lat;
-                      const lngFn = details.geometry?.location?.lng;
-                      const latitude = typeof latFn === "function" ? latFn() : latFn ?? "";
-                      const longitude = typeof lngFn === "function" ? lngFn() : lngFn ?? "";
-
-                      const updated = {
-                        ...formData,
-                        addressLine1: addressLine1 || details.vicinity || details.formatted_address || "",
-                        addressLine2: addressLine2 || "",
-                        city: city || "",
-                        state: state || "",
-                        country: country || "",
-                        zip: zip || "",
-                        latitude: latitude || "",
-                        longitude: longitude || "",
-                      };
-
-                      setFormData(updated);
-                      AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
-                    }
-                  }}
-                  query={{
-                    key: config.googleMapsApiKey,
-                    language: "en",
-                    types: "address",
-                  }}
-                  styles={{
-                    textInput: {
-                      backgroundColor: darkMode ? "#404040" : "#fff",
-                      color: darkMode ? "#ffffff" : "#000",
-                      borderRadius: 10,
-                      padding: 12,
-                      fontSize: 16,
-                      borderWidth: 1,
-                      borderColor: darkMode ? "#555" : "#ddd",
-                      width: "100%",
-                      marginBottom: 15,
-                    },
-                    listView: {
-                      backgroundColor: darkMode ? "#2d2d2d" : "#fff",
-                      zIndex: 9999,
-                      position: "absolute",
-                      top: 60,
-                      borderRadius: 10,
-                      elevation: 3,
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 4,
-                    },
-                  }}
-                  enablePoweredByContainer={false}
-                />
-              </View>
-
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Phone Number</Text>
               <TextInput
                 style={[styles.input, darkMode && styles.darkInput]}
@@ -279,6 +214,48 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
                 placeholder='(000) 000-0000'
                 placeholderTextColor={darkMode ? "#ffffff" : "#666"}
                 onChangeText={(text) => updateFormData("phoneNumber", formatPhoneNumber(text))}
+              />
+
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Address</Text>
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                value={formData.addressLine1 || ""}
+                placeholder='Enter street address'
+                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
+                onChangeText={(text) => updateFormData("addressLine1", text)}
+              />
+
+              <View style={{ flexDirection: "row", width: "100%", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>City</Text>
+                  <TextInput
+                    style={[styles.input, darkMode && styles.darkInput]}
+                    value={formData.city || ""}
+                    placeholder='City'
+                    placeholderTextColor={darkMode ? "#cccccc" : "#666"}
+                    onChangeText={(text) => updateFormData("city", text)}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>State</Text>
+                  <TextInput
+                    style={[styles.input, darkMode && styles.darkInput]}
+                    value={formData.state || ""}
+                    placeholder='State'
+                    placeholderTextColor={darkMode ? "#cccccc" : "#666"}
+                    onChangeText={(text) => updateFormData("state", text)}
+                  />
+                </View>
+              </View>
+
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Zip Code</Text>
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                keyboardType='number-pad'
+                value={formData.zip || ""}
+                placeholder='Zip Code'
+                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
+                onChangeText={(text) => updateFormData("zip", text)}
               />
 
               {/* <Text style={styles.label}>Business Role</Text>

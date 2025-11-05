@@ -160,7 +160,12 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
     <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#f5f5f5" }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
         <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 20, alignItems: "center" }}>
-          <ScrollView style={{ flex: 1, width: "100%" }} contentContainerStyle={{ justifyContent: "center", alignItems: "center", paddingBottom: 120 }} keyboardShouldPersistTaps='handled'>
+          <ScrollView
+            style={{ flex: 1, width: "100%" }}
+            contentContainerStyle={{ justifyContent: "center", alignItems: "center", paddingBottom: 120 }}
+            keyboardShouldPersistTaps='handled'
+            nestedScrollEnabled={true}
+          >
             <View style={[styles.formCard, darkMode && styles.darkFormCard]}>
               <Text style={[styles.title, darkMode && styles.darkTitle]}>Select Category</Text>
               <Text style={[styles.subtitle, darkMode && styles.darkSubtitle]}>Select Tags for your business</Text>
@@ -208,58 +213,6 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
                   />
                 </>
               )}
-
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Brief Description</Text>
-              <TextInput
-                style={[styles.textarea, darkMode && styles.darkTextarea]}
-                placeholder='Describe your business...'
-                placeholderTextColor={darkMode ? "#ffffff" : "#666"}
-                value={formData.shortBio}
-                multiline
-                numberOfLines={4}
-                onChangeText={(text) => {
-                  const updated = { ...formData, shortBio: text };
-                  setFormData(updated);
-                  AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
-                }}
-              />
-
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Images</Text>
-              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={true} style={styles.carousel}>
-                <View style={styles.imageRow}>
-                  {combinedImages.map((img, index) => {
-                    // console.log("BS2 Image URI at index", index, ":", img);
-                    return (
-                      <View key={index} style={[styles.imageWrapper, darkMode && styles.darkImageWrapper]}>
-                        <Image source={{ uri: img }} style={styles.uploadedImage} resizeMode='cover' />
-                        <TouchableOpacity
-                          style={styles.deleteIcon}
-                          onPress={() => {
-                            const isGoogle = index < googlePhotos.length;
-                            const updated = isGoogle
-                              ? [...googlePhotos.slice(0, index), ...googlePhotos.slice(index + 1)]
-                              : [...userUploadedImages.slice(0, index - googlePhotos.length), ...userUploadedImages.slice(index - googlePhotos.length + 1)];
-
-                            const newFormData = {
-                              ...formData,
-                              businessGooglePhotos: isGoogle ? updated : googlePhotos,
-                              images: !isGoogle ? updated : userUploadedImages,
-                            };
-                            setFormData(newFormData);
-                            AsyncStorage.setItem("businessFormData", JSON.stringify(newFormData)).catch((err) => console.error("Save error", err));
-                          }}
-                        >
-                          <Text style={styles.deleteText}>✕</Text>
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  })}
-
-                  <TouchableOpacity style={[styles.uploadBox, darkMode && styles.darkUploadBox]} onPress={() => handleImagePick(userUploadedImages.length)}>
-                    <Text style={[styles.uploadText, darkMode && styles.darkUploadText]}>Upload Image</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
 
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Custom Tags</Text>
               <View style={styles.tagRow}>
@@ -429,16 +382,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
   },
-  imageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-  },
-
   carousel: {
     marginVertical: 20,
     width: "100%",
     height: 120,
+  },
+  imageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
   },
   carouselImageWrapper: {
     width: "100%",

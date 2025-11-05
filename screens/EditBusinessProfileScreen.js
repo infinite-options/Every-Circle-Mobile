@@ -35,6 +35,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     website: business?.business_website || "",
     customTags: Array.isArray(business?.custom_tags) ? business.custom_tags : [],
     images: Array.isArray(business?.images) ? business.images : [],
+    businessGooglePhotos: Array.isArray(business?.businessGooglePhotos) ? business.businessGooglePhotos : [],
     socialLinks: {
       facebook: business?.facebook || "",
       instagram: business?.instagram || "",
@@ -88,30 +89,72 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       payload.append("business_website", formData.website);
       payload.append("custom_tags", JSON.stringify(formData.customTags));
 
-      // Separate Google and user-uploaded images
-      const googleImages = formData.images || [];
-      const userImages = formData.images || [];
+      // Separate images: existing S3 URLs vs new local files to upload
+      // Only include images that are currently in formData.images (deleted ones are already removed)
+      const allImages = (formData.images || []).filter((img) => img && typeof img === "string" && img.trim() !== "");
+      const existingS3Urls = [];
+      const newLocalFiles = [];
 
-      // Append Google images as URLs
-      payload.append("business_google_photos", JSON.stringify(googleImages));
+      console.log("🔍 All images in formData.images:", allImages);
 
-      // Append user-uploaded images as files and collect their filenames
+      allImages.forEach((imageUri) => {
+        if (imageUri && typeof imageUri === "string") {
+          // Check if it's already an S3 URL (existing uploaded image)
+          if (imageUri.startsWith("https://") || imageUri.startsWith("http://")) {
+            existingS3Urls.push(imageUri);
+          }
+          // Check if it's a new local file that needs to be uploaded
+          else if (imageUri.startsWith("file://") || imageUri.startsWith("content://")) {
+            newLocalFiles.push(imageUri);
+          }
+        }
+      });
+
+      console.log("📸 Existing S3 URLs:", existingS3Urls);
+      console.log("📁 New local files to upload:", newLocalFiles);
+
+      // Append Google images as URLs (if any - these are separate from user-uploaded)
+      // For now, keep existing Google photos separate
+      const googleImages = formData.businessGooglePhotos || [];
+      if (googleImages.length > 0) {
+        payload.append("business_google_photos", JSON.stringify(googleImages));
+      }
+
+      // Append new user-uploaded images as files and collect their filenames
       const userImageFilenames = [];
-      userImages.forEach((imageUri, index) => {
+      newLocalFiles.forEach((imageUri, index) => {
         if (imageUri && (imageUri.startsWith("file://") || imageUri.startsWith("content://"))) {
           const uriParts = imageUri.split(".");
-          const fileType = uriParts[uriParts.length - 1];
-          const fileName = `business_image_${index}.${fileType}`;
+          const fileType = uriParts[uriParts.length - 1] || "jpg";
+          const fileName = `business_img_${index}_${Date.now()}.${fileType}`;
           userImageFilenames.push(fileName);
-          payload.append(`image_${index}`, {
+          // Backend expects business_img_0, business_img_1, etc.
+          payload.append(`business_img_${index}`, {
             uri: imageUri,
             type: `image/${fileType}`,
             name: fileName,
           });
         }
       });
-      // Send the filenames as business_images_url
-      payload.append("business_images_url", JSON.stringify(userImageFilenames));
+
+      // Combine existing S3 URLs with new filenames (new ones will be uploaded and converted to S3 URLs by backend)
+      // For existing URLs, extract just the filename from the full URL
+      const existingFilenames = existingS3Urls.map((url) => {
+        // Extract filename from S3 URL: https://s3-.../business_personal/UID/filename
+        const parts = url.split("/");
+        const filename = parts[parts.length - 1];
+        console.log(`📝 Extracted filename from ${url}: ${filename}`);
+        return filename;
+      });
+
+      // Combine existing filenames with new filenames
+      // Only include images that are currently in formData.images (deleted ones are excluded)
+      const allImageFilenames = [...existingFilenames, ...userImageFilenames];
+
+      console.log("📋 Final image filenames to send:", allImageFilenames);
+
+      // Always send business_images_url, even if empty (to signal deletion)
+      payload.append("business_images_url", JSON.stringify(allImageFilenames));
 
       payload.append("social_links", JSON.stringify(formData.socialLinks));
       payload.append("business_email_id_is_public", formData.emailIsPublic ? "1" : "0");
@@ -249,6 +292,9 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 
   const removeImage = (indexToRemove) => {
     const updatedImages = (formData.images || []).filter((_, index) => index !== indexToRemove);
+    console.log(`🗑️ Removing image at index ${indexToRemove}`);
+    console.log(`📸 Images before removal:`, formData.images);
+    console.log(`📸 Images after removal:`, updatedImages);
     setFormData({ ...formData, images: updatedImages });
   };
 

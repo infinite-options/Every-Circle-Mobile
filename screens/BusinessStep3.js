@@ -60,7 +60,7 @@ export default function BusinessStep3({ formData, setFormData, navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#f5f5f5" }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingVertical: 40, paddingBottom: 120 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center", paddingVertical: 40, paddingBottom: 120 }} nestedScrollEnabled={true}>
         <View style={[styles.formCard, darkMode && styles.darkFormCard]}>
           <Text style={[styles.title, darkMode && styles.darkTitle]}>Social Media Links</Text>
 

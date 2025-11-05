@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import BusinessStep0 from "./BusinessStep0";
 import BusinessStep1 from "./BusinessStep1";
 import BusinessStep2 from "./BusinessStep2";
@@ -13,13 +14,12 @@ import { useDarkMode } from "../contexts/DarkModeContext";
 
 const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
 
-export default function BusinessSetupController({ navigation }) {
+export default function BusinessSetupController({ navigation, route }) {
   const { darkMode } = useDarkMode();
   console.log("BusinessSetupController - darkMode value:", darkMode);
-  const [activeStep, setActiveStep] = useState(0);
-  const [userUid, setUserUid] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
+
+  // Initialize empty form data
+  const getInitialFormData = () => ({
     businessName: "",
     location: "",
     phoneNumber: "",
@@ -73,12 +73,39 @@ export default function BusinessSetupController({ navigation }) {
     business_short_bio_is_public: 1,
     business_services_is_public: 1,
     business_owners_is_public: 1,
+    business_services: [],
+    social_links: [],
     // email, phone number, tagline, shortbio, images, bannerads, shortbio, services,
     // owners.
   });
 
+  const [activeStep, setActiveStep] = useState(0);
+  const [userUid, setUserUid] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState(getInitialFormData());
+
+  // Reset form when screen is focused to ensure fresh start for new business
+  useFocusEffect(
+    React.useCallback(() => {
+      const resetForm = async () => {
+        // Clear any existing business form data from AsyncStorage
+        await AsyncStorage.removeItem("businessFormData");
+
+        // Reset form data to initial empty state
+        setFormData(getInitialFormData());
+
+        // Reset to step 0
+        setActiveStep(0);
+
+        console.log("BusinessSetupController - Reset for NEW business creation");
+      };
+
+      resetForm();
+    }, [])
+  );
+
   useEffect(() => {
-    const fetchUid = async () => {
+    const initializeBusinessSetup = async () => {
       const uid = await AsyncStorage.getItem("user_uid");
       console.log("user_uid", uid);
       if (!uid) {
@@ -86,11 +113,22 @@ export default function BusinessSetupController({ navigation }) {
         return;
       }
       setUserUid(uid);
-      // Clear any existing business form data for fresh start
+
+      // Always start fresh for new business creation
+      // Clear any existing business form data from AsyncStorage
       await AsyncStorage.removeItem("businessFormData");
+
+      // Reset form data to initial empty state
+      setFormData(getInitialFormData());
+
+      // Reset to step 0
+      setActiveStep(0);
+
+      console.log("BusinessSetupController - Initialized for NEW business creation");
       setLoading(false);
     };
-    fetchUid();
+
+    initializeBusinessSetup();
   }, []);
 
   const handleNext = () => {
@@ -159,6 +197,44 @@ export default function BusinessSetupController({ navigation }) {
 
   const submitBusinessData = async () => {
     try {
+      // Build payload object for logging
+      const payloadData = {
+        user_uid: userUid,
+        business_name: formData.businessName,
+        business_phone_number: formData.phoneNumber,
+        business_ein_number: formData.einNumber,
+        business_address_line_1: formData.addressLine1,
+        business_address_line_2: formData.addressLine2,
+        business_city: formData.city,
+        business_state: formData.state,
+        business_country: formData.country,
+        business_zip_code: formData.zip,
+        business_latitude: formData.latitude,
+        business_longitude: formData.longitude,
+        business_short_bio: formData.shortBio,
+        business_tag_line: formData.tagLine,
+        business_category_id: formData.businessCategoryId,
+        business_google_rating: formData.googleRating,
+        business_google_photos: JSON.stringify(formData.businessGooglePhotos),
+        business_price_level: formData.priceLevel,
+        business_google_id: formData.googleId,
+        business_yelp: formData.yelp,
+        business_website: formData.website,
+        business_is_active: formData.business_is_active,
+        business_email_id_is_public: formData.business_email_id_is_public,
+        business_phone_number_is_public: formData.business_phone_number_is_public,
+        business_tag_line_is_public: formData.business_tag_line_is_public,
+        business_short_bio_is_public: formData.business_short_bio_is_public,
+        business_images_is_public: formData.business_images_is_public,
+        business_banner_ads_is_public: formData.business_banner_ad_is_public,
+        business_services_is_public: formData.business_services_is_public,
+        business_owners_is_public: formData.business_owners_is_public,
+        business_services: JSON.stringify(formData.business_services || []),
+        business_images_url: formData.images && formData.images.length > 0 ? `[${formData.images.length} user-uploaded image(s)]` : "[]",
+        user_uploaded_images_count: formData.images ? formData.images.length : 0,
+      };
+
+      // Create FormData and append all fields
       const data = new FormData();
       data.append("user_uid", userUid);
       data.append("business_name", formData.businessName);
@@ -207,35 +283,98 @@ export default function BusinessSetupController({ navigation }) {
       // Add business_services array as JSON string
       data.append("business_services", JSON.stringify(formData.business_services || []));
 
-      // Print the endpoint and the entire payload
-      console.log("BusinessProfileApi endpoint:", BusinessProfileApi);
-      console.log("Full FormData payload:");
+      // Append user-uploaded images as files
+      if (formData.images && formData.images.length > 0) {
+        const userImageFilenames = [];
+        formData.images.forEach((imageUri, index) => {
+          if (imageUri && (imageUri.startsWith("file://") || imageUri.startsWith("content://"))) {
+            const uriParts = imageUri.split(".");
+            const fileType = uriParts[uriParts.length - 1] || "jpg";
+            const fileName = `business_image_${index}.${fileType}`;
+            userImageFilenames.push(fileName);
+            // Backend expects business_img_0, business_img_1, etc. in request.files
+            data.append(`business_img_${index}`, {
+              uri: imageUri,
+              type: `image/${fileType}`,
+              name: fileName,
+            });
+          }
+        });
+        // Send the filenames as business_images_url
+        if (userImageFilenames.length > 0) {
+          data.append("business_images_url", JSON.stringify(userImageFilenames));
+        }
+      }
+
+      // ============================================
+      // CONSOLE LOGS FOR DEBUGGING / POSTMAN TESTING
+      // ============================================
+      console.log("============================================");
+      console.log("📡 BUSINESS INFO API REQUEST");
+      console.log("============================================");
+      console.log("🔗 ENDPOINT:", BusinessProfileApi);
+      console.log("📝 METHOD: POST");
+      console.log("============================================");
+      console.log("📦 FORM DATA (Key-Value Pairs for Postman):");
+      console.log("============================================");
+
+      // Log as key-value pairs for easy Postman copy-paste
+      Object.entries(payloadData).forEach(([key, value]) => {
+        const displayValue = typeof value === "object" ? JSON.stringify(value) : String(value);
+        console.log(`${key}: ${displayValue}`);
+      });
+
+      console.log("============================================");
+      console.log("📋 AS JSON (for Postman body - form-data):");
+      console.log("============================================");
+      console.log(JSON.stringify(payloadData, null, 2));
+
+      console.log("============================================");
+      console.log("📋 RAW FORM DATA PARTS:");
+      console.log("============================================");
       if (data && data._parts) {
         data._parts.forEach(([key, value]) => {
           console.log(`${key}:`, value);
         });
       }
+      console.log("============================================");
 
-      console.log("BusinessProfileApi", BusinessProfileApi);
       const response = await fetch(BusinessProfileApi, {
         method: "POST",
         body: data,
       });
 
       const result = await response.json();
+
+      // Log response details
+      console.log("============================================");
+      console.log("📥 API RESPONSE");
+      console.log("============================================");
+      console.log("📊 STATUS:", response.status, response.statusText);
+      console.log("📋 RESPONSE BODY:");
+      console.log(JSON.stringify(result, null, 2));
+      console.log("============================================");
+
       if (response.ok) {
         // Clear any cached profile data to force refresh
         await AsyncStorage.removeItem("cachedProfileData");
 
+        console.log("✅ Business created successfully");
+        console.log("🆔 Business UID:", result.business_uid);
         navigation.navigate("BusinessProfile", { business_uid: result.business_uid });
         // navigation.navigate('BusinessProfile');
-
-        console.log("Business created successfully");
-        console.log("result", result);
       } else {
+        console.error("❌ Business creation failed:", result.message || "Unknown error");
         throw new Error(result.message || "Business creation failed.");
       }
     } catch (error) {
+      console.error("============================================");
+      console.error("❌ ERROR IN BUSINESS CREATION");
+      console.error("============================================");
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      console.error("Full error:", error);
+      console.error("============================================");
       Alert.alert("Submission Error", error.message);
     }
   };

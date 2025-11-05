@@ -1,6 +1,6 @@
 // SearchScreen.js
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList, ActivityIndicator, Alert, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList, ActivityIndicator, Alert, Dimensions, Modal } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
@@ -101,6 +101,25 @@ export default function SearchScreen({ route }) {
   const [results, setResults] = useState(initialResults);
   const [loading, setLoading] = useState(false);
 
+  // Filter states
+  const [distance, setDistance] = useState(null);
+  const [network, setNetwork] = useState(null);
+  const [bounty, setBounty] = useState(null);
+  const [rating, setRating] = useState(null);
+
+  // Modal visibility states
+  const [distanceModalVisible, setDistanceModalVisible] = useState(false);
+  const [networkModalVisible, setNetworkModalVisible] = useState(false);
+  const [bountyModalVisible, setBountyModalVisible] = useState(false);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Filter options (same as FilterScreen)
+  const distanceOptions = [5, 10, 15, 25, 50, 100];
+  const networkOptions = [1, 2, 3, 4, 5];
+  const bountyOptions = ["Any", "Low", "Medium", "High"];
+  const ratingOptions = ["> 1", "> 2", "> 3", "> 4", "> 4.5", "> 4.6", "> 4.8"];
+
   const onSearch = async () => {
     const q = searchQuery.trim();
     if (!q) return;
@@ -108,11 +127,18 @@ export default function SearchScreen({ route }) {
     console.log("🔍 User searched for:", q);
     console.log("🔍 Search query length:", q.length);
     console.log("🔍 Search query type:", typeof q);
+    console.log("🔍 Rating filter:", rating);
 
     setLoading(true);
     try {
-      // Try the v1 API endpoint to match other endpoints in the app
-      const apiUrl = `${BUSINESS_RESULTS_ENDPOINT}?q=${encodeURIComponent(q)}`;
+      // Build the API URL with query parameter
+      let apiUrl = `${BUSINESS_RESULTS_ENDPOINT}?q=${encodeURIComponent(q)}`;
+
+      // Add min_rating parameter if rating filter is set
+      if (rating !== null) {
+        apiUrl += `&min_rating=${rating}`;
+      }
+
       // const apiUrl = `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       // const apiUrl = `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
@@ -243,6 +269,38 @@ export default function SearchScreen({ route }) {
     setResults([]);
   };
 
+  // Render option item for modals
+  const renderOptionItem = (options, selectedValue, onSelect, isRating = false) => {
+    return ({ item }) => {
+      let isSelected = false;
+      if (isRating) {
+        // For rating, compare the string format
+        const selectedStr = selectedValue !== null ? `> ${selectedValue}` : null;
+        isSelected = item === selectedStr;
+      } else if (typeof item === "string") {
+        isSelected = item === selectedValue;
+      } else {
+        isSelected = selectedValue === item;
+      }
+
+      return (
+        <TouchableOpacity
+          style={[styles.optionItem, isSelected && styles.selectedOption, darkMode && styles.darkOptionItem, darkMode && isSelected && styles.darkSelectedOption]}
+          onPress={() => {
+            if (isRating) {
+              onSelect(parseFloat(item.slice(1).trim()));
+            } else {
+              onSelect(item);
+            }
+          }}
+        >
+          <Text style={[styles.optionText, isSelected && styles.selectedOptionText, darkMode && styles.darkOptionText, darkMode && isSelected && styles.darkSelectedOptionText]}>{item}</Text>
+          {isSelected && <Ionicons name='checkmark' size={24} color={darkMode ? "#9C45F7" : "#9C45F7"} />}
+        </TouchableOpacity>
+      );
+    };
+  };
+
   const renderStars = (rating) => {
     return (
       <View style={{ flexDirection: "row" }}>
@@ -371,10 +429,96 @@ export default function SearchScreen({ route }) {
             <TouchableOpacity style={[styles.searchButton, darkMode && styles.darkSearchButton]} onPress={onSearch}>
               <Ionicons name='search' size={22} color={darkMode ? "#ffffff" : "#000000"} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.filterButton, darkMode && styles.darkFilterButton]} onPress={() => navigation.navigate("Filters")}>
+            <TouchableOpacity style={[styles.filterButton, darkMode && styles.darkFilterButton]} onPress={() => setShowFilters(!showFilters)}>
               <MaterialIcons name='filter-list' size={22} color={darkMode ? "#ffffff" : "#000000"} />
             </TouchableOpacity>
           </View>
+
+          {/* Filter Buttons */}
+          {showFilters && (
+            <View style={styles.filterButtonsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButtonOption,
+                  darkMode && styles.darkFilterButtonOption,
+                  distance !== null && styles.activeFilterButton,
+                  darkMode && distance !== null && styles.darkActiveFilterButton,
+                ]}
+                onPress={() => setDistanceModalVisible(true)}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    darkMode && styles.darkFilterButtonText,
+                    distance !== null && styles.activeFilterButtonText,
+                    darkMode && distance !== null && styles.darkActiveFilterButtonText,
+                  ]}
+                >
+                  {distance !== null ? `${distance} mi` : "Distance"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButtonOption,
+                  darkMode && styles.darkFilterButtonOption,
+                  network !== null && styles.activeFilterButton,
+                  darkMode && network !== null && styles.darkActiveFilterButton,
+                ]}
+                onPress={() => setNetworkModalVisible(true)}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    darkMode && styles.darkFilterButtonText,
+                    network !== null && styles.activeFilterButtonText,
+                    darkMode && network !== null && styles.darkActiveFilterButtonText,
+                  ]}
+                >
+                  {network !== null ? network : "Network"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButtonOption,
+                  darkMode && styles.darkFilterButtonOption,
+                  bounty !== null && styles.activeFilterButton,
+                  darkMode && bounty !== null && styles.darkActiveFilterButton,
+                ]}
+                onPress={() => setBountyModalVisible(true)}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    darkMode && styles.darkFilterButtonText,
+                    bounty !== null && styles.activeFilterButtonText,
+                    darkMode && bounty !== null && styles.darkActiveFilterButtonText,
+                  ]}
+                >
+                  {bounty !== null ? bounty : "Bounty"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButtonOption,
+                  darkMode && styles.darkFilterButtonOption,
+                  rating !== null && styles.activeFilterButton,
+                  darkMode && rating !== null && styles.darkActiveFilterButton,
+                ]}
+                onPress={() => setRatingModalVisible(true)}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    darkMode && styles.darkFilterButtonText,
+                    rating !== null && styles.activeFilterButtonText,
+                    darkMode && rating !== null && styles.darkActiveFilterButtonText,
+                  ]}
+                >
+                  {rating !== null ? `> ${rating}` : "Rating"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={[styles.tableHeader, darkMode && styles.darkTableHeader]}>
             <Text style={[styles.tableHeaderText, darkMode && styles.darkTableHeaderText]}>Company</Text>
@@ -397,6 +541,153 @@ export default function SearchScreen({ route }) {
             <Text style={[styles.bannerAdText, darkMode && styles.darkBannerAdText]}>Relevant Banner Ad</Text>
           </View>
         </View>
+
+        {/* Distance Selection Modal */}
+        <Modal animationType='slide' transparent={true} visible={distanceModalVisible} onRequestClose={() => setDistanceModalVisible(false)}>
+          <SafeAreaView style={[styles.modalContainer, darkMode && styles.darkModalContainer]}>
+            <View style={[styles.modalContent, darkMode && styles.darkModalContent]}>
+              <View style={[styles.modalHeader, darkMode && styles.darkModalHeader]}>
+                <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Select Distance</Text>
+                <TouchableOpacity onPress={() => setDistanceModalVisible(false)}>
+                  <Ionicons name='close' size={28} color={darkMode ? "#ffffff" : "#333"} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={[styles.resetOption, darkMode && styles.darkResetOption]}
+                onPress={() => {
+                  setDistance(null);
+                  setDistanceModalVisible(false);
+                }}
+              >
+                <Text style={[styles.resetOptionText, darkMode && styles.darkResetOptionText]}>Reset</Text>
+              </TouchableOpacity>
+              <FlatList
+                data={distanceOptions.map((d) => `${d} mi`)}
+                renderItem={({ item }) => {
+                  const isSelected = distance !== null && item === `${distance} mi`;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.optionItem, isSelected && styles.selectedOption, darkMode && styles.darkOptionItem, darkMode && isSelected && styles.darkSelectedOption]}
+                      onPress={() => {
+                        const value = parseInt(item.replace(" mi", ""));
+                        setDistance(value);
+                        setDistanceModalVisible(false);
+                      }}
+                    >
+                      <Text style={[styles.optionText, isSelected && styles.selectedOptionText, darkMode && styles.darkOptionText, darkMode && isSelected && styles.darkSelectedOptionText]}>
+                        {item}
+                      </Text>
+                      {isSelected && <Ionicons name='checkmark' size={24} color={darkMode ? "#9C45F7" : "#9C45F7"} />}
+                    </TouchableOpacity>
+                  );
+                }}
+                keyExtractor={(item) => item.toString()}
+                style={styles.optionsList}
+              />
+            </View>
+          </SafeAreaView>
+        </Modal>
+
+        {/* Network Selection Modal */}
+        <Modal animationType='slide' transparent={true} visible={networkModalVisible} onRequestClose={() => setNetworkModalVisible(false)}>
+          <SafeAreaView style={[styles.modalContainer, darkMode && styles.darkModalContainer]}>
+            <View style={[styles.modalContent, darkMode && styles.darkModalContent]}>
+              <View style={[styles.modalHeader, darkMode && styles.darkModalHeader]}>
+                <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Select Network</Text>
+                <TouchableOpacity onPress={() => setNetworkModalVisible(false)}>
+                  <Ionicons name='close' size={28} color={darkMode ? "#ffffff" : "#333"} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={[styles.resetOption, darkMode && styles.darkResetOption]}
+                onPress={() => {
+                  setNetwork(null);
+                  setNetworkModalVisible(false);
+                }}
+              >
+                <Text style={[styles.resetOptionText, darkMode && styles.darkResetOptionText]}>Reset</Text>
+              </TouchableOpacity>
+              <FlatList
+                data={networkOptions}
+                renderItem={renderOptionItem(networkOptions, network, (value) => {
+                  setNetwork(value);
+                  setNetworkModalVisible(false);
+                })}
+                keyExtractor={(item) => item.toString()}
+                style={styles.optionsList}
+              />
+            </View>
+          </SafeAreaView>
+        </Modal>
+
+        {/* Bounty Selection Modal */}
+        <Modal animationType='slide' transparent={true} visible={bountyModalVisible} onRequestClose={() => setBountyModalVisible(false)}>
+          <SafeAreaView style={[styles.modalContainer, darkMode && styles.darkModalContainer]}>
+            <View style={[styles.modalContent, darkMode && styles.darkModalContent]}>
+              <View style={[styles.modalHeader, darkMode && styles.darkModalHeader]}>
+                <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Select Bounty</Text>
+                <TouchableOpacity onPress={() => setBountyModalVisible(false)}>
+                  <Ionicons name='close' size={28} color={darkMode ? "#ffffff" : "#333"} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={[styles.resetOption, darkMode && styles.darkResetOption]}
+                onPress={() => {
+                  setBounty(null);
+                  setBountyModalVisible(false);
+                }}
+              >
+                <Text style={[styles.resetOptionText, darkMode && styles.darkResetOptionText]}>Reset</Text>
+              </TouchableOpacity>
+              <FlatList
+                data={bountyOptions}
+                renderItem={renderOptionItem(bountyOptions, bounty, (value) => {
+                  setBounty(value);
+                  setBountyModalVisible(false);
+                })}
+                keyExtractor={(item) => item.toString()}
+                style={styles.optionsList}
+              />
+            </View>
+          </SafeAreaView>
+        </Modal>
+
+        {/* Rating Selection Modal */}
+        <Modal animationType='slide' transparent={true} visible={ratingModalVisible} onRequestClose={() => setRatingModalVisible(false)}>
+          <SafeAreaView style={[styles.modalContainer, darkMode && styles.darkModalContainer]}>
+            <View style={[styles.modalContent, darkMode && styles.darkModalContent]}>
+              <View style={[styles.modalHeader, darkMode && styles.darkModalHeader]}>
+                <Text style={[styles.modalTitle, darkMode && styles.darkModalTitle]}>Select Rating</Text>
+                <TouchableOpacity onPress={() => setRatingModalVisible(false)}>
+                  <Ionicons name='close' size={28} color={darkMode ? "#ffffff" : "#333"} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={[styles.resetOption, darkMode && styles.darkResetOption]}
+                onPress={() => {
+                  setRating(null);
+                  setRatingModalVisible(false);
+                }}
+              >
+                <Text style={[styles.resetOptionText, darkMode && styles.darkResetOptionText]}>Reset</Text>
+              </TouchableOpacity>
+              <FlatList
+                data={ratingOptions}
+                renderItem={renderOptionItem(
+                  ratingOptions,
+                  rating !== null ? `> ${rating}` : null,
+                  (value) => {
+                    setRating(value);
+                    setRatingModalVisible(false);
+                  },
+                  true
+                )}
+                keyExtractor={(item) => item.toString()}
+                style={styles.optionsList}
+              />
+            </View>
+          </SafeAreaView>
+        </Modal>
 
         {/* Bottom Navigation Bar */}
         <BottomNavBar navigation={navigation} />
@@ -542,6 +833,97 @@ const styles = StyleSheet.create({
   },
   bannerAdText: { fontSize: 16, fontWeight: "bold" },
 
+  // Filter buttons container
+  filterButtonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 15,
+    gap: 10,
+  },
+  filterButtonOption: {
+    backgroundColor: "#f0f0f0",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    minWidth: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
+  activeFilterButton: {
+    backgroundColor: "#8b58f9",
+  },
+  activeFilterButtonText: {
+    color: "#fff",
+  },
+
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+    maxHeight: "70%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  resetOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    backgroundColor: "#f8f8f8",
+  },
+  resetOptionText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#9C45F7",
+    textAlign: "center",
+  },
+  optionsList: {
+    paddingHorizontal: 20,
+  },
+  optionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  selectedOption: {
+    backgroundColor: "#f8f0ff",
+  },
+  optionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  selectedOptionText: {
+    color: "#9C45F7",
+    fontWeight: "500",
+  },
+
   // Dark mode styles
   darkContainer: {
     backgroundColor: "#1a1a1a",
@@ -599,5 +981,50 @@ const styles = StyleSheet.create({
   },
   darkBannerAdText: {
     color: "#ffffff",
+  },
+  // Dark mode filter button styles
+  darkFilterButtonOption: {
+    backgroundColor: "#404040",
+  },
+  darkFilterButtonText: {
+    color: "#ffffff",
+  },
+  darkActiveFilterButton: {
+    backgroundColor: "#8b58f9",
+  },
+  darkActiveFilterButtonText: {
+    color: "#ffffff",
+  },
+  // Dark mode modal styles
+  darkModalContainer: {
+    backgroundColor: "rgba(0,0,0,0.7)",
+  },
+  darkModalContent: {
+    backgroundColor: "#2d2d2d",
+  },
+  darkModalHeader: {
+    borderBottomColor: "#404040",
+  },
+  darkModalTitle: {
+    color: "#ffffff",
+  },
+  darkResetOption: {
+    backgroundColor: "#404040",
+    borderBottomColor: "#404040",
+  },
+  darkResetOptionText: {
+    color: "#9C45F7",
+  },
+  darkOptionItem: {
+    borderBottomColor: "#404040",
+  },
+  darkSelectedOption: {
+    backgroundColor: "#3d2d4d",
+  },
+  darkOptionText: {
+    color: "#ffffff",
+  },
+  darkSelectedOptionText: {
+    color: "#9C45F7",
   },
 });
