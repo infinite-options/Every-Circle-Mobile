@@ -123,12 +123,20 @@ const ProfileScreen = ({ route, navigation }) => {
             isPublic: edu.profile_education_is_public === 1 || edu.isPublic === true,
           }))
         : [];
+      // Log business_info from API
+      console.log("ProfileScreen - apiUser.business_info (raw):", apiUser.business_info);
+      console.log("ProfileScreen - apiUser.business_info type:", typeof apiUser.business_info);
+
       userData.businesses = apiUser.business_info
         ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
             profile_business_uid: bus.business_uid || "",
             name: bus.business_name || "",
           }))
         : [];
+
+      console.log("ProfileScreen - userData.businesses (after mapping):", JSON.stringify(userData.businesses, null, 2));
+      console.log("ProfileScreen - userData.businesses.length:", userData.businesses.length);
+
       userData.expertise = apiUser.expertise_info
         ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
             profile_expertise_uid: exp.profile_expertise_uid || "",
@@ -159,8 +167,11 @@ const ProfileScreen = ({ route, navigation }) => {
 
       // Fetch business details for each business
       if (userData.businesses && userData.businesses.length > 0) {
+        console.log("ProfileScreen - Calling fetchBusinessesData with businesses:", userData.businesses);
         fetchBusinessesData(userData.businesses);
       } else {
+        console.log("ProfileScreen - No businesses found or empty array. Setting businessesData to []");
+        console.log("ProfileScreen - userData.businesses:", userData.businesses);
         setBusinessesData([]);
         setLoading(false);
       }
@@ -172,14 +183,27 @@ const ProfileScreen = ({ route, navigation }) => {
 
   const fetchBusinessesData = async (businesses) => {
     try {
+      console.log("ProfileScreen - fetchBusinessesData called with businesses:", JSON.stringify(businesses, null, 2));
+      console.log("ProfileScreen - Number of businesses to fetch:", businesses.length);
+
       const businessPromises = businesses.map(async (bus) => {
-        if (!bus.profile_business_uid) return null;
+        console.log("ProfileScreen - Processing business:", bus);
+        if (!bus.profile_business_uid) {
+          console.log("ProfileScreen - Skipping business - no profile_business_uid:", bus);
+          return null;
+        }
 
         try {
-          const response = await fetch(`${BUSINESS_INFO_ENDPOINT}/${bus.profile_business_uid}`);
+          const businessEndpoint = `${BUSINESS_INFO_ENDPOINT}/${bus.profile_business_uid}`;
+          console.log("ProfileScreen - Fetching business from:", businessEndpoint);
+          const response = await fetch(businessEndpoint);
           const result = await response.json();
+          console.log("ProfileScreen - Business API response for", bus.profile_business_uid, ":", JSON.stringify(result, null, 2));
 
-          if (!result || !result.business) return null;
+          if (!result || !result.business) {
+            console.log("ProfileScreen - No business data in response for", bus.profile_business_uid);
+            return null;
+          }
 
           const rawBusiness = result.business;
 
@@ -228,9 +252,11 @@ const ProfileScreen = ({ route, navigation }) => {
             business_address_line_1: rawBusiness.business_address_line_1 || "",
             business_zip_code: rawBusiness.business_zip_code || "",
             business_phone_number: rawBusiness.business_phone_number || "",
+            business_email: rawBusiness.business_email_id || "",
             business_website: rawBusiness.business_website || "",
             first_image: businessImages && businessImages.length > 0 ? businessImages[0] : null,
-            phoneIsPublic: rawBusiness.phone_is_public === "1",
+            phoneIsPublic: rawBusiness.business_phone_number_is_public === "1" || rawBusiness.phone_is_public === "1",
+            emailIsPublic: rawBusiness.business_email_id_is_public === "1" || rawBusiness.email_is_public === "1",
             business_uid: rawBusiness.business_uid || "",
           };
         } catch (error) {
@@ -240,9 +266,13 @@ const ProfileScreen = ({ route, navigation }) => {
       });
 
       const fetchedBusinesses = await Promise.all(businessPromises);
-      setBusinessesData(fetchedBusinesses.filter(Boolean));
+      console.log("ProfileScreen - Fetched businesses (before filter):", JSON.stringify(fetchedBusinesses, null, 2));
+      const validBusinesses = fetchedBusinesses.filter(Boolean);
+      console.log("ProfileScreen - Valid businesses (after filter):", JSON.stringify(validBusinesses, null, 2));
+      console.log("ProfileScreen - Setting businessesData with", validBusinesses.length, "businesses");
+      setBusinessesData(validBusinesses);
     } catch (error) {
-      console.error("Error fetching businesses data:", error);
+      console.error("ProfileScreen - Error fetching businesses data:", error);
       setBusinessesData([]);
     } finally {
       setLoading(false);
@@ -357,6 +387,11 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         {/* Only show Businesses section if there are businesses */}
+        {(() => {
+          console.log("ProfileScreen - Rendering businesses section. businessesData:", businessesData);
+          console.log("ProfileScreen - businessesData.length:", businessesData?.length);
+          return null;
+        })()}
         {businessesData && businessesData.length > 0 && (
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, darkMode && styles.darkLabel]}>Businesses:</Text>

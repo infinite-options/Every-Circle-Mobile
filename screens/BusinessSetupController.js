@@ -250,7 +250,7 @@ export default function BusinessSetupController({ navigation, route }) {
       data.append("business_longitude", formData.longitude);
       data.append("business_short_bio", formData.shortBio);
       data.append("business_tag_line", formData.tagLine);
-      // data.append('business_role', formData.businessRole);
+      data.append("business_role", formData.businessRole);
       data.append("business_category_id", formData.businessCategoryId);
       // data.append('business_google_photos', JSON.stringify(formData.images));
       // data.append('business_tags', JSON.stringify(formData.customTags));

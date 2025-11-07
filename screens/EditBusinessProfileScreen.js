@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView,
 import * as ImagePicker from "expo-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import ProductCard from "../components/ProductCard";
@@ -26,10 +27,10 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     country: business?.business_country || "",
     zip: business?.business_zip_code || "",
     phone: business?.business_phone_number || "",
-    email: business?.business_email || "",
+    email: business?.business_email_id || business?.business_email || "",
     category: business?.business_category || "",
-    tagline: business?.tagline || "",
-    shortBio: business?.business_short_bio || "",
+    tagline: business?.business_tag_line || business?.tagline || "",
+    shortBio: business?.business_short_bio || business?.short_bio || "",
     businessRole: business?.business_role || "",
     einNumber: business?.business_ein_number || "",
     website: business?.business_website || "",
@@ -42,10 +43,10 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       linkedin: business?.linkedin || "",
       youtube: business?.youtube || "",
     },
-    emailIsPublic: business?.email_is_public === "1",
-    phoneIsPublic: business?.phone_is_public === "1",
-    taglineIsPublic: business?.tagline_is_public === "1",
-    shortBioIsPublic: business?.short_bio_is_public === "1",
+    emailIsPublic: business?.business_email_id_is_public === "1" || business?.email_is_public === "1" || business?.emailIsPublic === true,
+    phoneIsPublic: business?.business_phone_number_is_public === "1" || business?.phone_is_public === "1" || business?.phoneIsPublic === true,
+    taglineIsPublic: business?.business_tag_line_is_public === "1" || business?.tagline_is_public === "1" || business?.taglineIsPublic === true,
+    shortBioIsPublic: business?.business_short_bio_is_public === "1" || business?.short_bio_is_public === "1" || business?.shortBioIsPublic === true,
   });
 
   const [customTagInput, setCustomTagInput] = useState("");
@@ -70,7 +71,15 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     }
 
     try {
+      // Retrieve user_uid from AsyncStorage
+      const userUid = await AsyncStorage.getItem("user_uid");
+      if (!userUid) {
+        Alert.alert("Error", "User UID not found. Please log in again.");
+        return;
+      }
+
       const payload = new FormData();
+      payload.append("user_uid", userUid);
       payload.append("business_uid", businessUID);
       payload.append("business_name", formData.name);
       payload.append("business_address_line_1", formData.location);
@@ -215,8 +224,16 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       payload.append("business_services", JSON.stringify(servicesToSend));
 
       console.log("FormData to be submitted:");
+      console.log("🔍 user_uid:", userUid);
+      console.log("🔍 business_role value:", formData.businessRole);
+      console.log("🔍 business_role type:", typeof formData.businessRole);
       for (let pair of payload.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
+        // Skip file objects to avoid logging large binary data
+        if (typeof pair[1] === "object" && pair[1]?.uri) {
+          console.log(`${pair[0]}: [FILE] ${pair[1].name || "image"}`);
+        } else {
+          console.log(`${pair[0]}: ${pair[1]}`);
+        }
       }
 
       // console.log("Before API Call:", payload);
@@ -342,6 +359,9 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     business_short_bio: formData.shortBio,
     business_phone_number: formData.phone,
     business_email: formData.email,
+    business_email_id: formData.email,
+    phoneIsPublic: formData.phoneIsPublic,
+    emailIsPublic: formData.emailIsPublic,
   };
 
   const renderCustomTagsSection = () => (
