@@ -90,6 +90,22 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
     // loadSavedForm();
   }, []);
 
+  const formatEINNumber = (text) => {
+    // Remove all non-numeric characters
+    const cleaned = text.replace(/\D/g, "");
+
+    // Limit to 9 digits (2 + 7)
+    if (cleaned.length > 9) {
+      return text.slice(0, -1);
+    }
+
+    // Format based on length: ##-#######
+    if (cleaned.length === 0) return "";
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 9) return `${cleaned.slice(0, 2)}-${cleaned.slice(2)}`;
+    return text;
+  };
+
   const updateFormData = (field, value) => {
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
@@ -282,9 +298,11 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
               <TextInput
                 style={[styles.input, darkMode && styles.darkInput]}
                 value={formData.einNumber || ""}
-                placeholder='Enter EIN number'
+                placeholder='##-#######'
                 placeholderTextColor={darkMode ? "#cccccc" : "#666"}
-                onChangeText={(text) => updateFormData("einNumber", text)}
+                keyboardType='numeric'
+                maxLength={10}
+                onChangeText={(text) => updateFormData("einNumber", formatEINNumber(text))}
               />
             </View>
           </ScrollView>
