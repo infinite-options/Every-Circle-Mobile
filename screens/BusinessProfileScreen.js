@@ -25,6 +25,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
   const [userReview, setUserReview] = useState(null);
   const [allReviews, setAllReviews] = useState([]);
   const [currentUserProfileId, setCurrentUserProfileId] = useState(null);
+  const [businessUsers, setBusinessUsers] = useState([]);
 
   // Load cart items when component mounts
   useEffect(() => {
@@ -109,7 +110,9 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
       const rawBusiness = result.business;
       console.log("BusinessProfileScreen - business_role in rawBusiness:", rawBusiness?.business_role);
+      console.log("BusinessProfileScreen - bu_role in rawBusiness:", rawBusiness?.bu_role);
       console.log("BusinessProfileScreen - All business fields:", Object.keys(rawBusiness || {}));
+      console.log("BusinessProfileScreen - Full rawBusiness object:", JSON.stringify(rawBusiness, null, 2));
 
       // Handle social_links - now it's an array of objects
       let socialLinksData = {};
@@ -252,7 +255,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
         business_phone_number: rawBusiness.business_phone_number || "",
         tagline: rawBusiness.business_tag_line || rawBusiness.tagline || "",
         business_short_bio: rawBusiness.business_short_bio || rawBusiness.short_bio || "",
-        business_role: rawBusiness.business_role || rawBusiness.role || "",
+        business_role: rawBusiness.business_role || rawBusiness.role || rawBusiness.bu_role || "",
         business_ein_number: rawBusiness.business_ein_number || "",
         ein_number: rawBusiness.business_ein_number || "", // Alias for display
         facebook: socialLinksData.facebook || "",
@@ -292,6 +295,14 @@ export default function BusinessProfileScreen({ route, navigation }) {
       };
 
       setBusiness(businessWithRatings);
+
+      // Store business_users if available
+      if (result.business_users && Array.isArray(result.business_users)) {
+        console.log("BusinessProfileScreen - business_users:", JSON.stringify(result.business_users, null, 2));
+        setBusinessUsers(result.business_users);
+      } else {
+        setBusinessUsers([]);
+      }
     } catch (err) {
       console.error("Error fetching business data:", err);
     } finally {
@@ -338,7 +349,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
         if (userData && userData.business_info) {
           const businessInfo = typeof userData.business_info === "string" ? JSON.parse(userData.business_info) : userData.business_info;
-          console.log("BusinessProfileScreen - business_info array:", JSON.stringify(businessInfo, null, 2));
+          // console.log("BusinessProfileScreen - business_info array:", JSON.stringify(businessInfo, null, 2));
 
           const isBusinessOwner = businessInfo.some((biz) => {
             const matches = biz.business_uid === business_uid || biz.profile_business_business_id === business_uid;
@@ -507,6 +518,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
                 navigation.navigate("EditBusinessProfile", {
                   business: business,
                   business_uid: business_uid,
+                  business_users: businessUsers,
                 })
               }
             >
@@ -574,10 +586,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
             </View>
           )}
 
-          {(business.business_role || business.role) && (
+          {(business.business_role || business.role || business.bu_role) && (
             <View style={styles.infoRow}>
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Role:</Text>
-              <Text style={[styles.value, darkMode && styles.darkValue]}>{business.business_role || business.role}</Text>
+              <Text style={[styles.value, darkMode && styles.darkValue]}>{business.business_role || business.role || business.bu_role}</Text>
             </View>
           )}
 
@@ -679,6 +691,32 @@ export default function BusinessProfileScreen({ route, navigation }) {
               ))}
             </ScrollView>
             {business.images.length === 0 && <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No compatible images available</Text>}
+          </View>
+        )}
+
+        {/* Business Editors/Owners Section - Only visible to owners/editors */}
+        {isOwner && businessUsers.length > 0 && (
+          <View style={[styles.card, darkMode && styles.darkCard]}>
+            <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Editors & Owners</Text>
+            {businessUsers.map((businessUser, index) => {
+              // Format user data for MiniCard component
+              const userForMiniCard = {
+                firstName: businessUser.first_name || "",
+                lastName: businessUser.last_name || "",
+                email: businessUser.user_email || "",
+                profileImage: businessUser.profile_photo || "",
+                // Note: We don't have visibility flags from business_users, so we'll show email/phone if they exist
+                emailIsPublic: true, // Assume public since we're showing to owners/editors
+                phoneIsPublic: false, // No phone in business_users data
+                phoneNumber: "", // No phone in business_users data
+              };
+              return (
+                <View key={businessUser.business_user_id || index} style={[styles.businessUserCard, darkMode && styles.darkBusinessUserCard]}>
+                  <MiniCard user={userForMiniCard} />
+                  <Text style={[styles.businessUserRole, darkMode && styles.darkBusinessUserRole]}>Role: {businessUser.business_role || "N/A"}</Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -1334,6 +1372,24 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   darkReviewMetadataText: {
+    color: "#cccccc",
+  },
+  businessUserCard: {
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  businessUserRole: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 8,
+    fontStyle: "italic",
+  },
+  darkBusinessUserCard: {
+    borderBottomColor: "#404040",
+  },
+  darkBusinessUserRole: {
     color: "#cccccc",
   },
 });
