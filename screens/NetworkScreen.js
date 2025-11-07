@@ -1,18 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-  TextInput,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, TextInput } from "react-native";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
+import { API_BASE_URL } from "../apiConfig";
 
 const NetworkScreen = ({ navigation }) => {
   const { darkMode } = useDarkMode();
@@ -52,27 +44,58 @@ const NetworkScreen = ({ navigation }) => {
   };
 
   const fetchNetwork = async () => {
+    console.log("============================================");
+    console.log("🔘 Fetch Button Clicked");
+    console.log("============================================");
+
     if (!profileUid || !degree) {
-      setError("Missing profile UID or degree value");
+      const errorMsg = "Missing profile UID or degree value";
+      console.log("❌ Error:", errorMsg);
+      console.log("Profile UID:", profileUid);
+      console.log("Degree:", degree);
+      setError(errorMsg);
       return;
     }
 
     setLoading(true);
     setError(null);
 
+    // Construct endpoint using base URL
+    const endpoint = `${API_BASE_URL}/api/network/${profileUid}/${degree}`;
+
+    console.log("🔗 Endpoint:", endpoint);
+    console.log("📋 Profile UID:", profileUid);
+    console.log("📋 Degree:", degree);
+    console.log("📋 Base URL:", API_BASE_URL);
+    console.log("============================================");
+
     try {
-      const response = await fetch(
-        `http://192.168.4.51:4090/api/network/${profileUid}/${degree}`
-      );
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      console.log("📡 Making fetch request...");
+      const response = await fetch(endpoint);
+
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response ok:", response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Response error:", errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
+      console.log("✅ Network data received:", JSON.stringify(data, null, 2));
+      console.log("✅ Data count:", Array.isArray(data) ? data.length : "Not an array");
+
       setNetworkData(data);
       setGroupedNetwork(groupByDegree(data));
     } catch (err) {
-      console.error("Network fetch failed:", err);
-      setError("Failed to fetch network data");
+      console.error("❌ Network fetch failed:", err);
+      console.error("❌ Error message:", err.message);
+      console.error("❌ Error stack:", err.stack);
+      setError(`Failed to fetch network data: ${err.message}`);
     } finally {
       setLoading(false);
+      console.log("============================================");
     }
   };
 
@@ -88,41 +111,20 @@ const NetworkScreen = ({ navigation }) => {
       <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
         {/* Header */}
         <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
-          <Text style={[styles.header, darkMode && styles.darkHeader]}>
-            Network
-          </Text>
+          <Text style={[styles.header, darkMode && styles.darkHeader]}>Network</Text>
         </View>
 
-        <ScrollView
-          contentContainerStyle={[
-            styles.contentCard,
-            darkMode && styles.darkContentCard,
-          ]}
-        >
+        <ScrollView contentContainerStyle={[styles.contentCard, darkMode && styles.darkContentCard]}>
           {/* AsyncStorage Debug Info */}
           <View>
-            <Text
-              style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}
-            >
-              AsyncStorage Contents:
-            </Text>
+            <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>AsyncStorage Contents:</Text>
             {storageData.length === 0 ? (
-              <Text
-                style={[styles.noDataText, darkMode && styles.darkNoDataText]}
-              >
-                No data in AsyncStorage.
-              </Text>
+              <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No data in AsyncStorage.</Text>
             ) : (
               storageData.map(([key, value]) => (
                 <View key={key} style={{ marginBottom: 8 }}>
-                  <Text style={[styles.keyText, darkMode && styles.darkKeyText]}>
-                    {key}:
-                  </Text>
-                  <Text
-                    style={[styles.valueText, darkMode && styles.darkValueText]}
-                  >
-                    {value}
-                  </Text>
+                  <Text style={[styles.keyText, darkMode && styles.darkKeyText]}>{key}:</Text>
+                  <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{value}</Text>
                 </View>
               ))
             )}
@@ -130,30 +132,18 @@ const NetworkScreen = ({ navigation }) => {
 
           {/* Network Fetch Section */}
           <View style={{ marginTop: 20 }}>
-            <Text
-              style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}
-            >
-              User Network:
-            </Text>
-            <Text
-              style={[styles.valueText, darkMode && styles.darkValueText]}
-            >{`Profile UID: ${profileUid || "Not found"}`}</Text>
+            <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>User Network:</Text>
+            <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{`Profile UID: ${profileUid || "Not found"}`}</Text>
 
             <View style={styles.inputRow}>
               <TextInput
-                style={[
-                  styles.input,
-                  darkMode && { backgroundColor: "#444", color: "#fff" },
-                ]}
+                style={[styles.input, darkMode && { backgroundColor: "#444", color: "#fff" }]}
                 value={degree}
                 onChangeText={setDegree}
-                placeholder="Enter degree (e.g., 1 or 2)"
-                keyboardType="numeric"
+                placeholder='Enter degree (e.g., 1 or 2)'
+                keyboardType='numeric'
               />
-              <TouchableOpacity
-                style={styles.fetchButton}
-                onPress={fetchNetwork}
-              >
+              <TouchableOpacity style={styles.fetchButton} onPress={fetchNetwork}>
                 <Text style={styles.fetchButtonText}>Fetch</Text>
               </TouchableOpacity>
             </View>
@@ -166,24 +156,13 @@ const NetworkScreen = ({ navigation }) => {
                 marginVertical: 12,
               }}
             >
-              <TouchableOpacity
-                onPress={() =>
-                  setViewMode(viewMode === "list" ? "graph" : "list")
-                }
-                style={styles.toggleButton}
-              >
-                <Text style={styles.toggleButtonText}>
-                  {viewMode === "list" ? "View as Graph" : "View as List"}
-                </Text>
+              <TouchableOpacity onPress={() => setViewMode(viewMode === "list" ? "graph" : "list")} style={styles.toggleButton}>
+                <Text style={styles.toggleButtonText}>{viewMode === "list" ? "View as Graph" : "View as List"}</Text>
               </TouchableOpacity>
             </View>
 
-            {loading && <ActivityIndicator size="large" color="#8b58f9" />}
-            {error && (
-              <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>
-                {error}
-              </Text>
-            )}
+            {loading && <ActivityIndicator size='large' color='#8b58f9' />}
+            {error && <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>{error}</Text>}
 
             {/* =================== LIST VIEW =================== */}
             {viewMode === "list" ? (
@@ -192,47 +171,13 @@ const NetworkScreen = ({ navigation }) => {
               Object.keys(groupedNetwork).length > 0 &&
               Object.entries(groupedNetwork).map(([deg, list]) => (
                 <View key={deg} style={{ marginTop: 16 }}>
-                  <Text
-                    style={[
-                      styles.degreeHeader,
-                      darkMode && styles.darkDegreeHeader,
-                    ]}
-                  >
-                    {degreeLabel(Number(deg))}
-                  </Text>
+                  <Text style={[styles.degreeHeader, darkMode && styles.darkDegreeHeader]}>{degreeLabel(Number(deg))}</Text>
 
                   {list.map((item, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.networkCard,
-                        darkMode && styles.darkNetworkCard,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.networkText,
-                          darkMode && styles.darkNetworkText,
-                        ]}
-                      >
-                        Target UID: {item.target_uid}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.networkText,
-                          darkMode && styles.darkNetworkText,
-                        ]}
-                      >
-                        Connected UID: {item.network_profile_personal_uid}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.networkText,
-                          darkMode && styles.darkNetworkText,
-                        ]}
-                      >
-                        Degree: {item.degree}
-                      </Text>
+                    <View key={index} style={[styles.networkCard, darkMode && styles.darkNetworkCard]}>
+                      <Text style={[styles.networkText, darkMode && styles.darkNetworkText]}>Target UID: {item.target_uid}</Text>
+                      <Text style={[styles.networkText, darkMode && styles.darkNetworkText]}>Connected UID: {item.network_profile_personal_uid}</Text>
+                      <Text style={[styles.networkText, darkMode && styles.darkNetworkText]}>Degree: {item.degree}</Text>
                     </View>
                   ))}
                 </View>
@@ -240,17 +185,10 @@ const NetworkScreen = ({ navigation }) => {
             ) : (
               // =================== GRAPH VIEW ===================
               <View style={{ alignItems: "center", marginTop: 10 }}>
-                <Svg height="400" width="100%">
+                <Svg height='400' width='100%'>
                   {/* Center node */}
-                  <Circle cx="200" cy="200" r="25" fill="#8b58f9" />
-                  <SvgText
-                    x="200"
-                    y="205"
-                    fill="#fff"
-                    fontSize="10"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
+                  <Circle cx='200' cy='200' r='25' fill='#8b58f9' />
+                  <SvgText x='200' y='205' fill='#fff' fontSize='10' fontWeight='bold' textAnchor='middle'>
                     You
                   </SvgText>
 
@@ -262,31 +200,13 @@ const NetworkScreen = ({ navigation }) => {
                       const angle = (2 * Math.PI * index) / nodes;
                       const x = 200 + radius * Math.cos(angle);
                       const y = 200 + radius * Math.sin(angle);
-                      const color =
-                        i === 0
-                          ? "#b894ff"
-                          : i === 1
-                          ? "#d6b3ff"
-                          : "#e9d4ff";
+                      const color = i === 0 ? "#b894ff" : i === 1 ? "#d6b3ff" : "#e9d4ff";
 
                       return (
                         <React.Fragment key={`${deg}-${index}`}>
-                          <Line
-                            x1="200"
-                            y1="200"
-                            x2={x}
-                            y2={y}
-                            stroke="#ccc"
-                            strokeWidth="1"
-                          />
-                          <Circle cx={x} cy={y} r="15" fill={color} />
-                          <SvgText
-                            x={x}
-                            y={y + 4}
-                            fontSize="8"
-                            fill="#333"
-                            textAnchor="middle"
-                          >
+                          <Line x1='200' y1='200' x2={x} y2={y} stroke='#ccc' strokeWidth='1' />
+                          <Circle cx={x} cy={y} r='15' fill={color} />
+                          <SvgText x={x} y={y + 4} fontSize='8' fill='#333' textAnchor='middle'>
                             {node.network_profile_personal_uid}
                           </SvgText>
                         </React.Fragment>
@@ -297,15 +217,7 @@ const NetworkScreen = ({ navigation }) => {
               </View>
             )}
 
-            {!loading &&
-              !error &&
-              Object.keys(groupedNetwork).length === 0 && (
-                <Text
-                  style={[styles.noDataText, darkMode && styles.darkNoDataText]}
-                >
-                  No network connections found.
-                </Text>
-              )}
+            {!loading && !error && Object.keys(groupedNetwork).length === 0 && <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No network connections found.</Text>}
           </View>
         </ScrollView>
 
