@@ -18,7 +18,7 @@ export default function SearchScreen({ route }) {
   useEffect(() => {
     const loadCartItems = async () => {
       try {
-        console.log("Loading cart items...");
+        console.log("SearchScreen.js - Loading cart items...");
         // Get all keys from AsyncStorage
         const keys = await AsyncStorage.getAllKeys();
         // Filter keys that start with 'cart_'
@@ -89,6 +89,14 @@ export default function SearchScreen({ route }) {
     clearCartData();
   }, [route.params?.refreshCart]);
 
+  // Log results changes for debugging (runs only when results change, not on every render)
+  useEffect(() => {
+    if (!loading && results.length > 0) {
+      console.log("🎨 Rendering results:", results.length, "items");
+      console.log("🎨 Results array:", results);
+    }
+  }, [results, loading]);
+
   // --- stub initial data, so you see the four items by default ---
   const initialResults = [
     { id: "1", company: "ABC Plumbing", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
@@ -142,15 +150,12 @@ export default function SearchScreen({ route }) {
       // const apiUrl = `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       // const apiUrl = `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
-      console.log("🌐 API URL:", apiUrl);
-      console.log("🌐 BUSINESS_RESULTS_ENDPOINT:", BUSINESS_RESULTS_ENDPOINT);
-      console.log("🌐 SEARCH_BASE_URL:", SEARCH_BASE_URL);
 
       const res = await fetch(apiUrl);
 
-      console.log("📡 Response status:", res.status);
-      console.log("📡 Response headers:", res.headers);
-      console.log("📡 Content-Type:", res.headers.get("content-type"));
+      // console.log("📡 Response status:", res.status);
+      // console.log("📡 Response headers:", res.headers);
+      // console.log("📡 Content-Type:", res.headers.get("content-type"));
 
       // Check if response is ok
       if (!res.ok) {
@@ -159,7 +164,7 @@ export default function SearchScreen({ route }) {
 
       // Get raw response text first
       const responseText = await res.text();
-      console.log("📄 Raw response text (first 500 chars):", responseText.substring(0, 500));
+      // console.log("📄 Raw response text (first 500 chars):", responseText.substring(0, 500));
 
       // Check if response looks like JSON
       if (!responseText.trim().startsWith("{") && !responseText.trim().startsWith("[")) {
@@ -169,17 +174,17 @@ export default function SearchScreen({ route }) {
       // Parse JSON
       const json = JSON.parse(responseText);
 
-      console.log("📡 Search API Response:", JSON.stringify(json, null, 2));
-      console.log("📊 Number of results returned:", Array.isArray(json) ? json.length : json.results?.length || json.result?.length || 0);
+      // console.log("📡 Search API Response:", JSON.stringify(json, null, 2));
+      // console.log("📊 Number of results returned:", Array.isArray(json) ? json.length : json.results?.length || json.result?.length || 0);
 
       // Handle both possible response structures
-      console.log("🔍 Raw JSON response:", json);
-      console.log("🔍 JSON type:", typeof json);
-      console.log("🔍 Is array?", Array.isArray(json));
+      // console.log("🔍 Raw JSON response:", json);
+      // console.log("🔍 JSON type:", typeof json);
+      // console.log("🔍 Is array?", Array.isArray(json));
 
       // The API returns an array directly, not wrapped in results/result
       const resultsArray = Array.isArray(json) ? json : json.results || json.result || [];
-      console.log("🔍 Results array length:", resultsArray.length);
+      // console.log("🔍 Results array length:", resultsArray.length);
 
       const list = resultsArray.map((b, i) => ({
         id: `${b.business_uid || i}`,
@@ -526,15 +531,7 @@ export default function SearchScreen({ route }) {
           </View>
 
           <ScrollView style={styles.resultsContainer}>
-            {loading ? (
-              <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading…</Text>
-            ) : (
-              (() => {
-                console.log("🎨 Rendering results:", results.length, "items");
-                console.log("🎨 Results array:", results);
-                return results.map((item, idx) => renderResultItem(item, idx));
-              })()
-            )}
+            {loading ? <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading…</Text> : results.map((item, idx) => renderResultItem(item, idx))}
           </ScrollView>
 
           <View style={[styles.bannerAd, darkMode && styles.darkBannerAd]}>
