@@ -1,7 +1,20 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
 
 const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic, handleDelete }) => {
+  // Cost unit options for dropdown
+  const costUnitOptions = [
+    { label: "total", value: "total" },
+    { label: "/hr", value: "hr" },
+    { label: "/day", value: "day" },
+    { label: "/week", value: "week" },
+    { label: "/2 weeks", value: "2 weeks" },
+    { label: "/month", value: "month" },
+    { label: "/quarter", value: "quarter" },
+    { label: "/year", value: "year" },
+  ];
+
   const addExpertise = () => {
     const newEntry = {
       name: "",
@@ -20,6 +33,80 @@ const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic,
   const handleInputChange = (index, field, value) => {
     const updated = [...expertise];
     updated[index][field] = value;
+    setExpertise(updated);
+  };
+
+  // Parse cost into amount and unit
+  const parseCost = (cost) => {
+    if (!cost || cost.trim() === "") {
+      return { amount: "", unit: "" };
+    }
+    if (cost.toLowerCase() === "free") {
+      return { amount: "Free", unit: "" };
+    }
+    // Remove $ if present
+    const cleaned = cost.replace(/\$/g, "").trim();
+
+    // Check if it ends with "total" (no leading /)
+    if (cleaned.toLowerCase().endsWith("total")) {
+      const amount = cleaned.replace(/total$/i, "").trim();
+      return { amount: amount || "Free", unit: "total" };
+    }
+
+    // Try to split by / to get unit
+    const parts = cleaned.split("/");
+    if (parts.length >= 2) {
+      const amount = parts[0].trim();
+      const unit = parts.slice(1).join("/").trim();
+      return { amount, unit };
+    }
+    return { amount: cleaned, unit: "" };
+  };
+
+  // Handle cost amount change
+  const handleCostAmountChange = (index, value) => {
+    const updated = [...expertise];
+    const currentCost = updated[index].cost || "";
+    const parsed = parseCost(currentCost);
+    const newAmount = value.replace(/\$/g, "");
+
+    // If amount is "Free", set cost to "Free"
+    if (newAmount.toLowerCase() === "free") {
+      updated[index].cost = "Free";
+    } else {
+      // Combine amount and unit
+      if (parsed.unit === "total") {
+        updated[index].cost = newAmount ? `${newAmount} total` : "total";
+      } else if (parsed.unit) {
+        updated[index].cost = `${newAmount}/${parsed.unit}`;
+      } else {
+        updated[index].cost = newAmount;
+      }
+    }
+    setExpertise(updated);
+  };
+
+  // Handle cost unit change (from dropdown)
+  const handleCostUnitChange = (index, selectedItem) => {
+    const updated = [...expertise];
+    const currentCost = updated[index].cost || "";
+    const parsed = parseCost(currentCost);
+
+    // If current amount is "Free", don't update
+    if (parsed.amount.toLowerCase() === "free") {
+      return;
+    }
+
+    // Combine amount and unit
+    if (!selectedItem || !selectedItem.value) {
+      updated[index].cost = parsed.amount;
+    } else if (selectedItem.value === "total") {
+      // For "total", don't add a leading /
+      updated[index].cost = parsed.amount ? `${parsed.amount} total` : "total";
+    } else {
+      // For other units, add leading /
+      updated[index].cost = `${parsed.amount}/${selectedItem.value}`;
+    }
     setExpertise(updated);
   };
 
@@ -53,19 +140,53 @@ const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic,
           </View>
 
           <TextInput style={styles.input} placeholder='Expertise Name' value={item.name} onChangeText={(text) => handleInputChange(index, "name", text)} />
-          <TextInput 
-            style={styles.descriptionInput} 
-            placeholder='Description' 
-            value={item.description} 
+          <TextInput
+            style={styles.descriptionInput}
+            placeholder='Description'
+            value={item.description}
             onChangeText={(text) => handleInputChange(index, "description", text)}
             multiline={true}
-            textAlignVertical="top"
+            textAlignVertical='top'
             scrollEnabled={false}
           />
 
           <View style={styles.amountRow}>
             <Text style={styles.costLabel}>Cost</Text>
-            <TextInput style={styles.amountInput} placeholder='$100/hr or Free' value={item.cost} onChangeText={(text) => handleInputChange(index, "cost", text)} />
+            <TextInput
+              style={styles.costAmountInput}
+              placeholder='100 or Free'
+              keyboardType={(() => {
+                const parsed = parseCost(item.cost);
+                const amount = parsed.amount;
+                // Use default keyboard if amount is "Free" or starts with non-numeric
+                return amount && (amount.toLowerCase() === "free" || !/^\d/.test(amount.trim())) ? "default" : "numeric";
+              })()}
+              value={parseCost(item.cost).amount}
+              onChangeText={(text) => handleCostAmountChange(index, text)}
+            />
+            {(() => {
+              const parsed = parseCost(item.cost);
+              const amount = parsed.amount;
+              // Only show dropdown if amount is numeric (contains at least one digit)
+              const isNumeric = amount && /^\d/.test(amount.trim());
+              return (
+                isNumeric && (
+                  <Dropdown
+                    style={styles.costUnitDropdown}
+                    data={costUnitOptions}
+                    labelField='label'
+                    valueField='value'
+                    placeholder='Select unit'
+                    value={parsed.unit}
+                    onChange={(item) => handleCostUnitChange(index, item)}
+                    containerStyle={styles.dropdownContainer}
+                    itemTextStyle={styles.dropdownItemText}
+                    selectedTextStyle={styles.dropdownSelectedText}
+                    activeColor='#f0f0f0'
+                  />
+                )
+              );
+            })()}
             <Text style={styles.dollar}>💰</Text>
             <TextInput
               style={styles.bountyInput}
@@ -150,13 +271,55 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     width: "45%",
   },
-  bountyInput: {
+  costAmountInput: {
     borderWidth: 1,
     borderColor: "#ccc",
     padding: 8,
     borderRadius: 5,
     backgroundColor: "#fff",
     width: "25%",
+    height: 40,
+    textAlignVertical: "center",
+  },
+  costUnitInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 8,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    width: "15%",
+    marginLeft: 5,
+  },
+  costUnitDropdown: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    width: "30%",
+    marginLeft: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minHeight: 40,
+  },
+  dropdownContainer: {
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  dropdownItemText: {
+    color: "#000",
+    fontSize: 14,
+  },
+  dropdownSelectedText: {
+    color: "#000",
+    fontSize: 14,
+  },
+  bountyInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 8,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    width: "20%",
   },
   dollar: { fontSize: 20, marginHorizontal: 5 },
   deleteIcon: { width: 20, height: 20 },
