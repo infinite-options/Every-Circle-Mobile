@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 
-const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDelete }) => {
+const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDelete, onInputFocus }) => {
+  const bountyInputRefs = useRef({});
   // Bounty unit options for dropdown
   const bountyUnitOptions = [
     { label: "total", value: "total" },
@@ -147,6 +148,9 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
           <View style={styles.amountRow}>
             <Text style={styles.dollar}>💰</Text>
             <TextInput
+              ref={(ref) => {
+                if (ref) bountyInputRefs.current[index] = ref;
+              }}
               style={styles.bountyAmountInput}
               placeholder='Amount or Free'
               keyboardType={(() => {
@@ -157,6 +161,11 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
               })()}
               value={parseBounty(item.amount).amount}
               onChangeText={(text) => handleBountyAmountChange(index, text)}
+              onFocus={() => {
+                if (onInputFocus && bountyInputRefs.current[index]) {
+                  onInputFocus(bountyInputRefs.current[index]);
+                }
+              }}
             />
             {(() => {
               const parsed = parseBounty(item.amount);
