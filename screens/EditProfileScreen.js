@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal, ActivityIndicator } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Modal, ActivityIndicator, Keyboard, UIManager, findNodeHandle } from "react-native";
 import axios from "axios";
 import ExperienceSection from "../components/ExperienceSection";
 import EducationSection from "../components/EducationSection";
@@ -20,6 +20,7 @@ const EditProfileScreen = ({ route, navigation }) => {
   const { darkMode } = useDarkMode();
   const { user, profile_uid: routeProfileUID } = route.params || {};
   const [profileUID, setProfileUID] = useState(routeProfileUID || user?.profile_uid || "");
+  const scrollViewRef = useRef(null);
 
   // Always initialize profileImageUri with the current profile image from the user object
   const initialProfileImage = user?.profile_personal_image || user?.profileImage || "";
@@ -561,9 +562,84 @@ const EditProfileScreen = ({ route, navigation }) => {
     }));
   };
 
+  // Track the currently focused input
+  const focusedInputRef = useRef(null);
+  const keyboardHeightRef = useRef(0);
+
+  // Function to scroll to a focused input
+  const scrollToFocusedInput = () => {
+    if (!focusedInputRef.current || !scrollViewRef.current) return;
+
+    // Small delay to ensure keyboard is fully shown and layout is updated
+    setTimeout(() => {
+      try {
+        const inputHandle = findNodeHandle(focusedInputRef.current);
+        const scrollHandle = findNodeHandle(scrollViewRef.current);
+
+        if (!inputHandle || !scrollHandle) return;
+
+        UIManager.measureLayout(
+          inputHandle,
+          scrollHandle,
+          (success) => {
+            // Input is not a child of ScrollView, try alternative approach
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          },
+          (x, y, width, height) => {
+            // y is the input's top position relative to ScrollView content
+            const { Dimensions } = require("react-native");
+            const screenHeight = Dimensions.get("window").height;
+            const bottomNavBarHeight = 80; // Approximate height of bottom nav bar
+            const keyboardHeight = keyboardHeightRef.current || 300;
+
+            // Calculate how much space is available above the keyboard
+            const availableHeight = screenHeight - keyboardHeight - bottomNavBarHeight;
+
+            // The input's bottom position in content coordinates
+            const inputBottom = y + height;
+
+            // We want to scroll so the input is visible above the keyboard with some padding
+            const padding = 30; // Padding above the input
+
+            // Calculate target scroll position: position input so it's visible above keyboard
+            // We want the input to be positioned at (availableHeight - input height - padding) from top
+            // So we scroll to: input's y position minus (availableHeight - height - padding)
+            const targetScrollY = y - (availableHeight - height - padding);
+
+            scrollViewRef.current?.scrollTo({
+              y: Math.max(0, targetScrollY),
+              animated: true,
+            });
+          }
+        );
+      } catch (error) {
+        // Fallback: scroll to end
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }
+    }, 200);
+  };
+
+  // Handle keyboard show/hide to scroll to focused input
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", (e) => {
+      keyboardHeightRef.current = e.endCoordinates.height;
+      scrollToFocusedInput();
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#ffffff" }}>
-      <ScrollView style={{ flex: 1, padding: 20, backgroundColor: darkMode ? "#1a1a1a" : "#ffffff" }} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={{ flex: 1, padding: 20, backgroundColor: darkMode ? "#1a1a1a" : "#ffffff" }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        keyboardShouldPersistTaps='handled'
+        showsVerticalScrollIndicator={true}
+      >
         <Text style={{ fontSize: 24, fontWeight: "bold", color: darkMode ? "#ffffff" : "#000000", marginTop: 20, marginBottom: 20 }}>Edit Profile</Text>
         {renderField("First Name (Public)", formData.firstName, true, "firstName", "firstNameIsPublic")}
         {renderField("Last Name (Public)", formData.lastName, true, "lastName", "lastNameIsPublic")}
@@ -638,6 +714,10 @@ const EditProfileScreen = ({ route, navigation }) => {
           toggleVisibility={() => handleToggleVisibility("expertiseIsPublic")}
           isPublic={formData.expertiseIsPublic}
           handleDelete={handleDeleteExpertise}
+          onInputFocus={(inputRef) => {
+            focusedInputRef.current = inputRef;
+            scrollToFocusedInput();
+          }}
         />
 
         <WishesSection
@@ -649,6 +729,10 @@ const EditProfileScreen = ({ route, navigation }) => {
           toggleVisibility={() => handleToggleVisibility("wishesIsPublic")}
           isPublic={formData.wishesIsPublic}
           handleDelete={handleDeleteWish}
+          onInputFocus={(inputRef) => {
+            focusedInputRef.current = inputRef;
+            scrollToFocusedInput();
+          }}
         />
 
         <TouchableOpacity

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, Image, Keyboard, UIManager, findNodeHandle } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
 import axios from "axios";
@@ -17,6 +17,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   // console.log("Edit Button Pressed: EditBusinessProfileScreen", route.params.business);
   const { business, business_users } = route.params || {};
   const [businessUID, setBusinessUID] = useState(business?.business_uid || "");
+  const scrollViewRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: business?.business_name || "",
@@ -665,9 +666,84 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     setEditingServiceIndex(null);
   };
 
+  // Track the currently focused input
+  const focusedInputRef = useRef(null);
+  const keyboardHeightRef = useRef(0);
+
+  // Function to scroll to a focused input
+  const scrollToFocusedInput = () => {
+    if (!focusedInputRef.current || !scrollViewRef.current) return;
+
+    // Small delay to ensure keyboard is fully shown and layout is updated
+    setTimeout(() => {
+      try {
+        const inputHandle = findNodeHandle(focusedInputRef.current);
+        const scrollHandle = findNodeHandle(scrollViewRef.current);
+
+        if (!inputHandle || !scrollHandle) return;
+
+        UIManager.measureLayout(
+          inputHandle,
+          scrollHandle,
+          (success) => {
+            // Input is not a child of ScrollView, try alternative approach
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          },
+          (x, y, width, height) => {
+            // y is the input's top position relative to ScrollView content
+            const { Dimensions } = require("react-native");
+            const screenHeight = Dimensions.get("window").height;
+            const bottomNavBarHeight = 80; // Approximate height of bottom nav bar
+            const keyboardHeight = keyboardHeightRef.current || 300;
+
+            // Calculate how much space is available above the keyboard
+            const availableHeight = screenHeight - keyboardHeight - bottomNavBarHeight;
+
+            // The input's bottom position in content coordinates
+            const inputBottom = y + height;
+
+            // We want to scroll so the input is visible above the keyboard with some padding
+            const padding = 30; // Padding above the input
+
+            // Calculate target scroll position: position input so it's visible above keyboard
+            // We want the input to be positioned at (availableHeight - input height - padding) from top
+            // So we scroll to: input's y position minus (availableHeight - height - padding)
+            const targetScrollY = y - (availableHeight - height - padding);
+
+            scrollViewRef.current?.scrollTo({
+              y: Math.max(0, targetScrollY),
+              animated: true,
+            });
+          }
+        );
+      } catch (error) {
+        // Fallback: scroll to end
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }
+    }, 200);
+  };
+
+  // Handle keyboard show/hide to scroll to focused input
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", (e) => {
+      keyboardHeightRef.current = e.endCoordinates.height;
+      scrollToFocusedInput();
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
+
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
-      <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={[styles.container, darkMode && styles.darkContainer]}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: 100 }]}
+        keyboardShouldPersistTaps='handled'
+        showsVerticalScrollIndicator={true}
+      >
         <Text style={[styles.header, darkMode && styles.darkHeader]}>Edit Business Profile</Text>
 
         {renderField("Business Name", formData.name, "name")}

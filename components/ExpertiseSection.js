@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 
-const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic, handleDelete }) => {
+const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic, handleDelete, onInputFocus }) => {
+  const costInputRefs = useRef({});
   // Cost unit options for dropdown
   const costUnitOptions = [
     { label: "total", value: "total" },
@@ -153,6 +154,9 @@ const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic,
           <View style={styles.amountRow}>
             <Text style={styles.costLabel}>Cost</Text>
             <TextInput
+              ref={(ref) => {
+                if (ref) costInputRefs.current[index] = ref;
+              }}
               style={styles.costAmountInput}
               placeholder='100 or Free'
               keyboardType={(() => {
@@ -163,6 +167,11 @@ const ExpertiseSection = ({ expertise, setExpertise, toggleVisibility, isPublic,
               })()}
               value={parseCost(item.cost).amount}
               onChangeText={(text) => handleCostAmountChange(index, text)}
+              onFocus={() => {
+                if (onInputFocus && costInputRefs.current[index]) {
+                  onInputFocus(costInputRefs.current[index]);
+                }
+              }}
             />
             {(() => {
               const parsed = parseCost(item.cost);
