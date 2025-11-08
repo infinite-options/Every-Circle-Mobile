@@ -1,7 +1,20 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
 
 const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDelete }) => {
+  // Bounty unit options for dropdown
+  const bountyUnitOptions = [
+    { label: "total", value: "total" },
+    { label: "/hr", value: "hr" },
+    { label: "/day", value: "day" },
+    { label: "/week", value: "week" },
+    { label: "/2 weeks", value: "2 weeks" },
+    { label: "/month", value: "month" },
+    { label: "/quarter", value: "quarter" },
+    { label: "/year", value: "year" },
+  ];
+
   const addWish = () => {
     const newEntry = { helpNeeds: "", details: "", amount: "", isPublic: false };
     setWishes([...wishes, newEntry]);
@@ -14,6 +27,80 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
   const handleInputChange = (index, field, value) => {
     const updated = [...wishes];
     updated[index][field] = value;
+    setWishes(updated);
+  };
+
+  // Parse bounty into amount and unit
+  const parseBounty = (bounty) => {
+    if (!bounty || bounty.trim() === "") {
+      return { amount: "", unit: "" };
+    }
+    if (bounty.toLowerCase() === "free") {
+      return { amount: "Free", unit: "" };
+    }
+    // Remove $ if present
+    const cleaned = bounty.replace(/\$/g, "").trim();
+
+    // Check if it ends with "total" (no leading /)
+    if (cleaned.toLowerCase().endsWith("total")) {
+      const amount = cleaned.replace(/total$/i, "").trim();
+      return { amount: amount || "Free", unit: "total" };
+    }
+
+    // Try to split by / to get unit
+    const parts = cleaned.split("/");
+    if (parts.length >= 2) {
+      const amount = parts[0].trim();
+      const unit = parts.slice(1).join("/").trim();
+      return { amount, unit };
+    }
+    return { amount: cleaned, unit: "" };
+  };
+
+  // Handle bounty amount change
+  const handleBountyAmountChange = (index, value) => {
+    const updated = [...wishes];
+    const currentBounty = updated[index].amount || "";
+    const parsed = parseBounty(currentBounty);
+    const newAmount = value.replace(/\$/g, "");
+
+    // If amount is "Free", set bounty to "Free"
+    if (newAmount.toLowerCase() === "free") {
+      updated[index].amount = "Free";
+    } else {
+      // Combine amount and unit
+      if (parsed.unit === "total") {
+        updated[index].amount = newAmount ? `${newAmount} total` : "total";
+      } else if (parsed.unit) {
+        updated[index].amount = `${newAmount}/${parsed.unit}`;
+      } else {
+        updated[index].amount = newAmount;
+      }
+    }
+    setWishes(updated);
+  };
+
+  // Handle bounty unit change (from dropdown)
+  const handleBountyUnitChange = (index, selectedItem) => {
+    const updated = [...wishes];
+    const currentBounty = updated[index].amount || "";
+    const parsed = parseBounty(currentBounty);
+
+    // If current amount is "Free", don't update
+    if (parsed.amount.toLowerCase() === "free") {
+      return;
+    }
+
+    // Combine amount and unit
+    if (!selectedItem || !selectedItem.value) {
+      updated[index].amount = parsed.amount;
+    } else if (selectedItem.value === "total") {
+      // For "total", don't add a leading /
+      updated[index].amount = parsed.amount ? `${parsed.amount} total` : "total";
+    } else {
+      // For other units, add leading /
+      updated[index].amount = `${parsed.amount}/${selectedItem.value}`;
+    }
     setWishes(updated);
   };
 
@@ -47,19 +134,53 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
           </View>
 
           <TextInput style={styles.input} placeholder='Wish Name' value={item.helpNeeds} onChangeText={(text) => handleInputChange(index, "helpNeeds", text)} />
-          <TextInput 
-            style={styles.descriptionInput} 
-            placeholder='Description' 
-            value={item.details} 
+          <TextInput
+            style={styles.descriptionInput}
+            placeholder='Description'
+            value={item.details}
             onChangeText={(text) => handleInputChange(index, "details", text)}
             multiline={true}
-            textAlignVertical="top"
+            textAlignVertical='top'
             scrollEnabled={false}
           />
 
           <View style={styles.amountRow}>
             <Text style={styles.dollar}>💰</Text>
-            <TextInput style={styles.amountInput} placeholder='Amount' keyboardType='numeric' value={item.amount} onChangeText={(text) => handleInputChange(index, "amount", text)} />
+            <TextInput
+              style={styles.bountyAmountInput}
+              placeholder='Amount or Free'
+              keyboardType={(() => {
+                const parsed = parseBounty(item.amount);
+                const amount = parsed.amount;
+                // Use default keyboard if amount is "Free" or starts with non-numeric
+                return amount && (amount.toLowerCase() === "free" || !/^\d/.test(amount.trim())) ? "default" : "numeric";
+              })()}
+              value={parseBounty(item.amount).amount}
+              onChangeText={(text) => handleBountyAmountChange(index, text)}
+            />
+            {(() => {
+              const parsed = parseBounty(item.amount);
+              const amount = parsed.amount;
+              // Only show dropdown if amount is numeric (contains at least one digit)
+              const isNumeric = amount && /^\d/.test(amount.trim());
+              return (
+                isNumeric && (
+                  <Dropdown
+                    style={styles.bountyUnitDropdown}
+                    data={bountyUnitOptions}
+                    labelField='label'
+                    valueField='value'
+                    placeholder='Select unit'
+                    value={parsed.unit}
+                    onChange={(item) => handleBountyUnitChange(index, item)}
+                    containerStyle={styles.dropdownContainer}
+                    itemTextStyle={styles.dropdownItemText}
+                    selectedTextStyle={styles.dropdownSelectedText}
+                    activeColor='#f0f0f0'
+                  />
+                )
+              );
+            })()}
             <TouchableOpacity onPress={() => deleteWish(index)}>
               <Image source={require("../assets/delete.png")} style={styles.deleteIcon} />
             </TouchableOpacity>
@@ -132,6 +253,39 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#fff",
     width: "70%",
+  },
+  bountyAmountInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 8,
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    width: "25%",
+    height: 40,
+    textAlignVertical: "center",
+  },
+  bountyUnitDropdown: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    backgroundColor: "#fff",
+    width: "30%",
+    marginLeft: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minHeight: 40,
+  },
+  dropdownContainer: {
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  dropdownItemText: {
+    color: "#000",
+    fontSize: 14,
+  },
+  dropdownSelectedText: {
+    color: "#000",
+    fontSize: 14,
   },
   deleteIcon: { width: 20, height: 20 },
   cardSpacing: {
