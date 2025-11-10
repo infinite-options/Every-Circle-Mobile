@@ -26,6 +26,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
   const [allReviews, setAllReviews] = useState([]);
   const [currentUserProfileId, setCurrentUserProfileId] = useState(null);
   const [businessUsers, setBusinessUsers] = useState([]);
+  const [reviewerProfiles, setReviewerProfiles] = useState({}); // Store reviewer profile data by profile_id
 
   // Load cart items when component mounts
   useEffect(() => {
@@ -57,6 +58,35 @@ export default function BusinessProfileScreen({ route, navigation }) {
     getCurrentUserProfileId();
   }, []);
 
+  // Fetch reviewer profile data
+  const fetchReviewerProfile = async (profileId) => {
+    if (!profileId || reviewerProfiles[profileId]) {
+      return; // Already fetched or invalid
+    }
+
+    try {
+      console.log("BusinessProfileScreen - Fetching reviewer profile for:", profileId);
+      const response = await fetch(`${ProfileScreenAPI}/${profileId}`);
+      const result = await response.json();
+
+      if (result && result.personal_info) {
+        const personalInfo = result.personal_info;
+        const reviewerData = {
+          firstName: personalInfo.profile_personal_first_name || "",
+          lastName: personalInfo.profile_personal_last_name || "",
+          profileImage: personalInfo.profile_personal_image ? String(personalInfo.profile_personal_image) : "",
+        };
+        setReviewerProfiles((prev) => ({
+          ...prev,
+          [profileId]: reviewerData,
+        }));
+        console.log("BusinessProfileScreen - Reviewer profile loaded for:", profileId, reviewerData);
+      }
+    } catch (error) {
+      console.error("BusinessProfileScreen - Error fetching reviewer profile:", profileId, error);
+    }
+  };
+
   // Process reviews when currentUserProfileId becomes available
   useEffect(() => {
     if (currentUserProfileId && business && business.ratings) {
@@ -78,6 +108,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
           } else {
             console.log("Adding to other reviews:", rating.rating_uid);
             otherReviews.push(rating);
+            // Fetch reviewer profile data for each review
+            if (rating.rating_profile_id) {
+              fetchReviewerProfile(rating.rating_profile_id);
+            }
           }
         });
       }
@@ -785,13 +819,29 @@ export default function BusinessProfileScreen({ route, navigation }) {
               >
                 <View style={styles.reviewCardHeader}>
                   <View style={styles.reviewProfileInfo}>
-                    <View style={[styles.reviewProfileAvatar, darkMode && styles.darkReviewProfileAvatar]}>
-                      <Text style={[styles.reviewProfileInitial, darkMode && styles.darkReviewProfileInitial]}>
-                        {review.rating_profile_id ? review.rating_profile_id.charAt(0).toUpperCase() : "U"}
-                      </Text>
-                    </View>
+                    {reviewerProfiles[review.rating_profile_id]?.profileImage ? (
+                      <Image
+                        source={{ uri: reviewerProfiles[review.rating_profile_id].profileImage }}
+                        style={[styles.reviewProfileAvatar, darkMode && styles.darkReviewProfileAvatar]}
+                        defaultSource={require("../assets/profile.png")}
+                      />
+                    ) : (
+                      <View style={[styles.reviewProfileAvatar, darkMode && styles.darkReviewProfileAvatar]}>
+                        <Text style={[styles.reviewProfileInitial, darkMode && styles.darkReviewProfileInitial]}>
+                          {reviewerProfiles[review.rating_profile_id]
+                            ? reviewerProfiles[review.rating_profile_id].firstName || reviewerProfiles[review.rating_profile_id].lastName
+                              ? (reviewerProfiles[review.rating_profile_id].firstName?.charAt(0) || reviewerProfiles[review.rating_profile_id].lastName?.charAt(0) || "").toUpperCase()
+                              : review.rating_profile_id?.charAt(0).toUpperCase() || "U"
+                            : review.rating_profile_id?.charAt(0).toUpperCase() || "U"}
+                        </Text>
+                      </View>
+                    )}
                     <View style={styles.reviewProfileDetails}>
-                      <Text style={[styles.reviewProfileName, darkMode && styles.darkReviewProfileName]}>User {review.rating_profile_id}</Text>
+                      <Text style={[styles.reviewProfileName, darkMode && styles.darkReviewProfileName]}>
+                        {reviewerProfiles[review.rating_profile_id]
+                          ? `${reviewerProfiles[review.rating_profile_id].firstName || ""} ${reviewerProfiles[review.rating_profile_id].lastName || ""}`.trim() || `User ${review.rating_profile_id}`
+                          : `User ${review.rating_profile_id}`}
+                      </Text>
                       <Text style={[styles.reviewDate, darkMode && styles.darkReviewDate]}>{review.rating_receipt_date}</Text>
                     </View>
                   </View>
@@ -809,7 +859,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
                 <View style={styles.reviewFooter}>
                   <View style={styles.reviewMetadata}>
-                    <Text style={[styles.reviewMetadataText, darkMode && styles.darkReviewMetadataText]}>Transaction ID: {review.rating_receipt_date}</Text>
+                    <Text style={[styles.reviewMetadataText, darkMode && styles.darkReviewMetadataText]}>Transaction ID: {review.rating_uid}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -1198,6 +1248,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
   },
   reviewProfileInitial: {
     fontSize: 16,

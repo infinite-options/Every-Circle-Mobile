@@ -6,9 +6,10 @@ import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BUSINESS_INFO_ENDPOINT } from "../apiConfig";
+import { BUSINESS_INFO_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 
 const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
+const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 
 export default function ReviewDetailScreen({ route, navigation }) {
   const { business_uid, business_name, reviewer_profile_id, business_data } = route.params;
@@ -18,6 +19,8 @@ export default function ReviewDetailScreen({ route, navigation }) {
   const [quantityModalVisible, setQuantityModalVisible] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [reviewerData, setReviewerData] = useState(null);
+  const [loadingReviewer, setLoadingReviewer] = useState(false);
 
   // Load cart items when component mounts
   useEffect(() => {
@@ -187,6 +190,45 @@ export default function ReviewDetailScreen({ route, navigation }) {
     }
   };
 
+  // Fetch reviewer profile data
+  const fetchReviewerData = async () => {
+    // Skip if reviewer_profile_id is "Charity" or not available
+    if (!reviewer_profile_id || reviewer_profile_id === "Charity") {
+      setReviewerData(null);
+      return;
+    }
+
+    try {
+      setLoadingReviewer(true);
+      console.log("ReviewDetailScreen - Fetching reviewer data for profile_id:", reviewer_profile_id);
+      const response = await fetch(`${ProfileScreenAPI}/${reviewer_profile_id}`);
+      const result = await response.json();
+
+      if (result && result.personal_info) {
+        const personalInfo = result.personal_info;
+        const reviewerForMiniCard = {
+          firstName: personalInfo.profile_personal_first_name || "",
+          lastName: personalInfo.profile_personal_last_name || "",
+          email: personalInfo.profile_personal_email || result.user_email || "",
+          phoneNumber: personalInfo.profile_personal_phone_number || "",
+          profileImage: personalInfo.profile_personal_image ? String(personalInfo.profile_personal_image) : "",
+          emailIsPublic: personalInfo.profile_personal_email_is_public === "1" || personalInfo.profile_personal_email_is_public === 1,
+          phoneIsPublic: personalInfo.profile_personal_phone_number_is_public === "1" || personalInfo.profile_personal_phone_number_is_public === 1,
+        };
+        setReviewerData(reviewerForMiniCard);
+        console.log("ReviewDetailScreen - Reviewer data loaded:", reviewerForMiniCard);
+      } else {
+        console.log("ReviewDetailScreen - No reviewer data found");
+        setReviewerData(null);
+      }
+    } catch (error) {
+      console.error("ReviewDetailScreen - Error fetching reviewer data:", error);
+      setReviewerData(null);
+    } finally {
+      setLoadingReviewer(false);
+    }
+  };
+
   useEffect(() => {
     // Only fetch business info if it wasn't passed as a parameter
     if (!business_data) {
@@ -195,6 +237,13 @@ export default function ReviewDetailScreen({ route, navigation }) {
       setLoading(false);
     }
   }, [business_uid, business_data]);
+
+  useEffect(() => {
+    // Fetch reviewer data when reviewer_profile_id is available
+    if (reviewer_profile_id) {
+      fetchReviewerData();
+    }
+  }, [reviewer_profile_id]);
 
   const handleProductPress = (service) => {
     setSelectedService(service);
@@ -307,15 +356,33 @@ export default function ReviewDetailScreen({ route, navigation }) {
         {/* Reviewer Information Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Reviewer Information</Text>
-          <View style={styles.reviewerInfo}>
-            <View style={styles.reviewerAvatar}>
-              <Text style={styles.reviewerInitial}>{reviewer_profile_id === "Charity" ? "C" : reviewer_profile_id ? reviewer_profile_id.charAt(0).toUpperCase() : "U"}</Text>
+          {reviewer_profile_id === "Charity" ? (
+            // Special case for Charity
+            <View style={styles.reviewerInfo}>
+              <View style={styles.reviewerAvatar}>
+                <Text style={styles.reviewerInitial}>C</Text>
+              </View>
+              <View style={styles.reviewerDetails}>
+                <Text style={styles.reviewerName}>Charity</Text>
+                <Text style={styles.reviewerLabel}>Charity Organization</Text>
+              </View>
             </View>
-            <View style={styles.reviewerDetails}>
-              <Text style={styles.reviewerName}>{reviewer_profile_id === "Charity" ? "Charity" : `User ${reviewer_profile_id}`}</Text>
-              <Text style={styles.reviewerLabel}>{reviewer_profile_id === "Charity" ? "Charity Organization" : `Profile ID: ${reviewer_profile_id}`}</Text>
+          ) : loadingReviewer ? (
+            <ActivityIndicator size='small' color='#9C45F7' style={{ marginVertical: 10 }} />
+          ) : reviewerData ? (
+            <MiniCard user={reviewerData} />
+          ) : (
+            // Fallback if reviewer data not found
+            <View style={styles.reviewerInfo}>
+              <View style={styles.reviewerAvatar}>
+                <Text style={styles.reviewerInitial}>{reviewer_profile_id ? reviewer_profile_id.charAt(0).toUpperCase() : "U"}</Text>
+              </View>
+              <View style={styles.reviewerDetails}>
+                <Text style={styles.reviewerName}>User {reviewer_profile_id}</Text>
+                <Text style={styles.reviewerLabel}>Profile ID: {reviewer_profile_id}</Text>
+              </View>
             </View>
-          </View>
+          )}
         </View>
 
         {/* Business Card (MiniCard at top) */}
