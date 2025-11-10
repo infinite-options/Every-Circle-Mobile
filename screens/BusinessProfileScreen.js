@@ -761,7 +761,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
               <Text style={[styles.userReviewTitle, darkMode && styles.darkUserReviewTitle]}>Your Review</Text>
               <View style={styles.userReviewRow}>
                 <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Rating:</Text>
-                <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_star} / 5</Text>
+                <View style={styles.userReviewRatingContainer}>
+                  {renderStars(userReview.rating_star)}
+                  <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue, { marginLeft: 8 }]}>{userReview.rating_star} / 5</Text>
+                </View>
               </View>
               <View style={styles.userReviewRow}>
                 <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Comments:</Text>
@@ -771,6 +774,12 @@ export default function BusinessProfileScreen({ route, navigation }) {
                 <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Date:</Text>
                 <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_receipt_date}</Text>
               </View>
+              {userReview.rating_uid && (
+                <View style={styles.userReviewRow}>
+                  <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Transaction ID:</Text>
+                  <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_uid}</Text>
+                </View>
+              )}
               <TouchableOpacity
                 style={[styles.editReviewButton, darkMode && styles.darkEditReviewButton]}
                 onPress={() =>
@@ -1206,6 +1215,11 @@ const styles = StyleSheet.create({
   userReviewLabel: {
     fontWeight: "bold",
     marginRight: 8,
+  },
+  userReviewRatingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   userReviewValue: {
     flex: 1,

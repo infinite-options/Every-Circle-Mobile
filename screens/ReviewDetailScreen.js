@@ -212,8 +212,11 @@ export default function ReviewDetailScreen({ route, navigation }) {
           email: personalInfo.profile_personal_email || result.user_email || "",
           phoneNumber: personalInfo.profile_personal_phone_number || "",
           profileImage: personalInfo.profile_personal_image ? String(personalInfo.profile_personal_image) : "",
+          tagLine: personalInfo.profile_personal_tagline || "",
           emailIsPublic: personalInfo.profile_personal_email_is_public === "1" || personalInfo.profile_personal_email_is_public === 1,
           phoneIsPublic: personalInfo.profile_personal_phone_number_is_public === "1" || personalInfo.profile_personal_phone_number_is_public === 1,
+          tagLineIsPublic: personalInfo.profile_personal_tagline_is_public === "1" || personalInfo.profile_personal_tagline_is_public === 1,
+          imageIsPublic: personalInfo.profile_personal_image_is_public === "1" || personalInfo.profile_personal_image_is_public === 1,
         };
         setReviewerData(reviewerForMiniCard);
         console.log("ReviewDetailScreen - Reviewer data loaded:", reviewerForMiniCard);
@@ -370,7 +373,10 @@ export default function ReviewDetailScreen({ route, navigation }) {
           ) : loadingReviewer ? (
             <ActivityIndicator size='small' color='#9C45F7' style={{ marginVertical: 10 }} />
           ) : reviewerData ? (
-            <MiniCard user={reviewerData} />
+            (() => {
+              console.log("ReviewDetailScreen - Rendering MiniCard with reviewerData:", reviewerData);
+              return <MiniCard user={reviewerData} />;
+            })()
           ) : (
             // Fallback if reviewer data not found
             <View style={styles.reviewerInfo}>
