@@ -48,6 +48,13 @@ export default function AccountScreen({ navigation }) {
         console.log("Response status:", response.status);
         console.log("Response ok:", response.ok);
 
+        // Handle 400 status as empty transactions (no transactions found)
+        if (response.status === 400) {
+          console.log("No transactions found (400 status), treating as empty result");
+          setTransactionData([]);
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -69,6 +76,7 @@ export default function AccountScreen({ navigation }) {
       }
     } catch (error) {
       console.error("Error loading transaction data:", error);
+      // Set empty array instead of showing error - no transactions is a valid state
       setTransactionData([]);
     } finally {
       setTransactionLoading(false);
