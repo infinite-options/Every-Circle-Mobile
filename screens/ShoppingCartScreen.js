@@ -153,22 +153,35 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       const total = calculateTotal();
       console.log("Creating payment intent for amount:", total);
 
+      const requestBody = {
+        customer_uid: profile_uid,
+        business_code: "ECTEST",
+        payment_summary: {
+          tax: 0,
+          total: total.toString(),
+        },
+      };
+
+      console.log("============================================");
+      console.log("ENDPOINT: CREATE_PAYMENT_INTENT");
+      console.log("URL:", CREATE_PAYMENT_INTENT_ENDPOINT);
+      console.log("METHOD: POST");
+      console.log("REQUEST BODY:", JSON.stringify(requestBody, null, 2));
+      console.log("============================================");
+
       const response = await fetch(CREATE_PAYMENT_INTENT_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          customer_uid: profile_uid,
-          business_code: "ECTEST",
-          payment_summary: {
-            tax: 0,
-            total: total.toString(),
-          },
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log("RESPONSE STATUS:", response.status);
+      console.log("RESPONSE OK:", response.ok);
+
       const data = await response.json();
+      console.log("RESPONSE BODY:", JSON.stringify(data, null, 2));
       console.log("Payment intent created:", data);
 
       // The API returns the client secret directly as a string
@@ -227,12 +240,27 @@ const ShoppingCartScreen = ({ route, navigation }) => {
   const getProfileId = async (userUid) => {
     try {
       console.log("Fetching profile ID for user:", userUid);
-      const response = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${userUid}`);
+      const endpoint = `${USER_PROFILE_INFO_ENDPOINT}/${userUid}`;
+
+      console.log("============================================");
+      console.log("ENDPOINT: GET_PROFILE_ID");
+      console.log("URL:", endpoint);
+      console.log("METHOD: GET");
+      console.log("============================================");
+
+      const response = await fetch(endpoint);
+
+      console.log("RESPONSE STATUS:", response.status);
+      console.log("RESPONSE OK:", response.ok);
+
       const data = await response.json();
+      console.log("RESPONSE BODY:", JSON.stringify(data, null, 2));
       console.log("Profile data received:", data);
 
       if (data && data.personal_info && data.personal_info.profile_personal_uid) {
-        return data.personal_info.profile_personal_uid;
+        const profileId = data.personal_info.profile_personal_uid;
+        console.log("Extracted profile ID:", profileId);
+        return profileId;
       }
       throw new Error("Profile ID not found");
     } catch (error) {
@@ -257,7 +285,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
     }
 
     const transactionData = {
-      user_profile_id: buyerUid,
+      profile_id: buyerUid,
       business_id: transactionBusinessId,
       stripe_payment_intent: paymentIntent,
       total_amount_paid: parseFloat(totalAmount),
@@ -294,7 +322,12 @@ const ShoppingCartScreen = ({ route, navigation }) => {
       // Prepare the transaction data
       const transactionData = prepareTransactionData(buyerProfileId, paymentIntent || "PAYMENT_INTENT_ID", calculateTotal());
 
-      console.log("Sending transaction data:", JSON.stringify(transactionData, null, 2));
+      console.log("============================================");
+      console.log("ENDPOINT: RECORD_TRANSACTIONS");
+      console.log("URL:", TRANSACTIONS_ENDPOINT);
+      console.log("METHOD: POST");
+      console.log("REQUEST BODY:", JSON.stringify(transactionData, null, 2));
+      console.log("============================================");
 
       // Make a single API call with all transaction data
       const response = await fetch(TRANSACTIONS_ENDPOINT, {
@@ -305,7 +338,11 @@ const ShoppingCartScreen = ({ route, navigation }) => {
         body: JSON.stringify(transactionData),
       });
 
+      console.log("RESPONSE STATUS:", response.status);
+      console.log("RESPONSE OK:", response.ok);
+
       const result = await response.json();
+      console.log("RESPONSE BODY:", JSON.stringify(result, null, 2));
       console.log("Transactions recorded:", result);
 
       if (!response.ok) {
@@ -467,7 +504,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
                       <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>Total Bounty:</Text>
                         <Text style={styles.totalValue}>
-                          {item.bs_bounty_currency || "USD"} {((parseFloat(item.bs_bounty) || 0) * (item.quantity || 1)).toFixed(2)}
+                          {item.bs_bounty_currency || "USD"} {(parseFloat(item.bs_bounty) || 0).toFixed(2)}
                         </Text>
                       </View>
                     </View>
@@ -475,7 +512,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
                 </View>
               ))}
               <View style={styles.totalContainer}>
-                <Text style={styles.totalText}>Total: ${calculateTotal().toFixed(2)}</Text>
+                <Text style={styles.totalText}>Grand Total: ${calculateTotal().toFixed(2)}</Text>
               </View>
             </>
           )}
@@ -539,7 +576,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 200,
+    paddingBottom: 250,
   },
   emptyCart: {
     fontSize: 18,
