@@ -373,10 +373,19 @@ export default function ReviewDetailScreen({ route, navigation }) {
           ) : loadingReviewer ? (
             <ActivityIndicator size='small' color='#9C45F7' style={{ marginVertical: 10 }} />
           ) : reviewerData ? (
-            (() => {
-              console.log("ReviewDetailScreen - Rendering MiniCard with reviewerData:", reviewerData);
-              return <MiniCard user={reviewerData} />;
-            })()
+            <TouchableOpacity
+              onPress={() => {
+                if (reviewer_profile_id && reviewer_profile_id !== "Charity") {
+                  navigation.navigate("Profile", { profile_uid: reviewer_profile_id });
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              {(() => {
+                console.log("ReviewDetailScreen - Rendering MiniCard with reviewerData:", reviewerData);
+                return <MiniCard user={reviewerData} />;
+              })()}
+            </TouchableOpacity>
           ) : (
             // Fallback if reviewer data not found
             <View style={styles.reviewerInfo}>

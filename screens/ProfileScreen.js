@@ -16,6 +16,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const [user, setUser] = useState(null);
   const [profileUID, setProfileUID] = useState("");
   const [businessesData, setBusinessesData] = useState([]);
+  const [isCurrentUserProfile, setIsCurrentUserProfile] = useState(false);
   const { darkMode } = useDarkMode();
 
   useFocusEffect(
@@ -23,11 +24,28 @@ const ProfileScreen = ({ route, navigation }) => {
       async function loadProfile() {
         console.log("ProfileScreen - useFocusEffect triggered, reloading profile data");
         setLoading(true);
-        let profileId = await AsyncStorage.getItem("profile_uid");
+
+        // Check if a specific profile_uid was passed via route params (for viewing other users' profiles)
+        const routeProfileUID = route?.params?.profile_uid;
+        const loggedInProfileUID = await AsyncStorage.getItem("profile_uid");
+
+        if (routeProfileUID) {
+          console.log("ProfileScreen - Loading profile from route params:", routeProfileUID);
+          console.log("ProfileScreen - Logged in profile UID:", loggedInProfileUID);
+          setProfileUID(routeProfileUID);
+          // Check if the profile being viewed matches the logged-in user's profile
+          setIsCurrentUserProfile(routeProfileUID === loggedInProfileUID);
+          await fetchUserData(routeProfileUID);
+          return;
+        }
+
+        let profileId = loggedInProfileUID;
         console.log("ProfileScreen - profileId from AsyncStorage:", profileId);
         if (profileId) {
           setProfileUID(profileId);
           console.log("ProfileScreen - Setting profileUID state to:", profileId);
+          // This is the logged-in user's own profile
+          setIsCurrentUserProfile(true);
           await fetchUserData(profileId);
           return;
         }
@@ -41,6 +59,8 @@ const ProfileScreen = ({ route, navigation }) => {
             if (apiUser && apiUser.personal_info?.profile_personal_uid) {
               profileId = apiUser.personal_info.profile_personal_uid;
               setProfileUID(profileId);
+              // This is the logged-in user's own profile (fetched via user_uid)
+              setIsCurrentUserProfile(true);
               await AsyncStorage.setItem("profile_uid", profileId);
               await fetchUserData(profileId);
               return;
@@ -54,7 +74,7 @@ const ProfileScreen = ({ route, navigation }) => {
         Alert.alert("Error", "Failed to load profile data. Please log in again.");
       }
       loadProfile();
-    }, [])
+    }, [route])
   );
 
   async function fetchUserData(profileUID) {
@@ -322,10 +342,12 @@ const ProfileScreen = ({ route, navigation }) => {
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.headerContainer}>
-          <Text style={[styles.header, darkMode && styles.darkHeader]}>Your Profile</Text>
-          <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate("EditProfile", { user: user, profile_uid: profileUID })}>
-            <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
-          </TouchableOpacity>
+          <Text style={[styles.header, darkMode && styles.darkHeader]}>{isCurrentUserProfile ? "Your Profile" : "Profile"}</Text>
+          {isCurrentUserProfile && (
+            <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate("EditProfile", { user: user, profile_uid: profileUID })}>
+              <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
@@ -359,40 +381,46 @@ const ProfileScreen = ({ route, navigation }) => {
           }}
         />
 
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Experience:</Text>
-          {user.experience
-            ?.filter((exp) => exp.isPublic)
-            .map((exp, index, arr) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                {exp.startDate || exp.endDate ? (
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                    {(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}
-                  </Text>
-                ) : null}
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.company || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.title || ""}</Text>
-                {exp.description && <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description}</Text>}
-              </View>
-            ))}
-        </View>
+        {/* Only show Experience section if there are public experiences, or if viewing own profile */}
+        {(isCurrentUserProfile || (user.experience && user.experience.filter((exp) => exp.isPublic).length > 0)) && (
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Experience:</Text>
+            {user.experience
+              ?.filter((exp) => exp.isPublic)
+              .map((exp, index, arr) => (
+                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                  {exp.startDate || exp.endDate ? (
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                      {(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.company || ""}</Text>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.title || ""}</Text>
+                  {exp.description && <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description}</Text>}
+                </View>
+              ))}
+          </View>
+        )}
 
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Education:</Text>
-          {user.education
-            ?.filter((edu) => edu.isPublic)
-            .map((edu, index) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                {edu.startDate || edu.endDate ? (
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                    {(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}
-                  </Text>
-                ) : null}
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.school || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.degree || ""}</Text>
-              </View>
-            ))}
-        </View>
+        {/* Only show Education section if there are public education entries, or if viewing own profile */}
+        {(isCurrentUserProfile || (user.education && user.education.filter((edu) => edu.isPublic).length > 0)) && (
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Education:</Text>
+            {user.education
+              ?.filter((edu) => edu.isPublic)
+              .map((edu, index) => (
+                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                  {edu.startDate || edu.endDate ? (
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                      {(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.school || ""}</Text>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.degree || ""}</Text>
+                </View>
+              ))}
+          </View>
+        )}
 
         {/* Only show Businesses section if there are businesses */}
         {businessesData && businessesData.length > 0 && (
@@ -414,38 +442,46 @@ const ProfileScreen = ({ route, navigation }) => {
           </View>
         )}
 
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Expertise:</Text>
-          {user.expertise
-            ?.filter((exp) => exp.isPublic)
-            .map((exp, index) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}</Text>
-                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
-                    {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
-                  </Text>
+        {/* Only show Expertise section if there are public expertise entries, or if viewing own profile */}
+        {(isCurrentUserProfile || (user.expertise && user.expertise.filter((exp) => exp.isPublic).length > 0)) && (
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Expertise:</Text>
+            {user.expertise
+              ?.filter((exp) => exp.isPublic)
+              .map((exp, index) => (
+                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                      {exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}
+                    </Text>
+                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
+                      {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
-        </View>
+              ))}
+          </View>
+        )}
 
-        <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Wishes:</Text>
-          {user.wishes
-            ?.filter((wish) => wish.isPublic)
-            .map((wish, index) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
-                <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+        {/* Only show Wishes section if there are public wishes, or if viewing own profile */}
+        {(isCurrentUserProfile || (user.wishes && user.wishes.filter((wish) => wish.isPublic).length > 0)) && (
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Wishes:</Text>
+            {user.wishes
+              ?.filter((wish) => wish.isPublic)
+              .map((wish, index) => (
+                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
+                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+                  </View>
                 </View>
-              </View>
-            ))}
-        </View>
+              ))}
+          </View>
+        )}
       </ScrollView>
 
       <BottomNavBar navigation={navigation} />
