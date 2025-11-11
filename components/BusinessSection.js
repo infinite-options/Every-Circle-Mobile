@@ -2,14 +2,20 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal, ScrollView } from "react-native";
 import { BUSINESSES_ENDPOINT } from "../apiConfig";
 
-const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic }) => {
+const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic, navigation, handleDelete }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [businessList, setBusinessList] = useState([]);
   const [activeBusinessIndex, setActiveBusinessIndex] = useState(null);
 
   const addBusiness = () => {
-    const newEntry = { name: "", role: "", isPublic: false, isNew: false };
-    setBusinesses([...businesses, newEntry]);
+    // Navigate to BusinessSetup screen to add a new business
+    if (navigation) {
+      navigation.navigate("BusinessSetup");
+    } else {
+      // Fallback: add entry if navigation not provided
+      const newEntry = { name: "", role: "", isPublic: false, isNew: false };
+      setBusinesses([...businesses, newEntry]);
+    }
   };
 
   const fetchBusinesses = async (index) => {
@@ -25,8 +31,12 @@ const BusinessSection = ({ businesses, setBusinesses, toggleVisibility, isPublic
   };
 
   const deleteBusiness = (index) => {
-    const updated = businesses.filter((_, i) => i !== index);
-    setBusinesses(updated);
+    if (handleDelete) {
+      handleDelete(index);
+    } else {
+      const updated = businesses.filter((_, i) => i !== index);
+      setBusinesses(updated);
+    }
   };
 
   const handleInputChange = (index, field, value) => {
