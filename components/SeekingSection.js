@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 
-const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDelete, onInputFocus }) => {
+const SeekingSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDelete, onInputFocus }) => {
   const bountyInputRefs = useRef({});
   // Bounty unit options for dropdown
   const bountyUnitOptions = [
@@ -302,4 +302,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WishesSection;
+export default SeekingSection;
