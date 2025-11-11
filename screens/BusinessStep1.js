@@ -200,7 +200,7 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#f5f5f5" }}>
+    <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#fff" }}>
       <View style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
           <ScrollView
@@ -233,28 +233,31 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                 value={formData.businessRole || ""}
                 onChange={(item) => updateFormData("businessRole", item.value)}
                 containerStyle={[{ borderRadius: 10, zIndex: 1000 }, darkMode && { backgroundColor: "#2d2d2d", borderColor: "#404040" }]}
-                itemTextStyle={{ color: darkMode ? "#ffffff" : "#000000" }}
-                selectedTextStyle={{ color: darkMode ? "#ffffff" : "#000000" }}
+                itemTextStyle={{ color: darkMode ? "#ffffff" : "#000000", fontSize: 16 }}
+                selectedTextStyle={{ color: darkMode ? "#ffffff" : "#000000", fontSize: 16 }}
                 activeColor={darkMode ? "#404040" : "#f0f0f0"}
-                maxHeight={200}
+                maxHeight={250}
+                renderItem={(item) => (
+                  <View style={{ paddingVertical: 6, paddingHorizontal: 12 }}>
+                    <Text style={{ color: darkMode ? "#ffffff" : "#000000", fontSize: 16 }}>{item.label}</Text>
+                  </View>
+                )}
                 flatListProps={{
                   nestedScrollEnabled: true,
+                  ItemSeparatorComponent: () => <View style={{ height: 2 }} />,
                 }}
               />
 
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Brief Description</Text>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>EIN Number (Optional)</Text>
+              <Text style={[styles.helperText, darkMode && styles.darkHelperText]}>For verification purposes</Text>
               <TextInput
-                style={[styles.textarea, darkMode && styles.darkTextarea]}
-                placeholder='Describe your business...'
-                placeholderTextColor={darkMode ? "#ffffff" : "#666"}
-                value={formData.shortBio}
-                multiline
-                numberOfLines={4}
-                onChangeText={(text) => {
-                  const updated = { ...formData, shortBio: text };
-                  setFormData(updated);
-                  AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
-                }}
+                style={[styles.input, darkMode && styles.darkInput]}
+                value={formData.einNumber || ""}
+                placeholder='##-#######'
+                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
+                keyboardType='numeric'
+                maxLength={10}
+                onChangeText={(text) => updateFormData("einNumber", formatEINNumber(text))}
               />
 
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Images</Text>
@@ -292,18 +295,6 @@ export default function BusinessStep1({ formData, setFormData, navigation }) {
                   </TouchableOpacity>
                 </View>
               </View>
-
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>EIN Number (Optional)</Text>
-              <Text style={[styles.helperText, darkMode && styles.darkHelperText]}>For verification purposes</Text>
-              <TextInput
-                style={[styles.input, darkMode && styles.darkInput]}
-                value={formData.einNumber || ""}
-                placeholder='##-#######'
-                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
-                keyboardType='numeric'
-                maxLength={10}
-                onChangeText={(text) => updateFormData("einNumber", formatEINNumber(text))}
-              />
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

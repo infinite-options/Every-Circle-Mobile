@@ -157,7 +157,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#f5f5f5" }}>
+    <View style={{ flex: 1, backgroundColor: darkMode ? "#1a1a1a" : "#fff" }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={90}>
         <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 20, alignItems: "center" }}>
           <ScrollView
@@ -170,7 +170,22 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
               <Text style={[styles.title, darkMode && styles.darkTitle]}>Select Category</Text>
               <Text style={[styles.subtitle, darkMode && styles.darkSubtitle]}>Select Tags for your business</Text>
 
-              <Text style={[styles.label, darkMode && styles.darkLabel]}>Main Categories *</Text>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Brief Description</Text>
+              <TextInput
+                style={[styles.textarea, darkMode && styles.darkTextarea]}
+                placeholder='Describe your business...'
+                placeholderTextColor={darkMode ? "#ffffff" : "#666"}
+                value={formData.shortBio || ""}
+                multiline
+                numberOfLines={4}
+                onChangeText={(text) => {
+                  const updated = { ...formData, shortBio: text };
+                  setFormData(updated);
+                  AsyncStorage.setItem("businessFormData", JSON.stringify(updated)).catch((err) => console.error("Save error", err));
+                }}
+              />
+
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Main Category *</Text>
               <Dropdown
                 style={[styles.input, darkMode && styles.darkInput]}
                 data={mainCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
@@ -184,7 +199,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
 
               {subCategories.length > 0 && (
                 <>
-                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Sub Categories (Optional)</Text>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Sub Category (Optional)</Text>
                   <Dropdown
                     style={[styles.input, darkMode && styles.darkInput]}
                     data={subCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}
@@ -200,7 +215,7 @@ export default function BusinessStep2({ formData, setFormData, navigation }) {
 
               {subSubCategories.length > 0 && (
                 <>
-                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Sub-Sub Categories (Optional)</Text>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Sub-Sub Category (Optional)</Text>
                   <Dropdown
                     style={[styles.input, darkMode && styles.darkInput]}
                     data={subSubCategories.map((c) => ({ label: c.category_name, value: c.category_uid }))}

@@ -107,12 +107,14 @@ const EditProfileScreen = ({ route, navigation }) => {
     educations: [],
     expertises: [],
     wishes: [],
+    businesses: [],
   });
 
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [pendingBusinessNames, setPendingBusinessNames] = useState([]);
   const [isChanged, setIsChanged] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [shortBioHeight, setShortBioHeight] = useState(40); // Initial height for Short Bio
 
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => {
@@ -134,6 +136,12 @@ const EditProfileScreen = ({ route, navigation }) => {
       }
       if (fieldName === "wishesIsPublic") {
         updated.wishes = prev.wishes.map((item) => ({
+          ...item,
+          isPublic: newValue,
+        }));
+      }
+      if (fieldName === "businessIsPublic") {
+        updated.businesses = prev.businesses.map((item) => ({
           ...item,
           isPublic: newValue,
         }));
@@ -297,6 +305,19 @@ const EditProfileScreen = ({ route, navigation }) => {
     setIsChanged(true);
   };
 
+  const handleDeleteBusiness = (index) => {
+    const deletedBusiness = formData.businesses[index];
+    if (deletedBusiness.profile_business_uid) {
+      setDeletedItems((prev) => ({
+        ...prev,
+        businesses: [...prev.businesses, deletedBusiness.profile_business_uid],
+      }));
+    }
+    const updated = formData.businesses.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, businesses: updated }));
+    setIsChanged(true);
+  };
+
   // Add image error handler
   const handleImageError = () => {
     console.log("EditProfileScreen - Image failed to load, using default image");
@@ -455,6 +476,9 @@ const EditProfileScreen = ({ route, navigation }) => {
       if (deletedItems.wishes.length > 0) {
         payload.append("delete_wishes", JSON.stringify(deletedItems.wishes));
       }
+      if (deletedItems.businesses.length > 0) {
+        payload.append("delete_businesses", JSON.stringify(deletedItems.businesses));
+      }
 
       console.log("Deleted items being sent:", deletedItems);
 
@@ -529,6 +553,32 @@ const EditProfileScreen = ({ route, navigation }) => {
         editable={editable}
         placeholder={`Enter ${label.toLowerCase()}`}
         placeholderTextColor={darkMode ? "#cccccc" : "#999999"}
+      />
+    </View>
+  );
+
+  const renderShortBioField = () => (
+    <View style={styles.fieldContainer}>
+      {/* Row: Label and Toggle */}
+      <View style={styles.labelRow}>
+        <Text style={[styles.label, darkMode && styles.darkLabel]}>Short Bio</Text>
+        <TouchableOpacity onPress={() => handleToggleVisibility("shortBioIsPublic")}>
+          <Text style={[styles.toggleText, { color: formData.shortBioIsPublic ? (darkMode ? "#4ade80" : "green") : darkMode ? "#f87171" : "red" }]}>
+            {formData.shortBioIsPublic ? "Public" : "Private"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <TextInput
+        style={[styles.input, styles.textarea, { height: Math.max(40, shortBioHeight) }, darkMode && styles.darkInput]}
+        value={formData.shortBio}
+        onChangeText={(text) => handleFieldChange("shortBio", text)}
+        placeholder='Enter short bio'
+        placeholderTextColor={darkMode ? "#cccccc" : "#999999"}
+        multiline
+        textAlignVertical='top'
+        onContentSizeChange={(event) => {
+          setShortBioHeight(event.nativeEvent.contentSize.height);
+        }}
       />
     </View>
   );
@@ -674,7 +724,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        {renderField("Short Bio", formData.shortBio, formData.shortBioIsPublic, "shortBio", "shortBioIsPublic")}
+        {renderShortBioField()}
 
         <ExperienceSection
           experience={formData.experience}
@@ -696,15 +746,17 @@ const EditProfileScreen = ({ route, navigation }) => {
           isPublic={formData.educationIsPublic}
           handleDelete={handleDeleteEducation}
         />
-        {/* Temporarily hiding Business Section
-      <BusinessSection
-        businesses={formData.businesses}
-        setBusinesses={(e) => setFormData({ ...formData, businesses: e })}
-        toggleVisibility={() => toggleVisibility("businessIsPublic")}
-        isPublic={formData.businessIsPublic}
+        <BusinessSection
+          businesses={formData.businesses}
+          setBusinesses={(e) => {
+            setFormData({ ...formData, businesses: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("businessIsPublic")}
+          isPublic={formData.businessIsPublic}
           handleDelete={handleDeleteBusiness}
-      />
-        */}
+          navigation={navigation}
+        />
         <ExpertiseSection
           expertise={formData.expertise}
           setExpertise={(e) => {
@@ -778,6 +830,7 @@ const styles = StyleSheet.create({
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5, color: "#000" },
   input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5, backgroundColor: "#fff" },
+  textarea: { minHeight: 40, maxHeight: 200 },
   disabledInput: { backgroundColor: "#eee", color: "#999" },
   saveButton: {
     backgroundColor: "#FFA500",

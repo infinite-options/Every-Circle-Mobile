@@ -149,13 +149,16 @@ const ProfileScreen = ({ route, navigation }) => {
 
       userData.businesses = apiUser.business_info
         ? (typeof apiUser.business_info === "string" ? JSON.parse(apiUser.business_info) : apiUser.business_info).map((bus) => ({
-            profile_business_uid: bus.business_uid || "",
-            name: bus.business_name || "",
+            profile_business_uid: bus.business_uid || bus.profile_business_uid || "",
+            name: bus.business_name || bus.profile_business_name || "",
+            role: bus.profile_business_role || bus.role || bus.bu_role || "",
+            isApproved: bus.profile_business_approved === "1" || bus.profile_business_approved === 1 || bus.isApproved === true || bus.isApproved === "1",
+            isPublic: bus.profile_business_is_visible === "1" || bus.profile_business_is_visible === 1 || bus.isPublic === true || bus.isPublic === "1",
           }))
         : [];
 
-      // console.log("ProfileScreen - userData.businesses (after mapping):", JSON.stringify(userData.businesses, null, 2));
-      // console.log("ProfileScreen - userData.businesses.length:", userData.businesses.length);
+      console.log("ProfileScreen - userData.businesses (after mapping):", JSON.stringify(userData.businesses, null, 2));
+      console.log("ProfileScreen - userData.businesses.length:", userData.businesses.length);
 
       userData.expertise = apiUser.expertise_info
         ? (typeof apiUser.expertise_info === "string" ? JSON.parse(apiUser.expertise_info) : apiUser.expertise_info).map((exp) => ({
@@ -273,6 +276,9 @@ const ProfileScreen = ({ route, navigation }) => {
             businessImages = [...uploadedImages, ...businessImages];
           }
 
+          // Get role and approval status from the original business_info entry
+          const originalBusiness = businesses.find((b) => b.profile_business_uid === bus.profile_business_uid);
+
           // Return business object matching BusinessProfileScreen structure for MiniCard
           return {
             business_name: rawBusiness.business_name || "",
@@ -286,6 +292,8 @@ const ProfileScreen = ({ route, navigation }) => {
               rawBusiness.business_phone_number_is_public === "1" || rawBusiness.business_phone_number_is_public === 1 || rawBusiness.phone_is_public === "1" || rawBusiness.phone_is_public === 1,
             emailIsPublic: rawBusiness.business_email_id_is_public === "1" || rawBusiness.business_email_id_is_public === 1 || rawBusiness.email_is_public === "1" || rawBusiness.email_is_public === 1,
             business_uid: rawBusiness.business_uid || "",
+            role: originalBusiness?.role || "",
+            isApproved: originalBusiness?.isApproved || false,
           };
         } catch (error) {
           console.error(`Error fetching business ${bus.profile_business_uid}:`, error);
@@ -385,20 +393,24 @@ const ProfileScreen = ({ route, navigation }) => {
         {(isCurrentUserProfile || (user.experience && user.experience.filter((exp) => exp.isPublic).length > 0)) && (
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, darkMode && styles.darkLabel]}>Experience:</Text>
-            {user.experience
-              ?.filter((exp) => exp.isPublic)
-              .map((exp, index, arr) => (
-                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                  {exp.startDate || exp.endDate ? (
-                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                      {(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}
-                    </Text>
-                  ) : null}
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.company || ""}</Text>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.title || ""}</Text>
-                  {exp.description && <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description}</Text>}
-                </View>
-              ))}
+            {user.experience && user.experience.filter((exp) => exp.isPublic).length > 0 ? (
+              user.experience
+                .filter((exp) => exp.isPublic)
+                .map((exp, index, arr) => (
+                  <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                    {exp.startDate || exp.endDate ? (
+                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                        {(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}
+                      </Text>
+                    ) : null}
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.company || ""}</Text>
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.title || ""}</Text>
+                    {exp.description && <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description}</Text>}
+                  </View>
+                ))
+            ) : (
+              <Text style={[styles.inputText, darkMode && styles.darkInputText, { fontStyle: "italic", color: darkMode ? "#999" : "#666" }]}>No experience added yet</Text>
+            )}
           </View>
         )}
 
@@ -406,39 +418,23 @@ const ProfileScreen = ({ route, navigation }) => {
         {(isCurrentUserProfile || (user.education && user.education.filter((edu) => edu.isPublic).length > 0)) && (
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, darkMode && styles.darkLabel]}>Education:</Text>
-            {user.education
-              ?.filter((edu) => edu.isPublic)
-              .map((edu, index) => (
-                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                  {edu.startDate || edu.endDate ? (
-                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                      {(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}
-                    </Text>
-                  ) : null}
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.school || ""}</Text>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.degree || ""}</Text>
-                </View>
-              ))}
-          </View>
-        )}
-
-        {/* Only show Businesses section if there are businesses */}
-        {businessesData && businessesData.length > 0 && (
-          <View style={styles.fieldContainer}>
-            <Text style={[styles.label, darkMode && styles.darkLabel]}>Businesses:</Text>
-            {businessesData.map((business, index) => (
-              <TouchableOpacity
-                key={business.business_uid || index}
-                onPress={() => {
-                  if (business.business_uid) {
-                    navigation.navigate("BusinessProfile", { business_uid: business.business_uid });
-                  }
-                }}
-                style={[styles.businessCardContainer, darkMode && styles.darkBusinessCardContainer]}
-              >
-                <MiniCard business={business} />
-              </TouchableOpacity>
-            ))}
+            {user.education && user.education.filter((edu) => edu.isPublic).length > 0 ? (
+              user.education
+                .filter((edu) => edu.isPublic)
+                .map((edu, index) => (
+                  <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                    {edu.startDate || edu.endDate ? (
+                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                        {(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}
+                      </Text>
+                    ) : null}
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.school || ""}</Text>
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.degree || ""}</Text>
+                  </View>
+                ))
+            ) : (
+              <Text style={[styles.inputText, darkMode && styles.darkInputText, { fontStyle: "italic", color: darkMode ? "#999" : "#666" }]}>No education added yet</Text>
+            )}
           </View>
         )}
 
@@ -446,22 +442,26 @@ const ProfileScreen = ({ route, navigation }) => {
         {(isCurrentUserProfile || (user.expertise && user.expertise.filter((exp) => exp.isPublic).length > 0)) && (
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, darkMode && styles.darkLabel]}>Expertise:</Text>
-            {user.expertise
-              ?.filter((exp) => exp.isPublic)
-              .map((exp, index) => (
-                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                      {exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}
-                    </Text>
-                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
-                      {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
-                    </Text>
+            {user.expertise && user.expertise.filter((exp) => exp.isPublic).length > 0 ? (
+              user.expertise
+                .filter((exp) => exp.isPublic)
+                .map((exp, index) => (
+                  <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                        {exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}
+                      </Text>
+                      <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
+                        {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                ))
+            ) : (
+              <Text style={[styles.inputText, darkMode && styles.darkInputText, { fontStyle: "italic", color: darkMode ? "#999" : "#666" }]}>No expertise added yet</Text>
+            )}
           </View>
         )}
 
@@ -469,17 +469,50 @@ const ProfileScreen = ({ route, navigation }) => {
         {(isCurrentUserProfile || (user.wishes && user.wishes.filter((wish) => wish.isPublic).length > 0)) && (
           <View style={styles.fieldContainer}>
             <Text style={[styles.label, darkMode && styles.darkLabel]}>Seeking:</Text>
-            {user.wishes
-              ?.filter((wish) => wish.isPublic)
-              .map((wish, index) => (
-                <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
-                  <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-                    <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+            {user.wishes && user.wishes.filter((wish) => wish.isPublic).length > 0 ? (
+              user.wishes
+                .filter((wish) => wish.isPublic)
+                .map((wish, index) => (
+                  <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
+                    <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
+                    <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
+                      <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                ))
+            ) : (
+              <Text style={[styles.inputText, darkMode && styles.darkInputText, { fontStyle: "italic", color: darkMode ? "#999" : "#666" }]}>No seeking added yet</Text>
+            )}
+          </View>
+        )}
+
+        {/* Only show Businesses section if there are businesses, or if viewing own profile */}
+        {(isCurrentUserProfile || (businessesData && businessesData.length > 0)) && (
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Businesses:</Text>
+            {businessesData && businessesData.length > 0 ? (
+              businessesData.map((business, index) => (
+                <TouchableOpacity
+                  key={business.business_uid || index}
+                  onPress={() => {
+                    if (business.business_uid) {
+                      navigation.navigate("BusinessProfile", { business_uid: business.business_uid });
+                    }
+                  }}
+                  style={[styles.businessCardContainer, darkMode && styles.darkBusinessCardContainer, index > 0 && { marginTop: 10 }]}
+                >
+                  <MiniCard business={business} />
+                  {business.role && (
+                    <View style={styles.roleContainer}>
+                      <Text style={[styles.roleText, darkMode && styles.darkRoleText]}>Role: {business.role}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={[styles.inputText, darkMode && styles.darkInputText, { fontStyle: "italic", color: darkMode ? "#999" : "#666" }]}>No businesses added yet</Text>
+            )}
           </View>
         )}
       </ScrollView>
@@ -497,7 +530,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 20 },
   headerContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10, paddingTop: 40 },
   header: { fontSize: 24, fontWeight: "bold" },
-  fieldContainer: { marginBottom: 15 },
+  fieldContainer: { marginTop: 15, marginBottom: 0 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
   inputContainer: {
     borderWidth: 1,
@@ -522,9 +555,9 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 18, color: "red", textAlign: "center", marginTop: 20 },
 
   cardContainer: {
-    padding: 10,
+    padding: 0,
     alignItems: "flex-start",
-    marginBottom: 20,
+    marginBottom: 0,
   },
 
   nameText: {
@@ -556,7 +589,7 @@ const styles = StyleSheet.create({
   contact: {
     fontSize: 16,
     color: "#555",
-    marginBottom: 6,
+    marginBottom: 20,
   },
 
   profileImage: {
@@ -612,12 +645,24 @@ const styles = StyleSheet.create({
     tintColor: "#ffffff",
   },
   businessCardContainer: {
-    marginBottom: 15,
+    marginBottom: 10,
     borderRadius: 10,
-    overflow: "hidden",
+    overflow: "visible",
   },
   darkBusinessCardContainer: {
-    backgroundColor: "#2d2d2d",
+    backgroundColor: "transparent",
+  },
+  roleContainer: {
+    marginTop: 8,
+    paddingLeft: 10,
+  },
+  roleText: {
+    fontSize: 14,
+    fontStyle: "italic",
+    color: "#666",
+  },
+  darkRoleText: {
+    color: "#999",
   },
 });
 

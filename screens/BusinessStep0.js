@@ -154,6 +154,12 @@ export default function BusinessStep0({ formData, setFormData, navigation }) {
 
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Search for Existing Business</Text>
               <View style={{ width: "100%", marginBottom: 20, zIndex: 1000 }}>
+                {(() => {
+                  const apiKey = config.googleMapsApiKey;
+                  console.log("BusinessStep0 - Google Maps API Key being used:", apiKey ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}` : "NOT SET");
+                  console.log("BusinessStep0 - API Key length:", apiKey ? apiKey.length : 0);
+                  return null;
+                })()}
                 <GooglePlacesAutocomplete
                   ref={googlePlacesRef}
                   placeholder='Search for a business'
