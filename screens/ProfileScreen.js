@@ -465,10 +465,10 @@ const ProfileScreen = ({ route, navigation }) => {
           </View>
         )}
 
-        {/* Only show Wishes section if there are public wishes, or if viewing own profile */}
+        {/* Only show Seeking section if there are public wishes, or if viewing own profile */}
         {(isCurrentUserProfile || (user.wishes && user.wishes.filter((wish) => wish.isPublic).length > 0)) && (
           <View style={styles.fieldContainer}>
-            <Text style={[styles.label, darkMode && styles.darkLabel]}>Wishes:</Text>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Seeking:</Text>
             {user.wishes
               ?.filter((wish) => wish.isPublic)
               .map((wish, index) => (

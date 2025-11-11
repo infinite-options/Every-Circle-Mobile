@@ -115,7 +115,7 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
     <View style={styles.sectionContainer}>
       <View style={styles.headerRow}>
         <View style={styles.labelRow}>
-          <Text style={styles.label}>Wishes</Text>
+          <Text style={styles.label}>Seeking</Text>
           <TouchableOpacity onPress={addWish}>
             <Text style={styles.addText}>+</Text>
           </TouchableOpacity>
@@ -128,13 +128,13 @@ const WishesSection = ({ wishes, setWishes, toggleVisibility, isPublic, handleDe
       {wishes.map((item, index) => (
         <View key={index} style={[styles.card, index > 0 && styles.cardSpacing]}>
           <View style={styles.rowHeader}>
-            <Text style={styles.label}>Wish #{index + 1}</Text>
+            <Text style={styles.label}>Seeking #{index + 1}</Text>
             <TouchableOpacity onPress={() => toggleEntryVisibility(index)}>
               <Text style={{ color: item.isPublic ? "#4CAF50" : "#f44336", fontWeight: "bold" }}>{item.isPublic ? "Public" : "Private"}</Text>
             </TouchableOpacity>
           </View>
 
-          <TextInput style={styles.input} placeholder='Wish Name' value={item.helpNeeds} onChangeText={(text) => handleInputChange(index, "helpNeeds", text)} />
+          <TextInput style={styles.input} placeholder='Seeking Title' value={item.helpNeeds} onChangeText={(text) => handleInputChange(index, "helpNeeds", text)} />
           <TextInput
             style={styles.descriptionInput}
             placeholder='Description'
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 5,
     backgroundColor: "#fff",
-    width: "25%",
+    width: "40%",
     height: 40,
     textAlignVertical: "center",
   },
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 5,
     backgroundColor: "#fff",
-    width: "30%",
+    width: "25%",
     marginLeft: 5,
     paddingHorizontal: 8,
     paddingVertical: 4,
