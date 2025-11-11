@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView,
 import axios from "axios";
 import ExperienceSection from "../components/ExperienceSection";
 import EducationSection from "../components/EducationSection";
-import WishesSection from "../components/WishesSection";
+import SeekingSection from "../components/SeekingSection";
 import MiniCard from "../components/MiniCard";
 import ExpertiseSection from "../components/ExpertiseSection";
 import BusinessSection from "../components/BusinessSection";
@@ -720,7 +720,7 @@ const EditProfileScreen = ({ route, navigation }) => {
           }}
         />
 
-        <WishesSection
+        <SeekingSection
           wishes={formData.wishes}
           setWishes={(e) => {
             setFormData({ ...formData, wishes: e });
