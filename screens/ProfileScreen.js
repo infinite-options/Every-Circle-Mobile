@@ -12,6 +12,11 @@ const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
 
 const ProfileScreen = ({ route, navigation }) => {
+
+  // modified on 11/08 - for network profile navigation
+  // Allows opening a specific user's profile when navigating from the Network screen
+  const { profile_uid: routeProfileUID } = route.params || {};
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [profileUID, setProfileUID] = useState("");
@@ -23,14 +28,18 @@ const ProfileScreen = ({ route, navigation }) => {
       async function loadProfile() {
         console.log("ProfileScreen - useFocusEffect triggered, reloading profile data");
         setLoading(true);
-        let profileId = await AsyncStorage.getItem("profile_uid");
-        console.log("ProfileScreen - profileId from AsyncStorage:", profileId);
+
+        // modified on 11/08 - prefer route param if coming from NetworkScreen
+        let profileId = routeProfileUID || (await AsyncStorage.getItem("profile_uid"));
+        console.log("ProfileScreen - Loaded profileId (route or async):", profileId);
+
         if (profileId) {
           setProfileUID(profileId);
-          console.log("ProfileScreen - Setting profileUID state to:", profileId);
+          console.log("ProfileScreen - Using profile UID:", profileId);
           await fetchUserData(profileId);
           return;
         }
+
         // If no profile_uid, try to get user_uid and fetch profile
         const userId = await AsyncStorage.getItem("user_uid");
         console.log("ProfileScreen - userId:", userId);
@@ -49,12 +58,13 @@ const ProfileScreen = ({ route, navigation }) => {
             console.error("Error fetching profile by user_uid:", err);
           }
         }
+
         // If still not found, show error
         setLoading(false);
         Alert.alert("Error", "Failed to load profile data. Please log in again.");
       }
       loadProfile();
-    }, [])
+    }, [routeProfileUID]) // modified on 11/08 - dependency added
   );
 
   async function fetchUserData(profileUID) {
@@ -71,17 +81,6 @@ const ProfileScreen = ({ route, navigation }) => {
         return;
       }
 
-      // Log each section of the response - turn on or off as needed
-      // console.log('Personal Info:', apiUser.personal_info);
-      // console.log('Experience Info:', apiUser.experience_info);
-      // console.log('Education Info:', apiUser.education_info);
-      // console.log('Business Info:', apiUser.business_info);
-      // console.log('Expertise Info:', apiUser.expertise_info);
-      // console.log('Wishes Info:', apiUser.wishes_info);
-      // console.log('Social Links:', apiUser.social_links);
-      // console.log('Ratings Info:', apiUser.ratings_info);
-
-      // Map API data to display fields (same as in main logic)
       const userData = {
         profile_uid: profileUID,
         email: apiUser?.user_email || "",
@@ -157,7 +156,6 @@ const ProfileScreen = ({ route, navigation }) => {
       console.log("ProfileScreen - Profile UID in userData:", userData.profile_uid);
       setUser(userData);
 
-      // Fetch business details for each business
       if (userData.businesses && userData.businesses.length > 0) {
         fetchBusinessesData(userData.businesses);
       } else {
@@ -183,7 +181,6 @@ const ProfileScreen = ({ route, navigation }) => {
 
           const rawBusiness = result.business;
 
-          // Process images similar to BusinessProfileScreen
           let businessImages = [];
           if (rawBusiness.business_google_photos) {
             if (typeof rawBusiness.business_google_photos === "string") {
@@ -197,7 +194,6 @@ const ProfileScreen = ({ route, navigation }) => {
             }
           }
 
-          // Handle business_images_url
           if (rawBusiness.business_images_url) {
             let uploadedImages = [];
             if (typeof rawBusiness.business_images_url === "string") {
@@ -238,7 +234,6 @@ const ProfileScreen = ({ route, navigation }) => {
           return null;
         }
       });
-
       const fetchedBusinesses = await Promise.all(businessPromises);
       setBusinessesData(fetchedBusinesses.filter(Boolean));
     } catch (error) {
@@ -263,17 +258,44 @@ const ProfileScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={[styles.pageContainer, darkMode && styles.darkPageContainer, { flex: 1, justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator size='large' color={darkMode ? "#ffffff" : "#007BFF"} style={{ marginTop: 50 }} />
+      <View
+        style={[
+          styles.pageContainer,
+          darkMode && styles.darkPageContainer,
+          { flex: 1, justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator
+          size="large"
+          color={darkMode ? "#ffffff" : "#007BFF"}
+          style={{ marginTop: 50 }}
+        />
       </View>
     );
   }
 
   if (!user) {
     return (
-      <View style={[styles.pageContainer, darkMode && styles.darkPageContainer, { flex: 1, justifyContent: "center", alignItems: "center" }]}>
-        <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>No user data available. Please try again.</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Home")} style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8 }}>
+      <View
+        style={[
+          styles.pageContainer,
+          darkMode && styles.darkPageContainer,
+          { flex: 1, justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <Text
+          style={[styles.errorText, darkMode && styles.darkErrorText]}
+        >
+          No user data available. Please try again.
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Home")}
+          style={{
+            backgroundColor: "#007AFF",
+            padding: 12,
+            borderRadius: 8,
+          }}
+        >
           <Text style={{ color: "#fff", fontWeight: "bold" }}>Go Home</Text>
         </TouchableOpacity>
       </View>
@@ -281,19 +303,62 @@ const ProfileScreen = ({ route, navigation }) => {
   }
 
   return (
-    <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
-      <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={{ paddingBottom: 100 }}>
+    <View
+      style={[styles.pageContainer, darkMode && styles.darkPageContainer]}
+    >
+      <ScrollView
+        style={[styles.container, darkMode && styles.darkContainer]}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* modified on 11/08 - show back button when viewing another user's profile */}
+        {routeProfileUID && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#8b58f9",
+              padding: 8,
+              borderRadius: 8,
+              marginBottom: 12,
+              alignSelf: "center",
+            }}
+            onPress={() =>
+              navigation.navigate("Profile", { profile_uid: null })
+            }
+          >
+            <Text style={{ color: "#fff", fontWeight: "600" }}>
+              Back to My Profile
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.headerContainer}>
-          <Text style={[styles.header, darkMode && styles.darkHeader]}>Your Profile</Text>
-          <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate("EditProfile", { user: user, profile_uid: profileUID })}>
-            <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
+          <Text style={[styles.header, darkMode && styles.darkHeader]}>
+            Your Profile
+          </Text>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() =>
+              navigation.navigate("EditProfile", {
+                user: user,
+                profile_uid: profileUID,
+              })
+            }
+          >
+            <Image
+              source={require("../assets/Edit.png")}
+              style={[styles.editIcon, darkMode && styles.darkEditIcon]}
+            />
           </TouchableOpacity>
         </View>
 
         <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
-          {/* This is the Profile Image */}
           <Image
-            source={user.profileImage && user.profileImage !== "" && String(user.profileImage).trim() !== "" ? { uri: String(user.profileImage) } : require("../assets/profile.png")}
+            source={
+              user.profileImage &&
+              user.profileImage !== "" &&
+              String(user.profileImage).trim() !== ""
+                ? { uri: String(user.profileImage) }
+                : require("../assets/profile.png")
+            }
             style={styles.profileImage}
             onError={(error) => {
               console.log("ProfileScreen image failed to load:", error.nativeEvent.error);
@@ -304,15 +369,31 @@ const ProfileScreen = ({ route, navigation }) => {
           <Text style={[styles.nameText, darkMode && styles.darkNameText]}>
             {user.firstName} {user.lastName}
           </Text>
-          {/* Display Profile ID */}
-          <Text style={[styles.profileId, darkMode && styles.darkProfileId]}>Profile ID: {profileUID}</Text>
-          {user.tagLine && user.tagLineIsPublic && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
-          {user.shortBio && user.shortBioIsPublic && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
-          {user.phoneNumber && user.phoneIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.phoneNumber}</Text>}
-          {user.email && user.emailIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.email}</Text>}
+          <Text style={[styles.profileId, darkMode && styles.darkProfileId]}>
+            Profile ID: {profileUID}
+          </Text>
+          {user.tagLine && user.tagLineIsPublic && (
+            <Text style={[styles.tagline, darkMode && styles.darkTagline]}>
+              {user.tagLine}
+            </Text>
+          )}
+          {user.shortBio && user.shortBioIsPublic && (
+            <Text style={[styles.bio, darkMode && styles.darkBio]}>
+              {user.shortBio}
+            </Text>
+          )}
+          {user.phoneNumber && user.phoneIsPublic && (
+            <Text style={[styles.contact, darkMode && styles.darkContact]}>
+              {user.phoneNumber}
+            </Text>
+          )}
+          {user.email && user.emailIsPublic && (
+            <Text style={[styles.contact, darkMode && styles.darkContact]}>
+              {user.email}
+            </Text>
+          )}
         </View>
 
-        {/* This is the MiniCard */}
         <MiniCard
           user={{
             ...user,
@@ -322,53 +403,93 @@ const ProfileScreen = ({ route, navigation }) => {
         />
 
         <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Experience:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>
+            Experience:
+          </Text>
           {user.experience
             ?.filter((exp) => exp.isPublic)
             .map((exp, index, arr) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+              <View
+                key={index}
+                style={[
+                  styles.inputContainer,
+                  darkMode && styles.darkInputContainer,
+                  index > 0 && { marginTop: 4 },
+                ]}
+              >
                 {exp.startDate || exp.endDate ? (
                   <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                    {(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}
+                    {(exp.startDate ? exp.startDate : "") +
+                      (exp.startDate && exp.endDate ? " - " : "") +
+                      (exp.endDate ? exp.endDate : "")}
                   </Text>
                 ) : null}
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.company || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.title || ""}</Text>
-                {exp.description && <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description}</Text>}
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {exp.company || ""}
+                </Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {exp.title || ""}
+                </Text>
+                {exp.description && (
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                    {exp.description}
+                  </Text>
+                )}
               </View>
             ))}
         </View>
 
         <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Education:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>
+            Education:
+          </Text>
           {user.education
             ?.filter((edu) => edu.isPublic)
             .map((edu, index) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+              <View
+                key={index}
+                style={[
+                  styles.inputContainer,
+                  darkMode && styles.darkInputContainer,
+                  index > 0 && { marginTop: 4 },
+                ]}
+              >
                 {edu.startDate || edu.endDate ? (
                   <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                    {(edu.startDate ? edu.startDate : "") + (edu.startDate && edu.endDate ? " - " : "") + (edu.endDate ? edu.endDate : "")}
+                    {(edu.startDate ? edu.startDate : "") +
+                      (edu.startDate && edu.endDate ? " - " : "") +
+                      (edu.endDate ? edu.endDate : "")}
                   </Text>
                 ) : null}
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.school || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{edu.degree || ""}</Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {edu.school || ""}
+                </Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {edu.degree || ""}
+                </Text>
               </View>
             ))}
         </View>
 
-        {/* Only show Businesses section if there are businesses */}
         {businessesData && businessesData.length > 0 && (
           <View style={styles.fieldContainer}>
-            <Text style={[styles.label, darkMode && styles.darkLabel]}>Businesses:</Text>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>
+              Businesses:
+            </Text>
             {businessesData.map((business, index) => (
               <TouchableOpacity
                 key={business.business_uid || index}
                 onPress={() => {
                   if (business.business_uid) {
-                    navigation.navigate("BusinessProfile", { business_uid: business.business_uid });
+                    navigation.navigate("BusinessProfile", {
+                      business_uid: business.business_uid,
+                    });
                   }
                 }}
-                style={[styles.businessCardContainer, darkMode && styles.darkBusinessCardContainer]}
+                style={[
+                  styles.businessCardContainer,
+                  darkMode && styles.darkBusinessCardContainer,
+                ]}
               >
                 <MiniCard business={business} />
               </TouchableOpacity>
@@ -377,17 +498,54 @@ const ProfileScreen = ({ route, navigation }) => {
         )}
 
         <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Expertise:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>
+            Expertise:
+          </Text>
           {user.expertise
             ?.filter((exp) => exp.isPublic)
             .map((exp, index) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}</Text>
-                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
-                    {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
+              <View
+                key={index}
+                style={[
+                  styles.inputContainer,
+                  darkMode && styles.darkInputContainer,
+                  index > 0 && { marginTop: 4 },
+                ]}
+              >
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {exp.name || ""}
+                </Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {exp.description || ""}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                    {exp.cost &&
+                    exp.cost.toLowerCase() !== "free"
+                      ? `cost: $${exp.cost}`
+                      : exp.cost
+                      ? `cost: ${exp.cost}`
+                      : ""}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.inputText,
+                      { textAlign: "right", minWidth: 60 },
+                      darkMode && styles.darkInputText,
+                    ]}
+                  >
+                    {exp.bounty &&
+                    exp.bounty.toLowerCase() !== "free"
+                      ? `💰 $${exp.bounty}`
+                      : exp.bounty
+                      ? `💰 ${exp.bounty}`
+                      : ""}
                   </Text>
                 </View>
               </View>
@@ -395,15 +553,42 @@ const ProfileScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Wishes:</Text>
+          <Text style={[styles.label, darkMode && styles.darkLabel]}>
+            Wishes:
+          </Text>
           {user.wishes
             ?.filter((wish) => wish.isPublic)
             .map((wish, index) => (
-              <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
-                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
-                <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-                  <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+              <View
+                key={index}
+                style={[
+                  styles.inputContainer,
+                  darkMode && styles.darkInputContainer,
+                  index > 0 && { marginTop: 4 },
+                ]}
+              >
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {wish.helpNeeds || ""}
+                </Text>
+                <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
+                  {wish.details || ""}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.inputText,
+                      { textAlign: "right", minWidth: 60 },
+                      darkMode && styles.darkInputText,
+                    ]}
+                  >
+                    {wish.amount ? `💰 $${wish.amount}` : ""}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -417,11 +602,15 @@ const ProfileScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: "#fff", padding: 0 },
-  scrollContainer: {
-    paddingBottom: 20,
-  },
+  scrollContainer: { paddingBottom: 20 },
   container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  headerContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10, paddingTop: 40 },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingTop: 40,
+  },
   header: { fontSize: 24, fontWeight: "bold" },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
@@ -433,58 +622,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     marginBottom: 4,
   },
-  inputText: {
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 4,
+  inputText: { fontSize: 15, color: "#333", marginBottom: 4 },
+  plainText: { fontSize: 15, color: "#333", marginBottom: 10 },
+  editButton: {
+    padding: 10,
+    marginTop: 5,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  plainText: {
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 10,
-  },
-  editButton: { padding: 10, marginTop: 5, alignItems: "center", justifyContent: "center" },
   editIcon: { width: 30, height: 30 },
   errorText: { fontSize: 18, color: "red", textAlign: "center", marginTop: 20 },
-
   cardContainer: {
     padding: 10,
     alignItems: "flex-start",
     marginBottom: 20,
   },
-
-  nameText: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 8,
-  },
+  nameText: { fontSize: 26, fontWeight: "bold", color: "#000", marginBottom: 8 },
   profileId: {
     fontSize: 14,
     color: "#666",
     marginBottom: 8,
     fontStyle: "italic",
   },
-
   tagline: {
     fontSize: 18,
     fontWeight: "600",
     color: "#777",
     marginBottom: 12,
   },
-
-  bio: {
-    fontSize: 16,
-    color: "#777",
-    marginBottom: 20,
-  },
-
-  contact: {
-    fontSize: 16,
-    color: "#555",
-    marginBottom: 6,
-  },
-
+  bio: { fontSize: 16, color: "#777", marginBottom: 20 },
+  contact: { fontSize: 16, color: "#555", marginBottom: 6 },
   profileImage: {
     width: 100,
     height: 100,
@@ -492,59 +659,22 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#eee",
   },
-
-  // Dark mode styles
-  darkPageContainer: {
-    backgroundColor: "#1a1a1a",
-  },
-  darkContainer: {
-    backgroundColor: "#1a1a1a",
-  },
-  darkHeader: {
-    color: "#ffffff",
-  },
-  darkCardContainer: {
-    backgroundColor: "#2d2d2d",
-  },
-  darkNameText: {
-    color: "#ffffff",
-  },
-  darkProfileId: {
-    color: "#cccccc",
-  },
-  darkTagline: {
-    color: "#cccccc",
-  },
-  darkBio: {
-    color: "#cccccc",
-  },
-  darkContact: {
-    color: "#cccccc",
-  },
-  darkLabel: {
-    color: "#ffffff",
-  },
-  darkInputContainer: {
-    backgroundColor: "#2d2d2d",
-    borderColor: "#404040",
-  },
-  darkInputText: {
-    color: "#ffffff",
-  },
-  darkErrorText: {
-    color: "#ff6b6b",
-  },
-  darkEditIcon: {
-    tintColor: "#ffffff",
-  },
-  businessCardContainer: {
-    marginBottom: 15,
-    borderRadius: 10,
-    overflow: "hidden",
-  },
-  darkBusinessCardContainer: {
-    backgroundColor: "#2d2d2d",
-  },
+  darkPageContainer: { backgroundColor: "#1a1a1a" },
+  darkContainer: { backgroundColor: "#1a1a1a" },
+  darkHeader: { color: "#ffffff" },
+  darkCardContainer: { backgroundColor: "#2d2d2d" },
+  darkNameText: { color: "#ffffff" },
+  darkProfileId: { color: "#cccccc" },
+  darkTagline: { color: "#cccccc" },
+  darkBio: { color: "#cccccc" },
+  darkContact: { color: "#cccccc" },
+  darkLabel: { color: "#ffffff" },
+  darkInputContainer: { backgroundColor: "#2d2d2d", borderColor: "#404040" },
+  darkInputText: { color: "#ffffff" },
+  darkErrorText: { color: "#ff6b6b" },
+  darkEditIcon: { tintColor: "#ffffff" },
+  businessCardContainer: { marginBottom: 15, borderRadius: 10, overflow: "hidden" },
+  darkBusinessCardContainer: { backgroundColor: "#2d2d2d" },
 });
 
 export default ProfileScreen;
