@@ -232,6 +232,7 @@ export default function BusinessSetupController({ navigation, route }) {
         business_services: JSON.stringify(formData.business_services || []),
         business_images_url: formData.images && formData.images.length > 0 ? `[${formData.images.length} user-uploaded image(s)]` : "[]",
         user_uploaded_images_count: formData.images ? formData.images.length : 0,
+        custom_tags: JSON.stringify(formData.customTags || []),
       };
 
       // Create FormData and append all fields
@@ -253,7 +254,7 @@ export default function BusinessSetupController({ navigation, route }) {
       data.append("business_role", formData.businessRole);
       data.append("business_category_id", formData.businessCategoryId);
       // data.append('business_google_photos', JSON.stringify(formData.images));
-      // data.append('business_tags', JSON.stringify(formData.customTags));
+      data.append("custom_tags", JSON.stringify(formData.customTags || []));
       // data.append('business_categories_id', JSON.stringify(formData.categories));
       data.append("business_google_rating", formData.googleRating);
       data.append("business_google_photos", JSON.stringify(formData.businessGooglePhotos));

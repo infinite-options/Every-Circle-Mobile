@@ -245,19 +245,31 @@ export default function BusinessProfileScreen({ route, navigation }) {
       console.log("Processed business images after filtering:", businessImages);
 
       // Handle custom tags if available
+      // Check both rawBusiness.custom_tags and result.tags (root level)
       let customTags = [];
-      if (rawBusiness.custom_tags) {
+
+      // First check root level 'tags' from API response
+      if (result.tags && Array.isArray(result.tags)) {
+        customTags = result.tags;
+        console.log("BusinessProfileScreen - Using root level tags:", customTags);
+      }
+      // Then check rawBusiness.custom_tags
+      else if (rawBusiness.custom_tags) {
         if (typeof rawBusiness.custom_tags === "string") {
           try {
             customTags = JSON.parse(rawBusiness.custom_tags);
+            console.log("BusinessProfileScreen - Parsed custom_tags string:", customTags);
           } catch (e) {
             console.log("Failed to parse custom_tags as JSON");
             customTags = [];
           }
         } else if (Array.isArray(rawBusiness.custom_tags)) {
           customTags = rawBusiness.custom_tags;
+          console.log("BusinessProfileScreen - Using custom_tags array:", customTags);
         }
       }
+
+      console.log("BusinessProfileScreen - Final customTags:", customTags);
 
       // Fetch category name if business_category_id is present
       let categoryName = rawBusiness.business_category || null;
@@ -678,8 +690,8 @@ export default function BusinessProfileScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Custom Tags */}
-        {business.customTags && business.customTags.length > 0 && (
+        {/* Custom Tags - Only visible to owners/editors */}
+        {isOwner && business.customTags && business.customTags.length > 0 && (
           <View style={[styles.card, darkMode && styles.darkCard]}>
             <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Tags</Text>
             <View style={styles.tagsContainer}>
