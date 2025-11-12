@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import ProductCard from "../components/ProductCard";
-import { BUSINESS_INFO_ENDPOINT } from "../apiConfig";
+import { BUSINESS_INFO_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
 
 const BusinessProfileAPI = BUSINESS_INFO_ENDPOINT;
@@ -35,7 +35,50 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     businessRole: business?.business_role || business?.role || business?.bu_role || "",
     einNumber: business?.business_ein_number || "",
     website: business?.business_website || "",
-    customTags: Array.isArray(business?.custom_tags) ? business.custom_tags : [],
+    customTags: (() => {
+      // Handle custom_tags - could be array, string, or already parsed as customTags
+      // Also check for 'tags' field from backend API
+      console.log("EditBusinessProfileScreen - Loading custom tags from business object:", {
+        customTags: business?.customTags,
+        custom_tags: business?.custom_tags,
+        tags: business?.tags,
+        businessKeys: business ? Object.keys(business) : "business is null/undefined",
+      });
+
+      // First check if already parsed as customTags (from BusinessProfileScreen)
+      if (business?.customTags && Array.isArray(business.customTags)) {
+        console.log("EditBusinessProfileScreen - Using customTags array:", business.customTags);
+        return business.customTags;
+      }
+
+      // Check for 'tags' field (from backend API response)
+      if (business?.tags && Array.isArray(business.tags)) {
+        console.log("EditBusinessProfileScreen - Using tags array:", business.tags);
+        return business.tags;
+      }
+
+      // Check for custom_tags as array
+      if (business?.custom_tags && Array.isArray(business.custom_tags)) {
+        console.log("EditBusinessProfileScreen - Using custom_tags array:", business.custom_tags);
+        return business.custom_tags;
+      }
+
+      // Check for custom_tags as string (JSON)
+      if (business?.custom_tags && typeof business.custom_tags === "string") {
+        try {
+          const parsed = JSON.parse(business.custom_tags);
+          if (Array.isArray(parsed)) {
+            console.log("EditBusinessProfileScreen - Parsed custom_tags string:", parsed);
+            return parsed;
+          }
+        } catch (e) {
+          console.log("EditBusinessProfileScreen - Failed to parse custom_tags as JSON:", e);
+        }
+      }
+
+      console.log("EditBusinessProfileScreen - No custom tags found, returning empty array");
+      return [];
+    })(),
     images: Array.isArray(business?.images) ? business.images : [],
     businessGooglePhotos: Array.isArray(business?.businessGooglePhotos) ? business.businessGooglePhotos : [],
     socialLinks: {
@@ -54,6 +97,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   const [additionalBusinessUsers, setAdditionalBusinessUsers] = useState([]);
   const [existingBusinessUsers, setExistingBusinessUsers] = useState(Array.isArray(business_users) ? business_users : []);
   const [deletedBusinessUsers, setDeletedBusinessUsers] = useState([]);
+  const [isOwner, setIsOwner] = useState(false);
 
   const businessRoles = [
     { label: "Owner", value: "owner" },
@@ -492,18 +536,20 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 
   const renderCustomTagsSection = () => (
     <View style={styles.fieldContainer}>
-      <Text style={[styles.label, darkMode && styles.darkLabel]}>Custom Tags</Text>
+      <View style={styles.labelRow}>
+        <Text style={[styles.label, darkMode && styles.darkLabel]}>Custom Tags</Text>
+        <TouchableOpacity onPress={addCustomTag}>
+          <Text style={[styles.addText, darkMode && styles.darkAddText]}>+</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.tagInputContainer}>
         <TextInput
-          style={[styles.input, { flex: 1, marginRight: 10, marginBottom: 0 }, darkMode && styles.darkInput]}
+          style={[styles.input, { flex: 1, marginBottom: 0 }, darkMode && styles.darkInput]}
           value={customTagInput}
           placeholder='Add a custom tag'
           placeholderTextColor={darkMode ? "#cccccc" : "#666"}
           onChangeText={setCustomTagInput}
         />
-        <TouchableOpacity style={styles.addTagButton} onPress={addCustomTag}>
-          <Text style={styles.addTagButtonText}>Add</Text>
-        </TouchableOpacity>
       </View>
       <View style={styles.tagsContainer}>
         {(formData.customTags || []).map((tag, index) => (
@@ -520,10 +566,12 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 
   const renderImagesSection = () => (
     <View style={styles.fieldContainer}>
-      <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Images</Text>
-      <TouchableOpacity style={styles.addImageButton} onPress={handleImagePick}>
-        <Text style={styles.addImageButtonText}>+ Add Images</Text>
-      </TouchableOpacity>
+      <View style={styles.labelRow}>
+        <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Images</Text>
+        <TouchableOpacity onPress={handleImagePick}>
+          <Text style={[styles.addText, darkMode && styles.darkAddText]}>+</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
         <View style={styles.imageRow}>
           {(formData.images || []).map((imageUri, index) => (
@@ -571,13 +619,14 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     // Initialize services with proper bs_uid preservation
     const initialServices = business?.business_services || business?.services || [];
     console.log(
-      "Initial services with bs_uid:",
-      initialServices.map((s) => ({ name: s.bs_service_name, bs_uid: s.bs_uid }))
+      "Initial services with bs_uid and bs_tags:",
+      initialServices.map((s) => ({ name: s.bs_service_name, bs_uid: s.bs_uid, bs_tags: s.bs_tags }))
     );
     return initialServices.map((service) => ({
       ...defaultService,
       ...service,
       bs_uid: service.bs_uid || "", // Ensure bs_uid is preserved
+      bs_tags: service.bs_tags || "", // Ensure bs_tags is preserved
     }));
   });
 
@@ -649,12 +698,13 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
   };
 
   const handleEditService = (service, index) => {
-    console.log("Editing service with bs_uid:", service.bs_uid);
-    // When editing, make sure to include the bs_uid in the form
+    console.log("Editing service with bs_uid:", service.bs_uid, "bs_tags:", service.bs_tags);
+    // When editing, make sure to include the bs_uid and bs_tags in the form
     setServiceForm({
       ...defaultService,
       ...service,
       bs_uid: service.bs_uid || "", // Ensure bs_uid is preserved, default to empty string if missing
+      bs_tags: service.bs_tags || "", // Ensure bs_tags is preserved, default to empty string if missing
     });
     setEditingServiceIndex(index);
     setShowServiceForm(true);
@@ -665,6 +715,65 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     setShowServiceForm(false);
     setEditingServiceIndex(null);
   };
+
+  // Check if current user is owner/editor of the business (same logic as BusinessProfileScreen)
+  useEffect(() => {
+    const checkBusinessOwnership = async () => {
+      try {
+        // Method 1: Check business_user_id directly from business object (most reliable)
+        if (business && business.business_user_id) {
+          const currentUserUid = await AsyncStorage.getItem("user_uid");
+          console.log("EditBusinessProfileScreen - Checking ownership via business_user_id:");
+          console.log("  - business.business_user_id:", business.business_user_id);
+          console.log("  - currentUserUid:", currentUserUid);
+
+          if (business.business_user_id === currentUserUid) {
+            console.log("EditBusinessProfileScreen - User is owner (via business_user_id match)");
+            setIsOwner(true);
+            return;
+          }
+        }
+
+        // Method 2: Check via user profile business_info array (fallback)
+        const userUid = await AsyncStorage.getItem("user_uid");
+        const profileUID = await AsyncStorage.getItem("profile_uid");
+        console.log("EditBusinessProfileScreen - Checking ownership via profile business_info:");
+
+        if (!userUid && !profileUID) {
+          console.log("EditBusinessProfileScreen - No user/profile UID found");
+          setIsOwner(false);
+          return;
+        }
+
+        // Try with profile_uid first (more accurate)
+        let uidToUse = profileUID || userUid;
+        const response = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${uidToUse}`);
+        const userData = await response.json();
+
+        if (userData && userData.business_info) {
+          const businessInfo = typeof userData.business_info === "string" ? JSON.parse(userData.business_info) : userData.business_info;
+          const isBusinessOwner = businessInfo.some((biz) => {
+            const matches = biz.business_uid === businessUID || biz.profile_business_business_id === businessUID;
+            return matches;
+          });
+
+          console.log("EditBusinessProfileScreen - isBusinessOwner result:", isBusinessOwner);
+          setIsOwner(isBusinessOwner);
+        } else {
+          console.log("EditBusinessProfileScreen - No business_info in user profile");
+          setIsOwner(false);
+        }
+      } catch (error) {
+        console.error("EditBusinessProfileScreen - Error checking business ownership:", error);
+        setIsOwner(false);
+      }
+    };
+
+    // Only check ownership if we have business data
+    if (business && businessUID) {
+      checkBusinessOwnership();
+    }
+  }, [business, businessUID]);
 
   // Track the currently focused input
   const focusedInputRef = useRef(null);
@@ -762,53 +871,46 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         {renderField("EIN Number", formData.einNumber, "einNumber", "##-#######", null, "numeric", 10, formatEINNumber)}
         {renderField("Website", formData.website, "website")}
 
-        {/* Existing Business Editors/Owners Section */}
-        {existingBusinessUsers.length > 0 && (
-          <View style={[styles.fieldContainer, darkMode && styles.darkFieldContainer]}>
-            <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Editors & Owners</Text>
-            {existingBusinessUsers.map((businessUser, index) => {
-              // Format user data for MiniCard component
-              const userForMiniCard = {
-                firstName: businessUser.first_name || "",
-                lastName: businessUser.last_name || "",
-                email: businessUser.user_email || "",
-                profileImage: businessUser.profile_photo || "",
-                emailIsPublic: true,
-                phoneIsPublic: false,
-                phoneNumber: "",
-              };
-
-              // Check if current user can delete this user
-              const userRole = businessUser.business_role?.toLowerCase() || "";
-              const canDelete = userRole === "employee" || userRole === "admin" || userRole === "other";
-
-              return (
-                <View key={businessUser.business_user_id || index} style={[styles.existingBusinessUserCard, darkMode && styles.darkExistingBusinessUserCard]}>
-                  <View style={styles.existingBusinessUserHeader}>
-                    <View style={styles.existingBusinessUserInfo}>
-                      <MiniCard user={userForMiniCard} />
-                      <Text style={[styles.existingBusinessUserRole, darkMode && styles.darkExistingBusinessUserRole]}>Role: {businessUser.business_role || "N/A"}</Text>
-                    </View>
-                    {canDelete && (
-                      <TouchableOpacity onPress={() => deleteExistingBusinessUser(businessUser)} style={[styles.deleteButton, darkMode && styles.darkDeleteButton]}>
-                        <Text style={[styles.deleteButtonText, darkMode && styles.darkDeleteButtonText]}>🗑️</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Additional Business Editors Section */}
+        {/* Business Editors & Owners Section */}
         <View style={[styles.fieldContainer, darkMode && styles.darkFieldContainer]}>
           <View style={styles.labelRow}>
-            <Text style={[styles.label, darkMode && styles.darkLabel]}>Add New Business Editors</Text>
-            <TouchableOpacity onPress={addBusinessEditor} style={[styles.addEditorButton, darkMode && styles.darkAddEditorButton]}>
-              <Text style={[styles.addEditorButtonText, darkMode && styles.darkAddEditorButtonText]}>+ Add Business Editor</Text>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Editors & Owners</Text>
+            <TouchableOpacity onPress={addBusinessEditor}>
+              <Text style={[styles.addText, darkMode && styles.darkAddText]}>+</Text>
             </TouchableOpacity>
           </View>
+          {existingBusinessUsers.map((businessUser, index) => {
+            // Format user data for MiniCard component
+            const userForMiniCard = {
+              firstName: businessUser.first_name || "",
+              lastName: businessUser.last_name || "",
+              email: businessUser.user_email || "",
+              profileImage: businessUser.profile_photo || "",
+              emailIsPublic: true,
+              phoneIsPublic: false,
+              phoneNumber: "",
+            };
+
+            // Check if current user can delete this user
+            const userRole = businessUser.business_role?.toLowerCase() || "";
+            const canDelete = userRole === "employee" || userRole === "admin" || userRole === "other";
+
+            return (
+              <View key={businessUser.business_user_id || index} style={[styles.existingBusinessUserCard, darkMode && styles.darkExistingBusinessUserCard]}>
+                <View style={styles.existingBusinessUserHeader}>
+                  <View style={styles.existingBusinessUserInfo}>
+                    <MiniCard user={userForMiniCard} />
+                    <Text style={[styles.existingBusinessUserRole, darkMode && styles.darkExistingBusinessUserRole]}>Role: {businessUser.business_role || "N/A"}</Text>
+                  </View>
+                  {canDelete && (
+                    <TouchableOpacity onPress={() => deleteExistingBusinessUser(businessUser)} style={[styles.deleteButton, darkMode && styles.darkDeleteButton]}>
+                      <Text style={[styles.deleteButtonText, darkMode && styles.darkDeleteButtonText]}>🗑️</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            );
+          })}
           {additionalBusinessUsers.map((user, index) => (
             <View key={index} style={[styles.businessEditorCard, darkMode && styles.darkBusinessEditorCard]}>
               <View style={styles.businessEditorHeader}>
@@ -850,7 +952,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
           ))}
         </View>
 
-        {renderCustomTagsSection()}
+        {isOwner && renderCustomTagsSection()}
 
         <View style={[styles.previewSection, darkMode && styles.darkPreviewSection]}>
           <Text style={[styles.label, darkMode && styles.darkLabel]}>MiniCard Preview:</Text>
@@ -867,12 +969,25 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
 
         {/* Products & Services Section */}
         <View style={styles.fieldContainer}>
-          <Text style={[styles.label, darkMode && styles.darkLabel]}>Products & Services</Text>
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Products & Services</Text>
+            {!showServiceForm && (
+              <TouchableOpacity
+                onPress={() => {
+                  setServiceForm({ ...defaultService });
+                  setEditingServiceIndex(null);
+                  setShowServiceForm(true);
+                }}
+              >
+                <Text style={[styles.addText, darkMode && styles.darkAddText]}>+</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           {services.length === 0 && <Text style={[styles.noServicesText, darkMode && styles.darkNoServicesText]}>No products or services added yet.</Text>}
           {services.map((service, idx) => (
             <ProductCard key={idx} service={service} onEdit={() => handleEditService(service, idx)} showEditButton={true} />
           ))}
-          {showServiceForm ? (
+          {showServiceForm && (
             <View style={[styles.serviceFormContainer, darkMode && styles.darkServiceFormContainer]}>
               <Text style={[styles.formTitle, darkMode && styles.darkFormTitle]}>{editingServiceIndex !== null ? "Edit Product/Service" : "Add New Product/Service"}</Text>
               <TextInput
@@ -919,6 +1034,13 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
                 placeholder='Bounty Currency (e.g. USD)'
                 placeholderTextColor={darkMode ? "#cccccc" : "#666"}
               />
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                value={serviceForm.bs_tags}
+                onChangeText={(t) => handleServiceChange("bs_tags", t)}
+                placeholder='Tags (comma separated, e.g. Suit, Men)'
+                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
+              />
               <View style={styles.formButtons}>
                 <TouchableOpacity style={[styles.formButton, styles.cancelButton, darkMode && styles.darkCancelButton]} onPress={handleCancelEdit}>
                   <Text style={[styles.cancelButtonText, darkMode && styles.darkCancelButtonText]}>Cancel</Text>
@@ -928,17 +1050,6 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
                 </TouchableOpacity>
               </View>
             </View>
-          ) : (
-            <TouchableOpacity
-              style={[styles.addTagButton, { marginTop: 10 }]}
-              onPress={() => {
-                setServiceForm({ ...defaultService });
-                setEditingServiceIndex(null);
-                setShowServiceForm(true);
-              }}
-            >
-              <Text style={styles.addTagButtonText}>+ Add Product/Service</Text>
-            </TouchableOpacity>
           )}
         </View>
 
@@ -959,7 +1070,8 @@ const styles = StyleSheet.create({
   header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   fieldContainer: { marginBottom: 15 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
-  labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 5 },
+  addText: { fontSize: 24, fontWeight: "bold", color: "#000" },
   input: { borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 5 },
   saveButton: {
     backgroundColor: "#00C721",
@@ -1239,6 +1351,9 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   darkLabel: {
+    color: "#ffffff",
+  },
+  darkAddText: {
     color: "#ffffff",
   },
   darkInput: {

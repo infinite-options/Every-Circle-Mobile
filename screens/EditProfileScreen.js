@@ -746,17 +746,6 @@ const EditProfileScreen = ({ route, navigation }) => {
           isPublic={formData.educationIsPublic}
           handleDelete={handleDeleteEducation}
         />
-        <BusinessSection
-          businesses={formData.businesses}
-          setBusinesses={(e) => {
-            setFormData({ ...formData, businesses: e });
-            setIsChanged(true);
-          }}
-          toggleVisibility={() => handleToggleVisibility("businessIsPublic")}
-          isPublic={formData.businessIsPublic}
-          handleDelete={handleDeleteBusiness}
-          navigation={navigation}
-        />
         <ExpertiseSection
           expertise={formData.expertise}
           setExpertise={(e) => {
@@ -785,6 +774,18 @@ const EditProfileScreen = ({ route, navigation }) => {
             focusedInputRef.current = inputRef;
             scrollToFocusedInput();
           }}
+        />
+
+        <BusinessSection
+          businesses={formData.businesses}
+          setBusinesses={(e) => {
+            setFormData({ ...formData, businesses: e });
+            setIsChanged(true);
+          }}
+          toggleVisibility={() => handleToggleVisibility("businessIsPublic")}
+          isPublic={formData.businessIsPublic}
+          handleDelete={handleDeleteBusiness}
+          navigation={navigation}
         />
 
         <TouchableOpacity
