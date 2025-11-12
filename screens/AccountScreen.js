@@ -2,9 +2,8 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavBar from "../components/BottomNavBar";
-import { BOUNTY_RESULTS_ENDPOINT, TRANSACTIONS_ENDPOINT } from "../apiConfig";
-import { LineChart } from "react-native-chart-kit";
-import Svg, { Circle } from "react-native-svg";
+import { BOUNTY_RESULTS_ENDPOINT, API_BASE_URL } from "../apiConfig";
+import Svg, { Circle, Line, Text as SvgText, G, Path } from "react-native-svg";
 import { useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 export default function AccountScreen({ navigation }) {
@@ -34,16 +33,13 @@ export default function AccountScreen({ navigation }) {
       const profileId = await AsyncStorage.getItem("profile_uid");
       console.log("Profile ID from AsyncStorage:", profileId);
       if (profileId) {
-        console.log("Making request to:", TRANSACTIONS_ENDPOINT);
-        console.log("Request body:", JSON.stringify({ profile_id: profileId }));
-        const response = await fetch(TRANSACTIONS_ENDPOINT, {
-          method: "POST",
+        const transactionsUrl = `${API_BASE_URL}/api/v1/transactions/${profileId}`;
+        console.log("Making GET request to:", transactionsUrl);
+        const response = await fetch(transactionsUrl, {
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            profile_id: profileId,
-          }),
         });
         console.log("Response status:", response.status);
         console.log("Response ok:", response.ok);
@@ -61,15 +57,20 @@ export default function AccountScreen({ navigation }) {
 
         const result = await response.json();
         console.log("=== TRANSACTION API RESPONSE ===");
-        console.log("Full API response:", result);
-        console.log("Response type:", typeof result);
-        console.log("Is array:", Array.isArray(result));
-        console.log("Length:", result?.length);
-        console.log("First item:", result?.[0]);
+        console.log("Full API response:", JSON.stringify(result, null, 2));
+        console.log("Response code:", result?.code);
+        console.log("Response message:", result?.message);
+        console.log("Data array length:", result?.data?.length);
+        console.log("Count:", result?.count);
+        if (result?.data && result.data.length > 0) {
+          console.log("First transaction:", JSON.stringify(result.data[0], null, 2));
+        }
         console.log("=== END TRANSACTION API RESPONSE ===");
-        console.log("Extracting data array from response:", result.data);
-        console.log("Data array length:", result.data?.length);
-        setTransactionData(result.data || []);
+
+        // Extract transactions from response.data
+        const transactions = result && result.code === 200 && Array.isArray(result.data) ? result.data : [];
+        console.log("Final transactions array length:", transactions.length);
+        setTransactionData(transactions);
       } else {
         console.log("No profile ID found, skipping transaction data fetch");
         setTransactionData([]);
@@ -141,65 +142,233 @@ export default function AccountScreen({ navigation }) {
 
   const screenWidth = Dimensions.get("window").width - 40;
 
-  const chartConfig = {
-    backgroundColor: "#f5f5f5",
-    backgroundGradientFrom: "#f5f5f5",
-    backgroundGradientTo: "#f5f5f5",
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(100,100,100,${opacity})`,
-    labelColor: (opacity = 1) => `rgba(100,100,100,${opacity})`,
-    propsForBackgroundLines: {
-      stroke: "#ddd",
-      strokeWidth: 1,
-    },
+  // Process bounty data for Net Earnings chart with dual axes
+  const processBountyDataForChart = () => {
+    if (!bountyData || !bountyData.data || !Array.isArray(bountyData.data) || bountyData.data.length === 0) {
+      return {
+        dates: [],
+        dailyBounty: [],
+        cumulativeBounty: [],
+        maxDaily: 0,
+        maxCumulative: 0,
+      };
+    }
+
+    // Group bounty by date and calculate cumulative
+    const bountyByDate = {};
+
+    bountyData.data.forEach((transaction) => {
+      if (!transaction.transaction_datetime || !transaction.bounty_earned) return;
+
+      const date = new Date(transaction.transaction_datetime);
+      const dateKey = date.toISOString().split("T")[0]; // YYYY-MM-DD
+
+      if (!bountyByDate[dateKey]) {
+        bountyByDate[dateKey] = 0;
+      }
+      bountyByDate[dateKey] += parseFloat(transaction.bounty_earned) || 0;
+    });
+
+    // Sort dates
+    const sortedDates = Object.keys(bountyByDate).sort();
+
+    // Get last 12 data points (or all if less than 12)
+    const recentDates = sortedDates.slice(-12);
+
+    // Build daily bounty array (one line)
+    const dailyBounty = recentDates.map((date) => bountyByDate[date]);
+
+    // Build cumulative bounty array (second line)
+    const cumulativeBounty = [];
+    let runningTotal = 0;
+    recentDates.forEach((date) => {
+      runningTotal += bountyByDate[date];
+      cumulativeBounty.push(runningTotal);
+    });
+
+    const maxDaily = Math.max(...dailyBounty, 1);
+    const maxCumulative = Math.max(...cumulativeBounty, 1);
+
+    return {
+      dates: recentDates,
+      dailyBounty,
+      cumulativeBounty,
+      maxDaily,
+      maxCumulative,
+    };
   };
 
-  const data = {
-    labels: Array(12).fill(""),
-    datasets: [
-      {
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 3390, 3390, 0, 0],
-        color: () => "#B71C1C",
-        strokeWidth: 3,
-      },
-      {
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 2890, 0, 0, 0],
-        color: () => "black",
-        strokeWidth: 3,
-      },
-    ],
+  // Logarithmic scale helper
+  const logScale = (value, maxValue, height) => {
+    if (value <= 0) return height;
+    const logValue = Math.log10(value);
+    const logMax = Math.log10(maxValue);
+    return height - (logValue / logMax) * height;
   };
 
-  const NetEarningChart = () => (
-    <LineChart
-      data={data}
-      width={screenWidth}
-      height={180}
-      chartConfig={chartConfig}
-      segments={7}
-      withHorizontalLines={true}
-      withVerticalLines={false}
-      withDots={true}
-      propsForDots={{ r: 0 }}
-      withShadow={false}
-      formatYLabel={(y) => {
-        const v = parseFloat(y);
-        return v >= 1000 ? `$${(v / 1000).toFixed(2)}K` : `$${v.toFixed(2)}`;
-      }}
-      style={{ marginVertical: 8 }}
-      renderDotContent={({ x, y, index, dataset }) => {
-        // black line single dot at index 8
-        if (dataset === data.datasets[0] && [8, 10, 11].includes(index)) {
-          return <Circle cx={x} cy={y} r={4} fill='black' />;
-        }
-        // red line two dots at indices 8 & 9
-        if (dataset === data.datasets[1] && (index === 8 || index === 9)) {
-          return <Circle cx={x} cy={y - 4} r={4} fill='#B71C1C' />;
-        }
-        return null;
-      }}
-    />
-  );
+  // Format date for X-axis (MM/DD)
+  const formatDateLabel = (dateString) => {
+    const d = new Date(dateString);
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${month}/${day}`;
+  };
+
+  // Format Y-axis label
+  const formatYLabel = (value) => {
+    if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+    return `$${value.toFixed(0)}`;
+  };
+
+  // Generate logarithmic tick values
+  const generateLogTicks = (maxValue) => {
+    const ticks = [];
+    const logMax = Math.log10(maxValue);
+    const minPower = Math.floor(logMax);
+
+    // Generate ticks at powers of 10 and intermediate values
+    for (let i = 0; i <= minPower; i++) {
+      const value = Math.pow(10, i);
+      if (value <= maxValue) {
+        ticks.push(value);
+      }
+      // Add intermediate values (2, 5 times the power)
+      if (i < minPower) {
+        [2, 5].forEach((mult) => {
+          const intermediate = mult * Math.pow(10, i);
+          if (intermediate <= maxValue) {
+            ticks.push(intermediate);
+          }
+        });
+      }
+    }
+    return ticks.sort((a, b) => a - b);
+  };
+
+  const NetEarningChart = () => {
+    const chartData = processBountyDataForChart();
+    const chartWidth = screenWidth;
+    const chartHeight = 180;
+    const paddingLeft = 50; // Space for left Y-axis
+    const paddingRight = 50; // Space for right Y-axis
+    const paddingTop = 20;
+    const paddingBottom = 30; // Space for X-axis labels
+    const plotWidth = chartWidth - paddingLeft - paddingRight;
+    const plotHeight = chartHeight - paddingTop - paddingBottom;
+
+    if (chartData.dates.length === 0) {
+      return (
+        <View style={{ width: chartWidth, height: chartHeight, justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ color: "#888" }}>No data available</Text>
+        </View>
+      );
+    }
+
+    const dataPoints = chartData.dates.length;
+    const xStep = plotWidth / Math.max(dataPoints - 1, 1);
+
+    // Calculate Y positions for daily bounty (linear, left axis)
+    const dailyYPositions = chartData.dailyBounty.map((value) => {
+      const normalized = value / chartData.maxDaily;
+      return paddingTop + plotHeight - normalized * plotHeight;
+    });
+
+    // Calculate Y positions for cumulative bounty (logarithmic, right axis)
+    const cumulativeYPositions = chartData.cumulativeBounty.map((value) => {
+      return paddingTop + logScale(value, chartData.maxCumulative, plotHeight);
+    });
+
+    // Generate X positions
+    const xPositions = chartData.dates.map((_, index) => paddingLeft + index * xStep);
+
+    // Generate left Y-axis ticks (linear)
+    const leftTicks = 6;
+    const leftTickValues = [];
+    for (let i = 0; i <= leftTicks; i++) {
+      leftTickValues.push((chartData.maxDaily / leftTicks) * i);
+    }
+
+    // Generate right Y-axis ticks (logarithmic)
+    const rightTickValues = generateLogTicks(chartData.maxCumulative);
+
+    // Build path strings for lines
+    const buildPath = (positions) => {
+      return positions
+        .map((y, index) => {
+          const x = xPositions[index];
+          return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+        })
+        .join(" ");
+    };
+
+    const dailyPath = buildPath(dailyYPositions);
+    const cumulativePath = buildPath(cumulativeYPositions);
+
+    return (
+      <View style={{ width: chartWidth, height: chartHeight, marginVertical: 8 }}>
+        <Svg width={chartWidth} height={chartHeight}>
+          {/* Grid lines (horizontal) */}
+          {leftTickValues.map((tick, index) => {
+            const y = paddingTop + plotHeight - (tick / chartData.maxDaily) * plotHeight;
+            return <Line key={`grid-${index}`} x1={paddingLeft} y1={y} x2={paddingLeft + plotWidth} y2={y} stroke='#ddd' strokeWidth='1' />;
+          })}
+
+          {/* Left Y-axis (linear) */}
+          <Line x1={paddingLeft} y1={paddingTop} x2={paddingLeft} y2={paddingTop + plotHeight} stroke='#666' strokeWidth='2' />
+          {leftTickValues.map((tick, index) => {
+            const y = paddingTop + plotHeight - (tick / chartData.maxDaily) * plotHeight;
+            return (
+              <G key={`left-tick-${index}`}>
+                <Line x1={paddingLeft} y1={y} x2={paddingLeft - 5} y2={y} stroke='#666' strokeWidth='1' />
+                <SvgText x={paddingLeft - 8} y={y + 4} fontSize='10' fill='#666' textAnchor='end'>
+                  {formatYLabel(tick)}
+                </SvgText>
+              </G>
+            );
+          })}
+
+          {/* Right Y-axis (logarithmic) */}
+          <Line x1={paddingLeft + plotWidth} y1={paddingTop} x2={paddingLeft + plotWidth} y2={paddingTop + plotHeight} stroke='#666' strokeWidth='2' />
+          {rightTickValues.map((tick, index) => {
+            const y = paddingTop + logScale(tick, chartData.maxCumulative, plotHeight);
+            return (
+              <G key={`right-tick-${index}`}>
+                <Line x1={paddingLeft + plotWidth} y1={y} x2={paddingLeft + plotWidth + 5} y2={y} stroke='#666' strokeWidth='1' />
+                <SvgText x={paddingLeft + plotWidth + 8} y={y + 4} fontSize='10' fill='#666' textAnchor='start'>
+                  {formatYLabel(tick)}
+                </SvgText>
+              </G>
+            );
+          })}
+
+          {/* X-axis */}
+          <Line x1={paddingLeft} y1={paddingTop + plotHeight} x2={paddingLeft + plotWidth} y2={paddingTop + plotHeight} stroke='#666' strokeWidth='2' />
+
+          {/* X-axis labels (dates) */}
+          {chartData.dates.map((date, index) => {
+            const x = xPositions[index];
+            return (
+              <SvgText key={`x-label-${index}`} x={x} y={paddingTop + plotHeight + 15} fontSize='10' fill='#666' textAnchor='middle'>
+                {formatDateLabel(date)}
+              </SvgText>
+            );
+          })}
+
+          {/* Daily bounty line (red, left axis) */}
+          <Path d={dailyPath} stroke='#B71C1C' strokeWidth='3' fill='none' />
+          {dailyYPositions.map((y, index) => (
+            <Circle key={`daily-dot-${index}`} cx={xPositions[index]} cy={y} r='4' fill='#B71C1C' />
+          ))}
+
+          {/* Cumulative bounty line (black, right axis) */}
+          <Path d={cumulativePath} stroke='black' strokeWidth='3' fill='none' />
+          {cumulativeYPositions.map((y, index) => (
+            <Circle key={`cumulative-dot-${index}`} cx={xPositions[index]} cy={y} r='4' fill='black' />
+          ))}
+        </Svg>
+      </View>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -276,30 +445,18 @@ export default function AccountScreen({ navigation }) {
               {/* Table Header */}
               <View style={styles.transactionHeaderRow}>
                 <Text style={styles.transactionHeaderDate}>Date</Text>
-                <Text style={styles.transactionHeaderProfile}>Profile</Text>
+                <Text style={styles.transactionHeaderId}>Transaction ID</Text>
                 <Text style={styles.transactionHeaderBusiness}>Business</Text>
-                <Text style={styles.transactionHeaderPercentage}>%</Text>
                 <Text style={styles.transactionHeaderAmount}>Amount</Text>
               </View>
               {/* Table Rows */}
               {transactionData.map((transaction, i) => {
-                console.log("=== RENDERING TRANSACTION ===");
-                console.log("Transaction index:", i);
-                console.log("Transaction object:", transaction);
-                console.log("Date:", transaction.transaction_datetime, "->", formatTransactionDate(transaction.transaction_datetime));
-                console.log("Profile ID:", transaction.tb_profile_id);
-                console.log("Business name:", transaction.business_name);
-                console.log("Percentage:", transaction.tb_percentage_sum);
-                console.log("Amount:", transaction.tb_amount_sum);
-                console.log("=== END RENDERING TRANSACTION ===");
-
                 return (
                   <View key={transaction.transaction_uid || i} style={styles.transactionRow}>
                     <Text style={styles.transactionDate}>{formatTransactionDate(transaction.transaction_datetime)}</Text>
-                    <Text style={styles.transactionProfile}>{transaction.tb_profile_id || "N/A"}</Text>
+                    <Text style={styles.transactionId}>{transaction.transaction_uid || "N/A"}</Text>
                     <Text style={styles.transactionBusiness}>{transaction.business_name || "N/A"}</Text>
-                    <Text style={styles.transactionPercentage}>{(transaction.tb_percentage_sum * 100)?.toFixed(1) || "0.0"}%</Text>
-                    <Text style={styles.transactionAmount}>${transaction.tb_amount_sum?.toFixed(2) || "0.00"}</Text>
+                    <Text style={styles.transactionAmount}>${parseFloat(transaction.transaction_total || 0).toFixed(2)}</Text>
                   </View>
                 );
               })}
@@ -425,17 +582,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   transactionRow: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  transactionDate: { width: 50, fontSize: 11, color: "#888" },
-  transactionProfile: { width: 60, fontSize: 11, color: "#333" },
+  transactionDate: { width: 60, fontSize: 11, color: "#333" },
+  transactionId: { width: 90, fontSize: 11, color: "#333" },
   transactionBusiness: { flex: 1, fontSize: 11, color: "#333", paddingHorizontal: 4 },
-  transactionPercentage: { width: 40, fontSize: 11, color: "#333", textAlign: "center" },
-  transactionAmount: { width: 60, fontSize: 11, color: "#333", textAlign: "right" },
+  transactionAmount: { width: 70, fontSize: 11, color: "#333", textAlign: "right" },
   // Header styles
-  transactionHeaderDate: { width: 50, fontSize: 11, color: "#fff", fontWeight: "bold" },
-  transactionHeaderProfile: { width: 60, fontSize: 11, color: "#fff", fontWeight: "bold" },
+  transactionHeaderDate: { width: 60, fontSize: 11, color: "#fff", fontWeight: "bold" },
+  transactionHeaderId: { width: 90, fontSize: 11, color: "#fff", fontWeight: "bold" },
   transactionHeaderBusiness: { flex: 1, fontSize: 11, color: "#fff", fontWeight: "bold", paddingHorizontal: 4 },
-  transactionHeaderPercentage: { width: 40, fontSize: 11, color: "#fff", fontWeight: "bold", textAlign: "center" },
-  transactionHeaderAmount: { width: 60, fontSize: 11, color: "#fff", fontWeight: "bold", textAlign: "right" },
+  transactionHeaderAmount: { width: 70, fontSize: 11, color: "#fff", fontWeight: "bold", textAlign: "right" },
   centeredContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   // Bounty Results styles
