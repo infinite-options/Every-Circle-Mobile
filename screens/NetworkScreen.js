@@ -1,10 +1,12 @@
+// NetworkScreen.js
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, TextInput } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, TextInput, Platform } from "react-native";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDarkMode } from "../contexts/DarkModeContext";
-import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
-import { API_BASE_URL } from "../apiConfig";
+import { WebView } from "react-native-webview";
+import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
+import MiniCard from "../components/MiniCard";
 
 const NetworkScreen = ({ navigation }) => {
   const { darkMode } = useDarkMode();
@@ -15,7 +17,7 @@ const NetworkScreen = ({ navigation }) => {
   const [degree, setDegree] = useState("2");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("list"); // "list" or "graph"
+  const [viewMode, setViewMode] = useState("list");
 
   useEffect(() => {
     const loadAsyncStorage = async () => {
@@ -23,7 +25,6 @@ const NetworkScreen = ({ navigation }) => {
         const keys = await AsyncStorage.getAllKeys();
         const stores = await AsyncStorage.multiGet(keys);
         setStorageData(stores);
-
         const profileEntry = stores.find(([key]) => key === "profile_uid");
         if (profileEntry) setProfileUid(profileEntry[1]);
       } catch (e) {
@@ -36,11 +37,45 @@ const NetworkScreen = ({ navigation }) => {
   const groupByDegree = (data) => {
     const grouped = {};
     data.forEach((item) => {
-      const deg = item.degree || 0;
+      const deg = Number(item.degree) || 0;
       if (!grouped[deg]) grouped[deg] = [];
       grouped[deg].push(item);
     });
     return grouped;
+  };
+
+  const pluckMiniCardFields = (apiUser) => {
+    const p = apiUser?.personal_info || {};
+    return {
+      firstName: p.profile_personal_first_name || "",
+      lastName: p.profile_personal_last_name || "",
+      tagLine: p.profile_personal_tag_line || p.profile_personal_tagline || "",
+      email: apiUser?.user_email || "",
+      phoneNumber: p.profile_personal_phone_number || "",
+      profileImage: p.profile_personal_image ? String(p.profile_personal_image) : "",
+    };
+  };
+
+  const getParentUid = (n) => {
+    if (!n) return null;
+    const tryJsonArray = (val) => {
+      try {
+        const arr = typeof val === "string" ? JSON.parse(val) : val;
+        return Array.isArray(arr) && arr.length >= 2 ? arr[arr.length - 2] : null;
+      } catch {
+        return null;
+      }
+    };
+    return (
+      n.parent_uid ||
+      n.via_uid ||
+      n.source_uid ||
+      n.connection_uid ||
+      (Array.isArray(n.path) ? (n.path.length >= 2 ? n.path[n.path.length - 2] : null) : null) ||
+      tryJsonArray(n.path) ||
+      tryJsonArray(n.connection_path) ||
+      null
+    );
   };
 
   const fetchNetwork = async () => {
@@ -86,8 +121,44 @@ const NetworkScreen = ({ navigation }) => {
       console.log("✅ Network data received:", JSON.stringify(data, null, 2));
       console.log("✅ Data count:", Array.isArray(data) ? data.length : "Not an array");
 
-      setNetworkData(data);
-      setGroupedNetwork(groupByDegree(data));
+      const enrichedData = await Promise.all(
+        data.map(async (node) => {
+          const uid = node?.network_profile_personal_uid;
+          if (!uid || uid === "110-000000") {
+            return { ...node, profile_image: "", __mc: {} };
+          }
+          try {
+            const userRes = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${uid}`);
+            if (!userRes.ok) throw new Error(`Failed to load profile ${uid}`);
+            const userData = await userRes.json();
+
+            const { firstName, lastName, tagLine, email, phoneNumber, profileImage } = pluckMiniCardFields(userData);
+
+            return {
+              ...node,
+              profile_image: profileImage || "",
+              __mc: {
+                personal_info: {
+                  profile_personal_first_name: firstName || "",
+                  profile_personal_last_name: lastName || "",
+                  profile_personal_tagline: tagLine || "",
+                  profile_personal_tag_line: tagLine || "",
+                  profile_personal_phone_number: phoneNumber || "",
+                  profile_personal_image: profileImage || "",
+                },
+                user_email: email || "",
+                profileImage: profileImage || "",
+              },
+            };
+          } catch (err) {
+            console.log("Profile fetch failed for uid:", uid);
+            return { ...node, profile_image: "", __mc: {} };
+          }
+        })
+      );
+
+      setNetworkData(enrichedData);
+      setGroupedNetwork(groupByDegree(enrichedData));
     } catch (err) {
       console.error("❌ Network fetch failed:", err);
       console.error("❌ Error message:", err.message);
@@ -106,16 +177,174 @@ const NetworkScreen = ({ navigation }) => {
     return `${deg}-Degree Connections`;
   };
 
+  /** ✅ Build vis-network HTML (hierarchical layout by degree) */
+  const generateVisHTML = (data, youId) => {
+    const nodes = [
+      {
+        id: youId || "YOU",
+        label: "You",
+        shape: "dot",
+        size: 14,
+        color: { border: "#8b58f9", background: "#b894ff" },
+        font: { color: "#ffffff", size: 10 },
+        level: 0,
+      },
+    ];
+
+    const allUids = new Set([youId]);
+    data.forEach((n) => allUids.add(n.network_profile_personal_uid));
+
+    data.forEach((n) => {
+      const name = n.__mc?.personal_info?.profile_personal_first_name || n.__mc?.firstName || "";
+      const last = n.__mc?.personal_info?.profile_personal_last_name || n.__mc?.lastName || "";
+      const label = [name, last].filter(Boolean).join(" ") || (n.network_profile_personal_uid ? n.network_profile_personal_uid.slice(-3) : "???");
+
+      const img = n.__mc?.personal_info?.profile_personal_image || n.__mc?.profileImage || n.profile_image || "";
+
+      const hasImg = img && String(img).trim() !== "";
+      nodes.push({
+        id: n.network_profile_personal_uid,
+        label,
+        shape: hasImg ? "image" : "dot",
+        image: hasImg ? img : undefined,
+        size: hasImg ? 18 : 10,
+        color: hasImg ? undefined : { border: "#8b58f9", background: "#e9d4ff" },
+        font: { size: 10, color: "#444" },
+        level: Number(n.degree) || 1,
+      });
+    });
+
+    const edges = [];
+    data.forEach((n) => {
+      const deg = Number(n.degree) || 1;
+      const parent = (function () {
+        try {
+          const p = getParentUid(n);
+          if (p && allUids.has(p)) return p;
+        } catch {}
+        return null;
+      })();
+
+      if (parent) {
+        edges.push({
+          from: parent,
+          to: n.network_profile_personal_uid,
+          color: { color: "#cccccc" },
+          width: 0.6,
+          smooth: true,
+        });
+      } else if (deg === 1) {
+        edges.push({
+          from: youId || "YOU",
+          to: n.network_profile_personal_uid,
+          color: { color: "#bbbbbb" },
+          width: 0.8,
+          smooth: true,
+        });
+      } else {
+        const possibleParent = data.find((x) => Number(x.degree) === deg - 1);
+        edges.push({
+          from: possibleParent ? possibleParent.network_profile_personal_uid : youId || "YOU",
+          to: n.network_profile_personal_uid,
+          color: { color: "#dddddd" },
+          width: 0.5,
+          smooth: true,
+        });
+      }
+    });
+
+    const payload = { nodes, edges };
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#ffffff; }
+  #mynetwork { width:100%; height:100%; background:#ffffff; }
+</style>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+  <div id="mynetwork"></div>
+  <script>
+    (function() {
+      const data = ${JSON.stringify(payload)};
+      const container = document.getElementById('mynetwork');
+
+      const options = {
+        layout: {
+          improvedLayout: true
+        },
+        physics: {
+          enabled: true,
+          solver: "repulsion",
+          repulsion: {
+            nodeDistance: 180,     // controls how far apart the rings are
+            centralGravity: 0.3,
+            springLength: 100,
+            springConstant: 0.02,
+            damping: 0.15
+          },
+          stabilization: {
+            iterations: 200,
+            updateInterval: 25
+          }
+        },
+
+        edges: {
+          color: '#cccccc',
+          width: 0.5,
+          smooth: { enabled: true, type: 'continuous', roundness: 0.3 }
+        },
+        interaction: {
+          hover: true,
+          zoomView: true,
+          dragView: true,
+          dragNodes: true
+        }
+      };
+
+      const network = new vis.Network(container, data, options);
+
+      network.once('stabilizationIterationsDone', () => {
+        network.fit({ animation: { duration: 200 }});
+      });
+
+      network.on('click', function(params) {
+        if (params && params.nodes && params.nodes.length > 0) {
+          const id = params.nodes[0];
+          if (id && window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage(String(id));
+          }
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        network.fit({ animation: false });
+      });
+    })();
+  </script>
+</body>
+</html>
+`;
+  };
+
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
-        {/* Header */}
         <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
           <Text style={[styles.header, darkMode && styles.darkHeader]}>Network</Text>
         </View>
 
-        <ScrollView contentContainerStyle={[styles.contentCard, darkMode && styles.darkContentCard]}>
-          {/* AsyncStorage Debug Info */}
+        <ScrollView
+          style={[styles.scrollContainer, darkMode && styles.darkScrollContainer]}
+          contentContainerStyle={{ padding: 10, paddingBottom: 120 }}
+          keyboardShouldPersistTaps='handled'
+          showsVerticalScrollIndicator
+        >
           <View>
             <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>AsyncStorage Contents:</Text>
             {storageData.length === 0 ? (
@@ -130,7 +359,6 @@ const NetworkScreen = ({ navigation }) => {
             )}
           </View>
 
-          {/* Network Fetch Section */}
           <View style={{ marginTop: 20 }}>
             <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>User Network:</Text>
             <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{`Profile UID: ${profileUid || "Not found"}`}</Text>
@@ -148,14 +376,7 @@ const NetworkScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Toggle List / Graph View */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                marginVertical: 12,
-              }}
-            >
+            <View style={styles.toggleContainer}>
               <TouchableOpacity onPress={() => setViewMode(viewMode === "list" ? "graph" : "list")} style={styles.toggleButton}>
                 <Text style={styles.toggleButtonText}>{viewMode === "list" ? "View as Graph" : "View as List"}</Text>
               </TouchableOpacity>
@@ -164,56 +385,60 @@ const NetworkScreen = ({ navigation }) => {
             {loading && <ActivityIndicator size='large' color='#8b58f9' />}
             {error && <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>{error}</Text>}
 
-            {/* =================== LIST VIEW =================== */}
-            {viewMode === "list" ? (
-              !loading &&
-              !error &&
-              Object.keys(groupedNetwork).length > 0 &&
-              Object.entries(groupedNetwork).map(([deg, list]) => (
-                <View key={deg} style={{ marginTop: 16 }}>
-                  <Text style={[styles.degreeHeader, darkMode && styles.darkDegreeHeader]}>{degreeLabel(Number(deg))}</Text>
+            {viewMode === "graph" && networkData.length > 0 && (
+              <View
+                style={{
+                  height: 400,
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  borderWidth: 0,
+                }}
+              >
+                <WebView
+                  originWhitelist={["*"]}
+                  source={{ html: generateVisHTML(networkData, profileUid || "YOU") }}
+                  onMessage={(event) => {
+                    const uid = event?.nativeEvent?.data;
+                    if (uid && uid !== (profileUid || "YOU")) {
+                      navigation.navigate("Profile", { profile_uid: uid });
+                    }
+                  }}
+                  javaScriptEnabled
+                  domStorageEnabled
+                  automaticallyAdjustContentInsets
+                  allowsInlineMediaPlayback
+                  androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
+                />
+              </View>
+            )}
 
-                  {list.map((item, index) => (
-                    <View key={index} style={[styles.networkCard, darkMode && styles.darkNetworkCard]}>
-                      <Text style={[styles.networkText, darkMode && styles.darkNetworkText]}>Target UID: {item.target_uid}</Text>
-                      <Text style={[styles.networkText, darkMode && styles.darkNetworkText]}>Connected UID: {item.network_profile_personal_uid}</Text>
-                      <Text style={[styles.networkText, darkMode && styles.darkNetworkText]}>Degree: {item.degree}</Text>
-                    </View>
-                  ))}
-                </View>
-              ))
-            ) : (
-              // =================== GRAPH VIEW ===================
-              <View style={{ alignItems: "center", marginTop: 10 }}>
-                <Svg height='400' width='100%'>
-                  {/* Center node */}
-                  <Circle cx='200' cy='200' r='25' fill='#8b58f9' />
-                  <SvgText x='200' y='205' fill='#fff' fontSize='10' fontWeight='bold' textAnchor='middle'>
-                    You
-                  </SvgText>
+            {viewMode === "list" && Object.keys(groupedNetwork).length > 0 && (
+              <View style={{ marginTop: 10 }}>
+                {Object.keys(groupedNetwork)
+                  .map((d) => Number(d))
+                  .sort((a, b) => a - b)
+                  .map((deg) => {
+                    const list = groupedNetwork[deg];
+                    return (
+                      <View key={deg} style={{ marginBottom: 20 }}>
+                        <Text style={[styles.degreeHeader, darkMode && styles.darkDegreeHeader]}>{degreeLabel(Number(deg))}</Text>
 
-                  {/* Draw nodes per degree */}
-                  {Object.entries(groupedNetwork).map(([deg, list], i) => {
-                    const radius = 80 + i * 70; // ring spacing
-                    const nodes = list.length;
-                    return list.map((node, index) => {
-                      const angle = (2 * Math.PI * index) / nodes;
-                      const x = 200 + radius * Math.cos(angle);
-                      const y = 200 + radius * Math.sin(angle);
-                      const color = i === 0 ? "#b894ff" : i === 1 ? "#d6b3ff" : "#e9d4ff";
-
-                      return (
-                        <React.Fragment key={`${deg}-${index}`}>
-                          <Line x1='200' y1='200' x2={x} y2={y} stroke='#ccc' strokeWidth='1' />
-                          <Circle cx={x} cy={y} r='15' fill={color} />
-                          <SvgText x={x} y={y + 4} fontSize='8' fill='#333' textAnchor='middle'>
-                            {node.network_profile_personal_uid}
-                          </SvgText>
-                        </React.Fragment>
-                      );
-                    });
+                        {list.map((node, index) => (
+                          <TouchableOpacity
+                            key={`${deg}-${index}`}
+                            onPress={() =>
+                              navigation.navigate("Profile", {
+                                profile_uid: node.network_profile_personal_uid,
+                              })
+                            }
+                            style={{ marginVertical: 6 }}
+                          >
+                            <MiniCard user={node.__mc} />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    );
                   })}
-                </Svg>
               </View>
             )}
 
@@ -238,19 +463,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
   },
   header: { color: "#fff", fontSize: 20, fontWeight: "bold" },
-  contentCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    marginTop: 20,
-    marginHorizontal: 6,
-    padding: 10,
-    flexGrow: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
+  scrollContainer: { flex: 1 },
+  darkScrollContainer: { backgroundColor: "#1a1a1a" },
   sectionTitle: { fontWeight: "bold", fontSize: 16, marginBottom: 10, color: "#333" },
   keyText: { fontWeight: "bold", color: "#333" },
   valueText: { color: "#555", fontSize: 13 },
@@ -270,6 +484,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   fetchButtonText: { color: "#fff", fontWeight: "600" },
+  toggleContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginVertical: 12,
+  },
   toggleButton: {
     backgroundColor: "#8b58f9",
     paddingHorizontal: 20,
@@ -278,30 +497,18 @@ const styles = StyleSheet.create({
   },
   toggleButtonText: { color: "#fff", fontWeight: "600" },
   degreeHeader: { fontWeight: "700", fontSize: 15, color: "#6b46c1", marginBottom: 6 },
-  networkCard: {
-    backgroundColor: "#f5f3ff",
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 10,
-  },
-  networkText: { color: "#333" },
   noDataText: { color: "#888" },
   errorText: { color: "red", marginTop: 8 },
-
-  // Dark Mode
   darkPageContainer: { backgroundColor: "#1a1a1a" },
   darkSafeArea: { backgroundColor: "#1a1a1a" },
-  darkHeaderBg: { backgroundColor: "#6b46c1" },
-  darkHeader: { color: "#ffffff" },
-  darkContentCard: { backgroundColor: "#2d2d2d", shadowColor: "#000" },
-  darkSectionTitle: { color: "#ffffff" },
-  darkNoDataText: { color: "#cccccc" },
-  darkKeyText: { color: "#ffffff" },
-  darkValueText: { color: "#cccccc" },
-  darkErrorText: { color: "#ff6b6b" },
-  darkNetworkCard: { backgroundColor: "#3b3b3b" },
-  darkNetworkText: { color: "#e6e6e6" },
-  darkDegreeHeader: { color: "#c7a6ff" },
+  darkHeaderBg: { backgroundColor: "#4b2c91" },
+  darkHeader: { color: "#fff" },
+  darkSectionTitle: { color: "#ccc" },
+  darkKeyText: { color: "#ccc" },
+  darkValueText: { color: "#aaa" },
+  darkNoDataText: { color: "#888" },
+  darkDegreeHeader: { color: "#a78bfa" },
+  darkErrorText: { color: "#f87171" },
 });
 
 export default NetworkScreen;
