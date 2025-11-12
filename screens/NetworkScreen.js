@@ -4,9 +4,48 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Act
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDarkMode } from "../contexts/DarkModeContext";
-import { WebView } from "react-native-webview";
 import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import MiniCard from "../components/MiniCard";
+
+// Lazy load WebView to avoid initialization issues
+let WebView = null;
+let webViewError = null;
+let webViewChecked = false;
+
+const loadWebView = () => {
+  // If we've already checked and failed, don't try again
+  if (webViewError) {
+    return null;
+  }
+
+  // If we've already loaded it successfully, return it
+  if (WebView) {
+    return WebView;
+  }
+
+  // If we haven't checked yet, try to load it
+  if (!webViewChecked) {
+    webViewChecked = true;
+    try {
+      // Try to require the module - this will fail if native module isn't linked
+      const webviewModule = require("react-native-webview");
+      if (webviewModule && webviewModule.WebView) {
+        WebView = webviewModule.WebView;
+        return WebView;
+      } else {
+        throw new Error("WebView component not found in react-native-webview module");
+      }
+    } catch (e) {
+      // Catch any error (including TurboModuleRegistry errors)
+      const errorMessage = e.message || String(e);
+      console.warn("WebView not available:", errorMessage);
+      webViewError = new Error("WebView native module not linked. Please rebuild the app: npx expo prebuild --clean && npx expo run:android");
+      return null;
+    }
+  }
+
+  return WebView;
+};
 
 const NetworkScreen = ({ navigation }) => {
   const { darkMode } = useDarkMode();
@@ -18,6 +57,7 @@ const NetworkScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState("list");
+  const [WebViewComponent, setWebViewComponent] = useState(null);
 
   useEffect(() => {
     const loadAsyncStorage = async () => {
@@ -33,6 +73,27 @@ const NetworkScreen = ({ navigation }) => {
     };
     loadAsyncStorage();
   }, []);
+
+  // Lazy load WebView when graph mode is selected
+  useEffect(() => {
+    if (viewMode === "graph" && !WebViewComponent && !webViewError) {
+      // Use setTimeout to ensure React context is ready
+      const timer = setTimeout(() => {
+        try {
+          const WebView = loadWebView();
+          if (WebView) {
+            setWebViewComponent(() => WebView);
+          } else if (webViewError) {
+            // Error already set in loadWebView, component will show error message
+            console.log("WebView not available, showing error message");
+          }
+        } catch (error) {
+          console.error("Error loading WebView component:", error);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode, WebViewComponent]);
 
   const groupByDegree = (data) => {
     const grouped = {};
@@ -394,21 +455,38 @@ const NetworkScreen = ({ navigation }) => {
                   borderWidth: 0,
                 }}
               >
-                <WebView
-                  originWhitelist={["*"]}
-                  source={{ html: generateVisHTML(networkData, profileUid || "YOU") }}
-                  onMessage={(event) => {
-                    const uid = event?.nativeEvent?.data;
-                    if (uid && uid !== (profileUid || "YOU")) {
-                      navigation.navigate("Profile", { profile_uid: uid });
-                    }
-                  }}
-                  javaScriptEnabled
-                  domStorageEnabled
-                  automaticallyAdjustContentInsets
-                  allowsInlineMediaPlayback
-                  androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
-                />
+                {WebViewComponent ? (
+                  <WebViewComponent
+                    originWhitelist={["*"]}
+                    source={{ html: generateVisHTML(networkData, profileUid || "YOU") }}
+                    onMessage={(event) => {
+                      const uid = event?.nativeEvent?.data;
+                      if (uid && uid !== (profileUid || "YOU")) {
+                        navigation.navigate("Profile", { profile_uid: uid });
+                      }
+                    }}
+                    javaScriptEnabled
+                    domStorageEnabled
+                    automaticallyAdjustContentInsets
+                    allowsInlineMediaPlayback
+                    androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
+                  />
+                ) : webViewError ? (
+                  <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+                    <Text style={[styles.errorText, darkMode && styles.darkErrorText, { textAlign: "center", marginBottom: 10 }]}>WebView is not available. The native module needs to be linked.</Text>
+                    <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5 }]}>
+                      To fix: Run {"\n"}
+                      npx expo prebuild --clean{"\n"}
+                      npx expo run:android
+                    </Text>
+                    <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5, fontSize: 10 }]}>(or run:ios for iOS)</Text>
+                  </View>
+                ) : (
+                  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <ActivityIndicator size='large' color='#8b58f9' />
+                    <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading graph view...</Text>
+                  </View>
+                )}
               </View>
             )}
 
@@ -509,6 +587,10 @@ const styles = StyleSheet.create({
   darkNoDataText: { color: "#888" },
   darkDegreeHeader: { color: "#a78bfa" },
   darkErrorText: { color: "#f87171" },
+  loadingText: { color: "#666", marginTop: 10 },
+  darkLoadingText: { color: "#aaa" },
+  helperText: { color: "#888", fontSize: 12, marginTop: 5 },
+  darkHelperText: { color: "#999" },
 });
 
 export default NetworkScreen;
