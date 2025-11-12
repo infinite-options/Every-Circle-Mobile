@@ -5,9 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cf4370dd-3228-4c89-af46-d26822a30204" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/screens/ChangePasswordScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/ChangePasswordScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/LoginScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/LoginScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/ProfileScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/ProfileScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screens/NetworkScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/NetworkScreen.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,9 +37,10 @@
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "rb__0403",
+    "git-widget-placeholder": "vr__1107",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/ramyasribhattaram/Desktop/Internship/Every-Circle-Mobile"
+    "last_opened_file_path": "/Users/ramyasribhattaram/Desktop/Internship/Every-Circle-Mobile",
+    "node.js.selected.package.tslint": "(autodetect)"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />

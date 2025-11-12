@@ -12,6 +12,10 @@ const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
 
 const ProfileScreen = ({ route, navigation }) => {
+  // modified on 11/08 - for network profile navigation
+  // Allows opening a specific user's profile when navigating from the Network screen
+  const { profile_uid: routeProfileUID } = route.params || {};
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [profileUID, setProfileUID] = useState("");
@@ -26,7 +30,6 @@ const ProfileScreen = ({ route, navigation }) => {
         setLoading(true);
 
         // Check if a specific profile_uid was passed via route params (for viewing other users' profiles)
-        const routeProfileUID = route?.params?.profile_uid;
         const loggedInProfileUID = await AsyncStorage.getItem("profile_uid");
 
         if (routeProfileUID) {
@@ -49,6 +52,7 @@ const ProfileScreen = ({ route, navigation }) => {
           await fetchUserData(profileId);
           return;
         }
+
         // If no profile_uid, try to get user_uid and fetch profile
         const userId = await AsyncStorage.getItem("user_uid");
         console.log("ProfileScreen - userId:", userId);
@@ -69,12 +73,13 @@ const ProfileScreen = ({ route, navigation }) => {
             console.error("Error fetching profile by user_uid:", err);
           }
         }
+
         // If still not found, show error
         setLoading(false);
         Alert.alert("Error", "Failed to load profile data. Please log in again.");
       }
       loadProfile();
-    }, [route])
+    }, [routeProfileUID]) // modified on 11/08 - dependency added
   );
 
   async function fetchUserData(profileUID) {
@@ -91,17 +96,6 @@ const ProfileScreen = ({ route, navigation }) => {
         return;
       }
 
-      // Log each section of the response - turn on or off as needed
-      // console.log('Personal Info:', apiUser.personal_info);
-      // console.log('Experience Info:', apiUser.experience_info);
-      // console.log('Education Info:', apiUser.education_info);
-      // console.log('Business Info:', apiUser.business_info);
-      // console.log('Expertise Info:', apiUser.expertise_info);
-      // console.log('Wishes Info:', apiUser.wishes_info);
-      // console.log('Social Links:', apiUser.social_links);
-      // console.log('Ratings Info:', apiUser.ratings_info);
-
-      // Map API data to display fields (same as in main logic)
       const userData = {
         profile_uid: profileUID,
         email: apiUser?.user_email || "",
@@ -188,7 +182,6 @@ const ProfileScreen = ({ route, navigation }) => {
       console.log("ProfileScreen - Profile UID in userData:", userData.profile_uid);
       setUser(userData);
 
-      // Fetch business details for each business
       if (userData.businesses && userData.businesses.length > 0) {
         console.log("ProfileScreen - Calling fetchBusinessesData with businesses:", userData.businesses);
         fetchBusinessesData(userData.businesses);
@@ -236,7 +229,6 @@ const ProfileScreen = ({ route, navigation }) => {
 
           const rawBusiness = result.business;
 
-          // Process images similar to BusinessProfileScreen
           let businessImages = [];
           if (rawBusiness.business_google_photos) {
             if (typeof rawBusiness.business_google_photos === "string") {
@@ -250,7 +242,6 @@ const ProfileScreen = ({ route, navigation }) => {
             }
           }
 
-          // Handle business_images_url
           if (rawBusiness.business_images_url) {
             let uploadedImages = [];
             if (typeof rawBusiness.business_images_url === "string") {
@@ -300,7 +291,6 @@ const ProfileScreen = ({ route, navigation }) => {
           return null;
         }
       });
-
       const fetchedBusinesses = await Promise.all(businessPromises);
       // console.log("ProfileScreen - Fetched businesses (before filter):", JSON.stringify(fetchedBusinesses, null, 2));
       const validBusinesses = fetchedBusinesses.filter(Boolean);
@@ -339,7 +329,14 @@ const ProfileScreen = ({ route, navigation }) => {
     return (
       <View style={[styles.pageContainer, darkMode && styles.darkPageContainer, { flex: 1, justifyContent: "center", alignItems: "center" }]}>
         <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>No user data available. Please try again.</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Home")} style={{ backgroundColor: "#007AFF", padding: 12, borderRadius: 8 }}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Home")}
+          style={{
+            backgroundColor: "#007AFF",
+            padding: 12,
+            borderRadius: 8,
+          }}
+        >
           <Text style={{ color: "#fff", fontWeight: "bold" }}>Go Home</Text>
         </TouchableOpacity>
       </View>
@@ -349,17 +346,40 @@ const ProfileScreen = ({ route, navigation }) => {
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* modified on 11/08 - show back button when viewing another user's profile */}
+        {routeProfileUID && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#8b58f9",
+              padding: 8,
+              borderRadius: 8,
+              marginBottom: 12,
+              alignSelf: "center",
+            }}
+            onPress={() => navigation.navigate("Profile", { profile_uid: null })}
+          >
+            <Text style={{ color: "#fff", fontWeight: "600" }}>Back to My Profile</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.headerContainer}>
           <Text style={[styles.header, darkMode && styles.darkHeader]}>{isCurrentUserProfile ? "Your Profile" : "Profile"}</Text>
           {isCurrentUserProfile && (
-            <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate("EditProfile", { user: user, profile_uid: profileUID })}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() =>
+                navigation.navigate("EditProfile", {
+                  user: user,
+                  profile_uid: profileUID,
+                })
+              }
+            >
               <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
             </TouchableOpacity>
           )}
         </View>
 
         <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
-          {/* This is the Profile Image */}
           <Image
             source={user.profileImage && user.profileImage !== "" && String(user.profileImage).trim() !== "" ? { uri: String(user.profileImage) } : require("../assets/profile.png")}
             style={styles.profileImage}
@@ -372,7 +392,6 @@ const ProfileScreen = ({ route, navigation }) => {
           <Text style={[styles.nameText, darkMode && styles.darkNameText]}>
             {user.firstName} {user.lastName}
           </Text>
-          {/* Display Profile ID */}
           <Text style={[styles.profileId, darkMode && styles.darkProfileId]}>Profile ID: {profileUID}</Text>
           {user.tagLine && user.tagLineIsPublic && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
           {user.shortBio && user.shortBioIsPublic && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
@@ -380,7 +399,6 @@ const ProfileScreen = ({ route, navigation }) => {
           {user.email && user.emailIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.email}</Text>}
         </View>
 
-        {/* This is the MiniCard */}
         <MiniCard
           user={{
             ...user,
@@ -524,11 +542,15 @@ const ProfileScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: "#fff", padding: 0 },
-  scrollContainer: {
-    paddingBottom: 20,
-  },
+  scrollContainer: { paddingBottom: 20 },
   container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  headerContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10, paddingTop: 40 },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    paddingTop: 40,
+  },
   header: { fontSize: 24, fontWeight: "bold" },
   fieldContainer: { marginTop: 15, marginBottom: 0 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
@@ -540,58 +562,44 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     marginBottom: 4,
   },
-  inputText: {
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 4,
+  inputText: { fontSize: 15, color: "#333", marginBottom: 4 },
+  plainText: { fontSize: 15, color: "#333", marginBottom: 10 },
+  editButton: {
+    padding: 10,
+    marginTop: 5,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  plainText: {
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 10,
-  },
-  editButton: { padding: 10, marginTop: 5, alignItems: "center", justifyContent: "center" },
   editIcon: { width: 30, height: 30 },
   errorText: { fontSize: 18, color: "red", textAlign: "center", marginTop: 20 },
-
   cardContainer: {
     padding: 0,
     alignItems: "flex-start",
     marginBottom: 0,
   },
-
-  nameText: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 8,
-  },
+  nameText: { fontSize: 26, fontWeight: "bold", color: "#000", marginBottom: 8 },
   profileId: {
     fontSize: 14,
     color: "#666",
     marginBottom: 8,
     fontStyle: "italic",
   },
-
   tagline: {
     fontSize: 18,
     fontWeight: "600",
     color: "#777",
     marginBottom: 12,
   },
-
   bio: {
     fontSize: 16,
     color: "#777",
     marginBottom: 20,
   },
-
   contact: {
     fontSize: 16,
     color: "#555",
     marginBottom: 20,
   },
-
   profileImage: {
     width: 100,
     height: 100,
@@ -599,7 +607,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#eee",
   },
-
   // Dark mode styles
   darkPageContainer: {
     backgroundColor: "#1a1a1a",
