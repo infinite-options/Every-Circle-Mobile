@@ -186,8 +186,8 @@ export default function AccountScreen({ navigation }) {
       cumulativeBounty.push(runningTotal);
     });
 
-    const maxDaily = Math.max(...dailyBounty, 1);
-    const maxCumulative = Math.max(...cumulativeBounty, 1);
+    const maxDaily = Math.max(...dailyBounty, 0.01); // Use 0.01 instead of 1 to avoid division issues
+    const maxCumulative = Math.max(...cumulativeBounty, 0.01);
 
     return {
       dates: recentDates,
@@ -198,12 +198,13 @@ export default function AccountScreen({ navigation }) {
     };
   };
 
-  // Logarithmic scale helper
-  const logScale = (value, maxValue, height) => {
-    if (value <= 0) return height;
-    const logValue = Math.log10(value);
-    const logMax = Math.log10(maxValue);
-    return height - (logValue / logMax) * height;
+  // Linear scale helper for right axis (with different scale)
+  const linearScale = (value, maxValue, height) => {
+    if (value <= 0 || !isFinite(value)) return height;
+    if (maxValue <= 0 || !isFinite(maxValue)) return height;
+    const normalized = Math.max(0, Math.min(1, value / maxValue));
+    const result = height - normalized * height;
+    return isFinite(result) ? result : height;
   };
 
   // Format date for X-axis (MM/DD)
@@ -214,35 +215,20 @@ export default function AccountScreen({ navigation }) {
     return `${month}/${day}`;
   };
 
-  // Format Y-axis label
+  // Format Y-axis label with 2 decimal places
   const formatYLabel = (value) => {
-    if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-    return `$${value.toFixed(0)}`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(2)}K`;
+    return `$${value.toFixed(2)}`;
   };
 
-  // Generate logarithmic tick values
-  const generateLogTicks = (maxValue) => {
+  // Generate linear tick values for right axis
+  const generateLinearTicks = (maxValue, numTicks = 6) => {
     const ticks = [];
-    const logMax = Math.log10(maxValue);
-    const minPower = Math.floor(logMax);
-
-    // Generate ticks at powers of 10 and intermediate values
-    for (let i = 0; i <= minPower; i++) {
-      const value = Math.pow(10, i);
-      if (value <= maxValue) {
-        ticks.push(value);
-      }
-      // Add intermediate values (2, 5 times the power)
-      if (i < minPower) {
-        [2, 5].forEach((mult) => {
-          const intermediate = mult * Math.pow(10, i);
-          if (intermediate <= maxValue) {
-            ticks.push(intermediate);
-          }
-        });
-      }
+    const step = maxValue / numTicks;
+    for (let i = 0; i <= numTicks; i++) {
+      ticks.push(step * i);
     }
-    return ticks.sort((a, b) => a - b);
+    return ticks;
   };
 
   const NetEarningChart = () => {
@@ -269,13 +255,15 @@ export default function AccountScreen({ navigation }) {
 
     // Calculate Y positions for daily bounty (linear, left axis)
     const dailyYPositions = chartData.dailyBounty.map((value) => {
-      const normalized = value / chartData.maxDaily;
-      return paddingTop + plotHeight - normalized * plotHeight;
+      const normalized = Math.max(0, Math.min(1, value / chartData.maxDaily)); // Clamp between 0 and 1
+      const y = paddingTop + plotHeight - normalized * plotHeight;
+      return isFinite(y) ? y : paddingTop + plotHeight; // Fallback if Infinity
     });
 
-    // Calculate Y positions for cumulative bounty (logarithmic, right axis)
+    // Calculate Y positions for cumulative bounty (linear, right axis with different scale)
     const cumulativeYPositions = chartData.cumulativeBounty.map((value) => {
-      return paddingTop + logScale(value, chartData.maxCumulative, plotHeight);
+      const y = paddingTop + linearScale(value, chartData.maxCumulative, plotHeight);
+      return isFinite(y) ? y : paddingTop + plotHeight; // Fallback if Infinity
     });
 
     // Generate X positions
@@ -288,15 +276,18 @@ export default function AccountScreen({ navigation }) {
       leftTickValues.push((chartData.maxDaily / leftTicks) * i);
     }
 
-    // Generate right Y-axis ticks (logarithmic)
-    const rightTickValues = generateLogTicks(chartData.maxCumulative);
+    // Generate right Y-axis ticks (linear)
+    const rightTickValues = generateLinearTicks(chartData.maxCumulative, 6);
 
     // Build path strings for lines
     const buildPath = (positions) => {
       return positions
         .map((y, index) => {
           const x = xPositions[index];
-          return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+          // Ensure both x and y are finite numbers
+          const safeX = isFinite(x) ? x : 0;
+          const safeY = isFinite(y) ? y : paddingTop + plotHeight;
+          return index === 0 ? `M ${safeX} ${safeY}` : `L ${safeX} ${safeY}`;
         })
         .join(" ");
     };
@@ -306,6 +297,17 @@ export default function AccountScreen({ navigation }) {
 
     return (
       <View style={{ width: chartWidth, height: chartHeight, marginVertical: 8 }}>
+        {/* Legend */}
+        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 8, gap: 20 }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ width: 12, height: 3, backgroundColor: "#B71C1C", marginRight: 6 }} />
+            <Text style={{ fontSize: 12, color: "#666" }}>Daily Bounty</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ width: 12, height: 3, backgroundColor: "#000", marginRight: 6 }} />
+            <Text style={{ fontSize: 12, color: "#666" }}>Cumulative Bounty</Text>
+          </View>
+        </View>
         <Svg width={chartWidth} height={chartHeight}>
           {/* Grid lines (horizontal) */}
           {leftTickValues.map((tick, index) => {
@@ -327,10 +329,10 @@ export default function AccountScreen({ navigation }) {
             );
           })}
 
-          {/* Right Y-axis (logarithmic) */}
+          {/* Right Y-axis (linear) */}
           <Line x1={paddingLeft + plotWidth} y1={paddingTop} x2={paddingLeft + plotWidth} y2={paddingTop + plotHeight} stroke='#666' strokeWidth='2' />
           {rightTickValues.map((tick, index) => {
-            const y = paddingTop + logScale(tick, chartData.maxCumulative, plotHeight);
+            const y = paddingTop + linearScale(tick, chartData.maxCumulative, plotHeight);
             return (
               <G key={`right-tick-${index}`}>
                 <Line x1={paddingLeft + plotWidth} y1={y} x2={paddingLeft + plotWidth + 5} y2={y} stroke='#666' strokeWidth='1' />
