@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import MiniCard from "../components/MiniCard";
+import QRCode from "react-native-qrcode-svg";
 
 // Lazy load WebView to avoid initialization issues
 let WebView = null;
@@ -58,6 +59,8 @@ const NetworkScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [WebViewComponent, setWebViewComponent] = useState(null);
+  const [userProfileData, setUserProfileData] = useState(null);
+  const [qrCodeData, setQrCodeData] = useState("");
 
   useEffect(() => {
     const loadAsyncStorage = async () => {
@@ -66,13 +69,94 @@ const NetworkScreen = ({ navigation }) => {
         const stores = await AsyncStorage.multiGet(keys);
         setStorageData(stores);
         const profileEntry = stores.find(([key]) => key === "profile_uid");
-        if (profileEntry) setProfileUid(profileEntry[1]);
+        if (profileEntry) {
+          const uid = profileEntry[1];
+          setProfileUid(uid);
+          // Fetch user profile data for QR code
+          fetchUserProfileForQR(uid);
+        }
       } catch (e) {
         setStorageData([["error", e.message]]);
       }
     };
     loadAsyncStorage();
   }, []);
+
+  // Fetch user profile data to create QR code with public miniCard info
+  const fetchUserProfileForQR = async (profileUID) => {
+    try {
+      const response = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${profileUID}`);
+      if (!response.ok) return;
+      const apiUser = await response.json();
+
+      // Extract public miniCard information
+      const p = apiUser?.personal_info || {};
+      const publicData = {
+        profile_uid: profileUID,
+        firstName: p.profile_personal_first_name || "",
+        lastName: p.profile_personal_last_name || "",
+        tagLine: p.profile_personal_tag_line_is_public === 1 || p.profile_personal_tagline_is_public === 1 ? p.profile_personal_tag_line || p.profile_personal_tagline || "" : "",
+        email: p.profile_personal_email_is_public === 1 ? apiUser?.user_email || "" : "",
+        phoneNumber: p.profile_personal_phone_number_is_public === 1 ? p.profile_personal_phone_number || "" : "",
+        profileImage: p.profile_personal_image_is_public === 1 ? (p.profile_personal_image ? String(p.profile_personal_image) : "") : "",
+      };
+
+      setUserProfileData(publicData);
+      // Create vCard format for QR code (standard contact card format)
+      const vCard = createVCard(publicData);
+      setQrCodeData(vCard);
+    } catch (error) {
+      console.error("Error fetching user profile for QR code:", error);
+    }
+  };
+
+  // Create vCard format (standard contact card format that QR scanners recognize)
+  const createVCard = (data) => {
+    const lines = ["BEGIN:VCARD", "VERSION:3.0"];
+
+    // Name (required)
+    const fullName = `${data.firstName} ${data.lastName}`.trim();
+    if (fullName) {
+      lines.push(`FN:${fullName}`);
+      lines.push(`N:${data.lastName || ""};${data.firstName || ""};;;`);
+    }
+
+    // Organization/Title (using tagLine)
+    if (data.tagLine) {
+      lines.push(`ORG:${escapeVCardValue(data.tagLine)}`);
+    }
+
+    // Email
+    if (data.email) {
+      lines.push(`EMAIL:${data.email}`);
+    }
+
+    // Phone
+    if (data.phoneNumber) {
+      // Remove any non-digit characters for phone
+      const phone = data.phoneNumber.replace(/\D/g, "");
+      lines.push(`TEL:${phone}`);
+    }
+
+    // Profile UID as a note
+    if (data.profile_uid) {
+      lines.push(`NOTE:Profile ID: ${data.profile_uid}`);
+    }
+
+    // Profile Image URL (if available)
+    if (data.profileImage) {
+      lines.push(`PHOTO;TYPE=URL:${data.profileImage}`);
+    }
+
+    lines.push("END:VCARD");
+    return lines.join("\n");
+  };
+
+  // Escape special characters in vCard values
+  const escapeVCardValue = (value) => {
+    if (!value) return "";
+    return String(value).replace(/\\/g, "\\\\").replace(/,/g, "\\,").replace(/;/g, "\\;").replace(/\n/g, "\\n");
+  };
 
   // Lazy load WebView when graph mode is selected
   useEffect(() => {
@@ -406,6 +490,25 @@ const NetworkScreen = ({ navigation }) => {
           keyboardShouldPersistTaps='handled'
           showsVerticalScrollIndicator
         >
+          {/* QR Code Section */}
+          {qrCodeData && (
+            <View style={[styles.qrCodeContainer, darkMode && styles.darkQrCodeContainer]}>
+              <Text style={[styles.qrCodeTitle, darkMode && styles.darkQrCodeTitle]}>My Contact QR Code</Text>
+              <Text style={[styles.qrCodeSubtitle, darkMode && styles.darkQrCodeSubtitle]}>Scan to share your public contact information</Text>
+              <View style={[styles.qrCodeWrapper, darkMode && styles.darkQrCodeWrapper]}>
+                <QRCode value={qrCodeData} size={200} color={darkMode ? "#ffffff" : "#000000"} backgroundColor={darkMode ? "#1a1a1a" : "#ffffff"} />
+              </View>
+              {userProfileData && (
+                <View style={styles.qrCodeInfo}>
+                  <Text style={[styles.qrCodeInfoText, darkMode && styles.darkQrCodeInfoText]}>
+                    {userProfileData.firstName} {userProfileData.lastName}
+                  </Text>
+                  {userProfileData.tagLine && <Text style={[styles.qrCodeInfoText, darkMode && styles.darkQrCodeInfoText]}>{userProfileData.tagLine}</Text>}
+                </View>
+              )}
+            </View>
+          )}
+
           <View>
             <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>AsyncStorage Contents:</Text>
             {storageData.length === 0 ? (
@@ -591,6 +694,60 @@ const styles = StyleSheet.create({
   darkLoadingText: { color: "#aaa" },
   helperText: { color: "#888", fontSize: 12, marginTop: 5 },
   darkHelperText: { color: "#999" },
+  qrCodeContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  darkQrCodeContainer: {
+    backgroundColor: "#2d2d2d",
+  },
+  qrCodeTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  darkQrCodeTitle: {
+    color: "#ffffff",
+  },
+  qrCodeSubtitle: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  darkQrCodeSubtitle: {
+    color: "#aaa",
+  },
+  qrCodeWrapper: {
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  darkQrCodeWrapper: {
+    backgroundColor: "#1a1a1a",
+  },
+  qrCodeInfo: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+  qrCodeInfoText: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 4,
+  },
+  darkQrCodeInfoText: {
+    color: "#cccccc",
+  },
 });
 
 export default NetworkScreen;
