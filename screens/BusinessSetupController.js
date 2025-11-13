@@ -250,7 +250,7 @@ export default function BusinessSetupController({ navigation, route }) {
       data.append("business_longitude", formData.longitude);
       data.append("business_short_bio", formData.shortBio);
       data.append("business_tag_line", formData.tagLine);
-      // data.append('business_role', formData.businessRole);
+      data.append("business_role", formData.businessRole);
       data.append("business_category_id", formData.businessCategoryId);
       // data.append('business_google_photos', JSON.stringify(formData.images));
       // data.append('business_tags', JSON.stringify(formData.customTags));
@@ -318,10 +318,22 @@ export default function BusinessSetupController({ navigation, route }) {
       console.log("📦 FORM DATA (Key-Value Pairs for Postman):");
       console.log("============================================");
 
-      // Log as key-value pairs for easy Postman copy-paste
-      Object.entries(payloadData).forEach(([key, value]) => {
+      // Collect all FormData entries and format for Postman
+      const formDataEntries = [];
+      for (let pair of data.entries()) {
+        const [key, value] = pair;
+        // Skip file objects to avoid logging large binary data
+        if (typeof value === "object" && value?.uri) {
+          formDataEntries.push([key, `[FILE] ${value.name || "image"}`]);
+        } else {
+          formDataEntries.push([key, value]);
+        }
+      }
+
+      // Log in Postman-friendly format (key:value - no space after colon for easy copy-paste)
+      formDataEntries.forEach(([key, value]) => {
         const displayValue = typeof value === "object" ? JSON.stringify(value) : String(value);
-        console.log(`${key}: ${displayValue}`);
+        console.log(`${key}:${displayValue}`);
       });
 
       console.log("============================================");

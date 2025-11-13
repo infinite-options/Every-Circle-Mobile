@@ -25,6 +25,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
   const [userReview, setUserReview] = useState(null);
   const [allReviews, setAllReviews] = useState([]);
   const [currentUserProfileId, setCurrentUserProfileId] = useState(null);
+  const [businessUsers, setBusinessUsers] = useState([]);
 
   // Load cart items when component mounts
   useEffect(() => {
@@ -108,6 +109,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
       console.log("BusinessProfileScreen received data:", JSON.stringify(result, null, 2));
 
       const rawBusiness = result.business;
+      console.log("BusinessProfileScreen - business_role in rawBusiness:", rawBusiness?.business_role);
+      console.log("BusinessProfileScreen - bu_role in rawBusiness:", rawBusiness?.bu_role);
+      console.log("BusinessProfileScreen - All business fields:", Object.keys(rawBusiness || {}));
+      console.log("BusinessProfileScreen - Full rawBusiness object:", JSON.stringify(rawBusiness, null, 2));
 
       // Handle social_links - now it's an array of objects
       let socialLinksData = {};
@@ -245,6 +250,14 @@ export default function BusinessProfileScreen({ route, navigation }) {
       // Store ratings in business object for later processing when profile ID is available
       const businessWithRatings = {
         ...rawBusiness,
+        business_user_id: rawBusiness.business_user_id || "", // Include business_user_id for ownership check
+        business_email_id: rawBusiness.business_email_id || "",
+        business_phone_number: rawBusiness.business_phone_number || "",
+        tagline: rawBusiness.business_tag_line || rawBusiness.tagline || "",
+        business_short_bio: rawBusiness.business_short_bio || rawBusiness.short_bio || "",
+        business_role: rawBusiness.business_role || rawBusiness.role || rawBusiness.bu_role || "",
+        business_ein_number: rawBusiness.business_ein_number || "",
+        ein_number: rawBusiness.business_ein_number || "", // Alias for display
         facebook: socialLinksData.facebook || "",
         instagram: socialLinksData.instagram || "",
         linkedin: socialLinksData.linkedin || "",
@@ -253,10 +266,13 @@ export default function BusinessProfileScreen({ route, navigation }) {
         customTags: customTags,
         business_category: categoryName || rawBusiness.business_category || null,
         ratings: result.ratings, // Store ratings for later processing
-        emailIsPublic: rawBusiness.email_is_public === "1",
-        phoneIsPublic: rawBusiness.phone_is_public === "1",
-        taglineIsPublic: rawBusiness.tagline_is_public === "1",
-        shortBioIsPublic: rawBusiness.short_bio_is_public === "1",
+        emailIsPublic: rawBusiness.business_email_id_is_public === "1" || rawBusiness.business_email_id_is_public === 1 || rawBusiness.email_is_public === "1" || rawBusiness.email_is_public === 1,
+        phoneIsPublic:
+          rawBusiness.business_phone_number_is_public === "1" || rawBusiness.business_phone_number_is_public === 1 || rawBusiness.phone_is_public === "1" || rawBusiness.phone_is_public === 1,
+        taglineIsPublic:
+          rawBusiness.business_tag_line_is_public === "1" || rawBusiness.business_tag_line_is_public === 1 || rawBusiness.tagline_is_public === "1" || rawBusiness.tagline_is_public === 1,
+        shortBioIsPublic:
+          rawBusiness.business_short_bio_is_public === "1" || rawBusiness.business_short_bio_is_public === 1 || rawBusiness.short_bio_is_public === "1" || rawBusiness.short_bio_is_public === 1,
         business_services: (() => {
           if (rawBusiness.business_services) {
             if (typeof rawBusiness.business_services === "string") {
@@ -279,6 +295,14 @@ export default function BusinessProfileScreen({ route, navigation }) {
       };
 
       setBusiness(businessWithRatings);
+
+      // Store business_users if available
+      if (result.business_users && Array.isArray(result.business_users)) {
+        console.log("BusinessProfileScreen - business_users:", JSON.stringify(result.business_users, null, 2));
+        setBusinessUsers(result.business_users);
+      } else {
+        setBusinessUsers([]);
+      }
     } catch (err) {
       console.error("Error fetching business data:", err);
     } finally {
@@ -289,29 +313,72 @@ export default function BusinessProfileScreen({ route, navigation }) {
   useEffect(() => {
     const checkBusinessOwnership = async () => {
       try {
-        const profileUID = await AsyncStorage.getItem("user_uid");
-        if (!profileUID) {
-          console.log("No user profile found");
+        // Method 1: Check business_user_id directly from business object (most reliable)
+        if (business && business.business_user_id) {
+          const currentUserUid = await AsyncStorage.getItem("user_uid");
+          console.log("BusinessProfileScreen - Checking ownership via business_user_id:");
+          console.log("  - business.business_user_id:", business.business_user_id);
+          console.log("  - currentUserUid:", currentUserUid);
+
+          if (business.business_user_id === currentUserUid) {
+            console.log("BusinessProfileScreen - User is owner (via business_user_id match)");
+            setIsOwner(true);
+            return;
+          }
+        }
+
+        // Method 2: Check via user profile business_info array (fallback)
+        const userUid = await AsyncStorage.getItem("user_uid");
+        const profileUID = await AsyncStorage.getItem("profile_uid");
+        console.log("BusinessProfileScreen - Checking ownership via profile business_info:");
+        console.log("  - user_uid:", userUid);
+        console.log("  - profile_uid:", profileUID);
+        console.log("  - business_uid:", business_uid);
+
+        if (!userUid && !profileUID) {
+          console.log("BusinessProfileScreen - No user/profile UID found");
+          setIsOwner(false);
           return;
         }
 
-        const response = await fetch(`${ProfileScreenAPI}/${profileUID}`);
+        // Try with profile_uid first (more accurate)
+        let uidToUse = profileUID || userUid;
+        const response = await fetch(`${ProfileScreenAPI}/${uidToUse}`);
         const userData = await response.json();
+        console.log("BusinessProfileScreen - Profile API response:", JSON.stringify(userData, null, 2));
 
         if (userData && userData.business_info) {
           const businessInfo = typeof userData.business_info === "string" ? JSON.parse(userData.business_info) : userData.business_info;
+          // console.log("BusinessProfileScreen - business_info array:", JSON.stringify(businessInfo, null, 2));
 
-          const isBusinessOwner = businessInfo.some((biz) => biz.business_uid === business_uid || biz.profile_business_business_id === business_uid);
+          const isBusinessOwner = businessInfo.some((biz) => {
+            const matches = biz.business_uid === business_uid || biz.profile_business_business_id === business_uid;
+            console.log(`BusinessProfileScreen - Checking business:`, {
+              biz_business_uid: biz.business_uid,
+              biz_profile_business_business_id: biz.profile_business_business_id,
+              target_business_uid: business_uid,
+              matches: matches,
+            });
+            return matches;
+          });
 
+          console.log("BusinessProfileScreen - isBusinessOwner result:", isBusinessOwner);
           setIsOwner(isBusinessOwner);
+        } else {
+          console.log("BusinessProfileScreen - No business_info in user profile");
+          setIsOwner(false);
         }
       } catch (error) {
-        console.error("Error checking business ownership:", error);
+        console.error("BusinessProfileScreen - Error checking business ownership:", error);
+        setIsOwner(false);
       }
     };
 
-    checkBusinessOwnership();
-  }, [business_uid]);
+    // Only check ownership if we have business data
+    if (business) {
+      checkBusinessOwnership();
+    }
+  }, [business_uid, business]);
 
   // Add focus listener to refresh data when returning to this screen
   useEffect(() => {
@@ -451,6 +518,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
                 navigation.navigate("EditBusinessProfile", {
                   business: business,
                   business_uid: business_uid,
+                  business_users: businessUsers,
                 })
               }
             >
@@ -467,9 +535,11 @@ export default function BusinessProfileScreen({ route, navigation }) {
               business_address_line_1: business.business_address_line_1,
               business_zip_code: business.business_zip_code,
               business_phone_number: business.business_phone_number,
+              business_email: business.business_email_id,
               business_website: business.business_website,
               first_image: business.images && business.images.length > 0 ? business.images[0] : null,
               phoneIsPublic: business.phoneIsPublic,
+              emailIsPublic: business.emailIsPublic,
             }}
           />
         </View>
@@ -497,10 +567,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
             </View>
           )}
 
-          {business.emailIsPublic && business.business_email && (
+          {business.emailIsPublic && business.business_email_id && (
             <View style={styles.infoRow}>
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Email:</Text>
-              <Text style={[styles.value, darkMode && styles.darkValue]}>{business.business_email}</Text>
+              <Text style={[styles.value, darkMode && styles.darkValue]}>{business.business_email_id}</Text>
             </View>
           )}
 
@@ -516,10 +586,10 @@ export default function BusinessProfileScreen({ route, navigation }) {
             </View>
           )}
 
-          {business.business_role && (
+          {(business.business_role || business.role || business.bu_role) && (
             <View style={styles.infoRow}>
               <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Role:</Text>
-              <Text style={[styles.value, darkMode && styles.darkValue]}>{business.business_role}</Text>
+              <Text style={[styles.value, darkMode && styles.darkValue]}>{business.business_role || business.role || business.bu_role}</Text>
             </View>
           )}
 
@@ -621,6 +691,32 @@ export default function BusinessProfileScreen({ route, navigation }) {
               ))}
             </ScrollView>
             {business.images.length === 0 && <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No compatible images available</Text>}
+          </View>
+        )}
+
+        {/* Business Editors/Owners Section - Only visible to owners/editors */}
+        {isOwner && businessUsers.length > 0 && (
+          <View style={[styles.card, darkMode && styles.darkCard]}>
+            <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Editors & Owners</Text>
+            {businessUsers.map((businessUser, index) => {
+              // Format user data for MiniCard component
+              const userForMiniCard = {
+                firstName: businessUser.first_name || "",
+                lastName: businessUser.last_name || "",
+                email: businessUser.user_email || "",
+                profileImage: businessUser.profile_photo || "",
+                // Note: We don't have visibility flags from business_users, so we'll show email/phone if they exist
+                emailIsPublic: true, // Assume public since we're showing to owners/editors
+                phoneIsPublic: false, // No phone in business_users data
+                phoneNumber: "", // No phone in business_users data
+              };
+              return (
+                <View key={businessUser.business_user_id || index} style={[styles.businessUserCard, darkMode && styles.darkBusinessUserCard]}>
+                  <MiniCard user={userForMiniCard} />
+                  <Text style={[styles.businessUserRole, darkMode && styles.darkBusinessUserRole]}>Role: {businessUser.business_role || "N/A"}</Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -1276,6 +1372,24 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   darkReviewMetadataText: {
+    color: "#cccccc",
+  },
+  businessUserCard: {
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  businessUserRole: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 8,
+    fontStyle: "italic",
+  },
+  darkBusinessUserCard: {
+    borderBottomColor: "#404040",
+  },
+  darkBusinessUserRole: {
     color: "#cccccc",
   },
 });

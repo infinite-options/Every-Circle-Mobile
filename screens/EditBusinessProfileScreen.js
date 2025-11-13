@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView,
 import * as ImagePicker from "expo-image-picker";
 import { Dropdown } from "react-native-element-dropdown";
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import ProductCard from "../components/ProductCard";
@@ -14,7 +15,7 @@ const BusinessProfileAPI = BUSINESS_INFO_ENDPOINT;
 export default function EditBusinessProfileScreen({ route, navigation }) {
   const { darkMode } = useDarkMode();
   // console.log("Edit Button Pressed: EditBusinessProfileScreen", route.params.business);
-  const { business } = route.params || {};
+  const { business, business_users } = route.params || {};
   const [businessUID, setBusinessUID] = useState(business?.business_uid || "");
 
   const [formData, setFormData] = useState({
@@ -26,11 +27,11 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     country: business?.business_country || "",
     zip: business?.business_zip_code || "",
     phone: business?.business_phone_number || "",
-    email: business?.business_email || "",
+    email: business?.business_email_id || business?.business_email || "",
     category: business?.business_category || "",
-    tagline: business?.tagline || "",
-    shortBio: business?.business_short_bio || "",
-    businessRole: business?.business_role || "",
+    tagline: business?.business_tag_line || business?.tagline || "",
+    shortBio: business?.business_short_bio || business?.short_bio || "",
+    businessRole: business?.business_role || business?.role || business?.bu_role || "",
     einNumber: business?.business_ein_number || "",
     website: business?.business_website || "",
     customTags: Array.isArray(business?.custom_tags) ? business.custom_tags : [],
@@ -42,13 +43,16 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       linkedin: business?.linkedin || "",
       youtube: business?.youtube || "",
     },
-    emailIsPublic: business?.email_is_public === "1",
-    phoneIsPublic: business?.phone_is_public === "1",
-    taglineIsPublic: business?.tagline_is_public === "1",
-    shortBioIsPublic: business?.short_bio_is_public === "1",
+    emailIsPublic: business?.business_email_id_is_public === "1" || business?.email_is_public === "1" || business?.emailIsPublic === true,
+    phoneIsPublic: business?.business_phone_number_is_public === "1" || business?.phone_is_public === "1" || business?.phoneIsPublic === true,
+    taglineIsPublic: business?.business_tag_line_is_public === "1" || business?.tagline_is_public === "1" || business?.taglineIsPublic === true,
+    shortBioIsPublic: business?.business_short_bio_is_public === "1" || business?.short_bio_is_public === "1" || business?.shortBioIsPublic === true,
   });
 
   const [customTagInput, setCustomTagInput] = useState("");
+  const [additionalBusinessUsers, setAdditionalBusinessUsers] = useState([]);
+  const [existingBusinessUsers, setExistingBusinessUsers] = useState(Array.isArray(business_users) ? business_users : []);
+  const [deletedBusinessUsers, setDeletedBusinessUsers] = useState([]);
 
   const businessRoles = [
     { label: "Owner", value: "owner" },
@@ -58,8 +62,75 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     { label: "Other", value: "other" },
   ];
 
+  const formatEINNumber = (text) => {
+    // Remove all non-numeric characters
+    const cleaned = text.replace(/\D/g, "");
+
+    // Limit to 9 digits (2 + 7)
+    if (cleaned.length > 9) {
+      return text.slice(0, -1);
+    }
+
+    // Format based on length: ##-#######
+    if (cleaned.length === 0) return "";
+    if (cleaned.length <= 2) return cleaned;
+    if (cleaned.length <= 9) return `${cleaned.slice(0, 2)}-${cleaned.slice(2)}`;
+    return text;
+  };
+
   const toggleVisibility = (fieldName) => {
     setFormData((prev) => ({ ...prev, [fieldName]: !prev[fieldName] }));
+  };
+
+  const addBusinessEditor = () => {
+    setAdditionalBusinessUsers([...additionalBusinessUsers, { email: "", role: "" }]);
+  };
+
+  const removeBusinessEditor = (index) => {
+    const updated = additionalBusinessUsers.filter((_, i) => i !== index);
+    setAdditionalBusinessUsers(updated);
+  };
+
+  const updateBusinessEditor = (index, field, value) => {
+    const updated = [...additionalBusinessUsers];
+    updated[index] = { ...updated[index], [field]: value };
+    setAdditionalBusinessUsers(updated);
+  };
+
+  // Delete existing business user (only for employee/admin/other roles)
+  const deleteExistingBusinessUser = async (businessUser) => {
+    // Check if current user is owner or partner
+    const userUid = await AsyncStorage.getItem("user_uid");
+    const currentUser = existingBusinessUsers.find((user) => user.business_user_id === userUid);
+    const currentUserRole = currentUser?.business_role || formData.businessRole || "";
+
+    // Only allow deletion if current user is owner or partner
+    if (currentUserRole.toLowerCase() !== "owner" && currentUserRole.toLowerCase() !== "partner") {
+      Alert.alert("Permission Denied", "Only owners and partners can remove business users.");
+      return;
+    }
+
+    // Only allow deletion of employee, admin, or other roles
+    const userRole = businessUser.business_role?.toLowerCase() || "";
+    if (userRole === "owner" || userRole === "partner") {
+      Alert.alert("Cannot Delete", "Owners and partners cannot be removed.");
+      return;
+    }
+
+    Alert.alert("Remove Business User", `Are you sure you want to remove ${businessUser.first_name || ""} ${businessUser.last_name || ""} (${businessUser.business_role || ""})?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          // Remove from existing users
+          const updated = existingBusinessUsers.filter((user) => user.business_user_id !== businessUser.business_user_id);
+          setExistingBusinessUsers(updated);
+          // Add to deleted users list
+          setDeletedBusinessUsers((prev) => [...prev, businessUser.business_user_id]);
+        },
+      },
+    ]);
   };
 
   const handleSave = async () => {
@@ -70,7 +141,25 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     }
 
     try {
+      // Retrieve user_uid from AsyncStorage
+      const userUid = await AsyncStorage.getItem("user_uid");
+      if (!userUid) {
+        Alert.alert("Error", "User UID not found. Please log in again.");
+        return;
+      }
+
+      // Get current user's role from existingBusinessUsers if businessRole is empty
+      let currentBusinessRole = formData.businessRole;
+      if (!currentBusinessRole && existingBusinessUsers.length > 0) {
+        const currentUser = existingBusinessUsers.find((user) => user.business_user_id === userUid);
+        if (currentUser?.business_role) {
+          currentBusinessRole = currentUser.business_role;
+          console.log("Setting business_role from existingBusinessUsers:", currentBusinessRole);
+        }
+      }
+
       const payload = new FormData();
+      payload.append("user_uid", userUid);
       payload.append("business_uid", businessUID);
       payload.append("business_name", formData.name);
       payload.append("business_address_line_1", formData.location);
@@ -84,7 +173,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       payload.append("business_category_id", formData.category);
       payload.append("business_short_bio", formData.shortBio);
       payload.append("business_tag_line", formData.tagline);
-      payload.append("business_role", formData.businessRole);
+      payload.append("business_role", currentBusinessRole || "");
       payload.append("business_ein_number", formData.einNumber);
       payload.append("business_website", formData.website);
       payload.append("custom_tags", JSON.stringify(formData.customTags));
@@ -214,13 +303,61 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
       );
       payload.append("business_services", JSON.stringify(servicesToSend));
 
-      console.log("FormData to be submitted:");
-      for (let pair of payload.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
+      // Combine existing business users (excluding deleted ones) with new users
+      const remainingExistingUsers = existingBusinessUsers.filter((user) => !deletedBusinessUsers.includes(user.business_user_id));
+
+      // Get emails and roles from existing users
+      const existingEmails = remainingExistingUsers.map((user) => user.user_email || "").filter((email) => email);
+      const existingRoles = remainingExistingUsers.map((user) => user.business_role || "").filter((role) => role);
+
+      // Get emails and roles from new users
+      const validNewUsers = additionalBusinessUsers.filter((user) => user.email.trim() && user.role);
+      const newEmails = validNewUsers.map((user) => user.email.trim());
+      const newRoles = validNewUsers.map((user) => user.role);
+
+      // Combine existing and new users into single arrays
+      const allEmails = [...existingEmails, ...newEmails];
+      const allRoles = [...existingRoles, ...newRoles];
+
+      // Send all users (existing + new) in additional_business_user and additional_business_role
+      if (allEmails.length > 0 && allRoles.length > 0) {
+        payload.append("additional_business_user", JSON.stringify(allEmails));
+        payload.append("additional_business_role", JSON.stringify(allRoles));
+        console.log("All business users (existing + new):", allEmails);
+        console.log("All business roles (existing + new):", allRoles);
       }
 
-      // console.log("Before API Call:", payload);
-      console.log("Business Endpoint PUT:", `${BusinessProfileAPI}`);
+      // ============================================
+      // CONSOLE LOGS FOR DEBUGGING / POSTMAN TESTING
+      // ============================================
+      console.log("============================================");
+      console.log("📡 BUSINESS INFO API REQUEST (PUT)");
+      console.log("============================================");
+      console.log("🔗 ENDPOINT:", BusinessProfileAPI);
+      console.log("📝 METHOD: PUT");
+      console.log("============================================");
+      console.log("📦 FORM DATA (Key-Value Pairs for Postman):");
+      console.log("============================================");
+
+      // Collect all FormData entries and format for Postman
+      const formDataEntries = [];
+      for (let pair of payload.entries()) {
+        const [key, value] = pair;
+        // Skip file objects to avoid logging large binary data
+        if (typeof value === "object" && value?.uri) {
+          formDataEntries.push([key, `[FILE] ${value.name || "image"}`]);
+        } else {
+          formDataEntries.push([key, value]);
+        }
+      }
+
+      // Log in Postman-friendly format (key:value)
+      formDataEntries.forEach(([key, value]) => {
+        const displayValue = typeof value === "object" ? JSON.stringify(value) : String(value);
+        console.log(`${key}:${displayValue}`);
+      });
+
+      console.log("============================================");
 
       const response = await axios.put(`${BusinessProfileAPI}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -298,7 +435,7 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     setFormData({ ...formData, images: updatedImages });
   };
 
-  const renderField = (label, value, key, placeholder, visibilityKey = null) => (
+  const renderField = (label, value, key, placeholder, visibilityKey = null, keyboardType = "default", maxLength = null, formatter = null) => (
     <View style={styles.fieldContainer}>
       <View style={styles.labelRow}>
         <Text style={[styles.label, darkMode && styles.darkLabel]}>{label}</Text>
@@ -313,7 +450,12 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         value={value}
         placeholder={placeholder || label}
         placeholderTextColor={darkMode ? "#cccccc" : "#666"}
-        onChangeText={(text) => setFormData({ ...formData, [key]: text })}
+        keyboardType={keyboardType}
+        maxLength={maxLength}
+        onChangeText={(text) => {
+          const formattedText = formatter ? formatter(text) : text;
+          setFormData({ ...formData, [key]: formattedText });
+        }}
       />
     </View>
   );
@@ -342,6 +484,9 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
     business_short_bio: formData.shortBio,
     business_phone_number: formData.phone,
     business_email: formData.email,
+    business_email_id: formData.email,
+    phoneIsPublic: formData.phoneIsPublic,
+    emailIsPublic: formData.emailIsPublic,
   };
 
   const renderCustomTagsSection = () => (
@@ -538,8 +683,97 @@ export default function EditBusinessProfileScreen({ route, navigation }) {
         {renderField("Tag Line", formData.tagline, "tagline", "", "taglineIsPublic")}
         {renderField("Short Bio", formData.shortBio, "shortBio", "", "shortBioIsPublic")}
         {renderBusinessRoleField()}
-        {renderField("EIN Number", formData.einNumber, "einNumber")}
+        {renderField("EIN Number", formData.einNumber, "einNumber", "##-#######", null, "numeric", 10, formatEINNumber)}
         {renderField("Website", formData.website, "website")}
+
+        {/* Existing Business Editors/Owners Section */}
+        {existingBusinessUsers.length > 0 && (
+          <View style={[styles.fieldContainer, darkMode && styles.darkFieldContainer]}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Editors & Owners</Text>
+            {existingBusinessUsers.map((businessUser, index) => {
+              // Format user data for MiniCard component
+              const userForMiniCard = {
+                firstName: businessUser.first_name || "",
+                lastName: businessUser.last_name || "",
+                email: businessUser.user_email || "",
+                profileImage: businessUser.profile_photo || "",
+                emailIsPublic: true,
+                phoneIsPublic: false,
+                phoneNumber: "",
+              };
+
+              // Check if current user can delete this user
+              const userRole = businessUser.business_role?.toLowerCase() || "";
+              const canDelete = userRole === "employee" || userRole === "admin" || userRole === "other";
+
+              return (
+                <View key={businessUser.business_user_id || index} style={[styles.existingBusinessUserCard, darkMode && styles.darkExistingBusinessUserCard]}>
+                  <View style={styles.existingBusinessUserHeader}>
+                    <View style={styles.existingBusinessUserInfo}>
+                      <MiniCard user={userForMiniCard} />
+                      <Text style={[styles.existingBusinessUserRole, darkMode && styles.darkExistingBusinessUserRole]}>Role: {businessUser.business_role || "N/A"}</Text>
+                    </View>
+                    {canDelete && (
+                      <TouchableOpacity onPress={() => deleteExistingBusinessUser(businessUser)} style={[styles.deleteButton, darkMode && styles.darkDeleteButton]}>
+                        <Text style={[styles.deleteButtonText, darkMode && styles.darkDeleteButtonText]}>🗑️</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Additional Business Editors Section */}
+        <View style={[styles.fieldContainer, darkMode && styles.darkFieldContainer]}>
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, darkMode && styles.darkLabel]}>Add New Business Editors</Text>
+            <TouchableOpacity onPress={addBusinessEditor} style={[styles.addEditorButton, darkMode && styles.darkAddEditorButton]}>
+              <Text style={[styles.addEditorButtonText, darkMode && styles.darkAddEditorButtonText]}>+ Add Business Editor</Text>
+            </TouchableOpacity>
+          </View>
+          {additionalBusinessUsers.map((user, index) => (
+            <View key={index} style={[styles.businessEditorCard, darkMode && styles.darkBusinessEditorCard]}>
+              <View style={styles.businessEditorHeader}>
+                <Text style={[styles.businessEditorLabel, darkMode && styles.darkBusinessEditorLabel]}>Editor #{index + 1}</Text>
+                <TouchableOpacity onPress={() => removeBusinessEditor(index)}>
+                  <Text style={[styles.removeButtonText, darkMode && styles.darkRemoveButtonText]}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.sublabel, darkMode && styles.darkSublabel]}>Email Address</Text>
+              <TextInput
+                style={[styles.input, darkMode && styles.darkInput]}
+                value={user.email}
+                placeholder='Enter email address'
+                placeholderTextColor={darkMode ? "#cccccc" : "#666"}
+                keyboardType='email-address'
+                autoCapitalize='none'
+                onChangeText={(text) => updateBusinessEditor(index, "email", text)}
+              />
+              <Text style={[styles.sublabel, darkMode && styles.darkSublabel]}>Business Role</Text>
+              <Dropdown
+                style={[styles.input, darkMode && styles.darkInput]}
+                data={businessRoles}
+                labelField='label'
+                valueField='value'
+                placeholder='Select role'
+                placeholderTextColor={darkMode ? "#ffffff" : "#666"}
+                value={user.role}
+                onChange={(item) => updateBusinessEditor(index, "role", item.value)}
+                containerStyle={[{ borderRadius: 10, marginTop: 5 }, darkMode && { backgroundColor: "#1a1a1a", borderColor: "#404040" }]}
+                itemTextStyle={{ color: darkMode ? "#ffffff" : "#000000" }}
+                selectedTextStyle={{ color: darkMode ? "#ffffff" : "#000000" }}
+                activeColor={darkMode ? "#404040" : "#f0f0f0"}
+                itemContainerStyle={darkMode ? { backgroundColor: "#1a1a1a" } : {}}
+                flatListProps={{
+                  nestedScrollEnabled: true,
+                }}
+              />
+            </View>
+          ))}
+        </View>
+
         {renderCustomTagsSection()}
 
         <View style={[styles.previewSection, darkMode && styles.darkPreviewSection]}>
@@ -809,8 +1043,116 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 10,
   },
+  businessEditorCard: {
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  businessEditorHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  businessEditorLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  removeButtonText: {
+    color: "#ff3b30",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  sublabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666",
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  addEditorButton: {
+    backgroundColor: "#00C721",
+    padding: 10,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  addEditorButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
 
   // Dark mode styles
+  darkFieldContainer: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkAddEditorButton: {
+    backgroundColor: "#00C721",
+  },
+  darkAddEditorButtonText: {
+    color: "#ffffff",
+  },
+  darkBusinessEditorCard: {
+    backgroundColor: "#2d2d2d",
+    borderColor: "#404040",
+  },
+  darkBusinessEditorLabel: {
+    color: "#ffffff",
+  },
+  darkRemoveButtonText: {
+    color: "#ff6b6b",
+  },
+  darkSublabel: {
+    color: "#cccccc",
+  },
+  existingBusinessUserCard: {
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  existingBusinessUserHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  existingBusinessUserInfo: {
+    flex: 1,
+  },
+  existingBusinessUserRole: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 8,
+    fontStyle: "italic",
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    fontSize: 20,
+  },
+  darkExistingBusinessUserCard: {
+    backgroundColor: "#2d2d2d",
+    borderColor: "#404040",
+  },
+  darkExistingBusinessUserRole: {
+    color: "#cccccc",
+  },
+  darkDeleteButton: {
+    // No special styling needed for dark mode
+  },
+  darkDeleteButtonText: {
+    // No special styling needed for dark mode
+  },
   darkPageContainer: {
     backgroundColor: "#1a1a1a",
   },
