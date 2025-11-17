@@ -8,7 +8,7 @@ module.exports = ({ config: expoConfig }) => ({
   expo: {
     name: process.env.EXPO_PUBLIC_APP_NAME || "EveryCircle",
     slug: process.env.EXPO_PUBLIC_APP_SLUG || "everycircle",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -26,9 +26,7 @@ module.exports = ({ config: expoConfig }) => ({
         ITSAppUsesNonExemptEncryption: false,
         CFBundleURLTypes: [
           {
-            CFBundleURLSchemes: [
-              process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME || "com.googleusercontent.apps.255320444536-fjgkn445u968bhsp7i57fpqquemqbmn5"
-            ],
+            CFBundleURLSchemes: [process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME || "com.googleusercontent.apps.255320444536-fjgkn445u968bhsp7i57fpqquemqbmn5"],
             CFBundleURLName: "google",
           },
         ],
@@ -49,10 +47,7 @@ module.exports = ({ config: expoConfig }) => ({
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
       },
-      permissions: [
-        "android.permission.ACCESS_COARSE_LOCATION", 
-        "android.permission.ACCESS_FINE_LOCATION"
-      ],
+      permissions: ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"],
       config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAPoq8L-jM4diZmj80ayQj6_8Gd8z5XwJY",

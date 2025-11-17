@@ -168,7 +168,13 @@ export default function SearchScreen({ route }) {
 
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
 
-      const res = await fetch(apiUrl);
+      const res = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
 
       // console.log("📡 Response status:", res.status);
       // console.log("📡 Response headers:", res.headers);
@@ -306,6 +312,14 @@ export default function SearchScreen({ route }) {
     } catch (err) {
       console.warn("❌ Search failed for query:", q, "Error:", err);
       console.warn("❌ Error details:", err.message);
+      console.warn("❌ Error type:", err.constructor.name);
+
+      // Check if it's a network error (common on iOS with HTTP endpoints or connection issues)
+      if (err.message.includes("Network request failed") || err.message.includes("Failed to fetch")) {
+        Alert.alert("Network Error", "Unable to connect to the search server. Please check your internet connection or try again later.", [{ text: "OK" }]);
+        setResults([]);
+        return;
+      }
 
       // If the v1 endpoint fails, let's try alternative endpoints
       if (err.message.includes("404")) {
