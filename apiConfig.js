@@ -41,6 +41,9 @@ export const CATEGORY_LIST_ENDPOINT = `${API_BASE_URL}/category_list/all`;
 // Search and Network Endpoints
 // export const BUSINESS_RESULTS_ENDPOINT = `${API_BASE_URL}/api/businessresults`;
 export const BUSINESS_RESULTS_ENDPOINT = `${SEARCH_BASE_URL}/search_business`;
+export const EXPERTISE_RESULTS_ENDPOINT = `${SEARCH_BASE_URL}/search_expertise`;
+export const WISHES_RESULTS_ENDPOINT = `${SEARCH_BASE_URL}/search_wishes`;
+
 export const BOUNTY_RESULTS_ENDPOINT = `${API_BASE_URL}/api/bountyresults`;
 export const TAG_SEARCH_DISTINCT_ENDPOINT = `${API_BASE_URL}/api/tagsearchdistinct`;
 export const TAG_CATEGORY_DISTINCT_ENDPOINT = `${API_BASE_URL}/api/tagcategorydistinct`;
