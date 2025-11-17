@@ -1,11 +1,11 @@
 // SearchScreen.js
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList, ActivityIndicator, Alert, Dimensions, Modal } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList, ActivityIndicator, Alert, Dimensions, Modal, Image } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BUSINESS_RESULTS_ENDPOINT, TAG_SEARCH_DISTINCT_ENDPOINT, TAG_CATEGORY_DISTINCT_ENDPOINT, SEARCH_BASE_URL } from "../apiConfig";
+import { BUSINESS_RESULTS_ENDPOINT, EXPERTISE_RESULTS_ENDPOINT, WISHES_RESULTS_ENDPOINT, TAG_SEARCH_DISTINCT_ENDPOINT, TAG_CATEGORY_DISTINCT_ENDPOINT, SEARCH_BASE_URL } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
 
 export default function SearchScreen({ route }) {
@@ -115,6 +115,9 @@ export default function SearchScreen({ route }) {
   const [bounty, setBounty] = useState(null);
   const [rating, setRating] = useState(null);
 
+  // Search type state: 'businesses', 'expertise', 'seeking'
+  const [searchType, setSearchType] = useState("businesses");
+
   // Modal visibility states
   const [distanceModalVisible, setDistanceModalVisible] = useState(false);
   const [networkModalVisible, setNetworkModalVisible] = useState(false);
@@ -133,22 +136,36 @@ export default function SearchScreen({ route }) {
     if (!q) return;
 
     console.log("🔍 User searched for:", q);
+    console.log("🔍 Search type:", searchType);
     console.log("🔍 Search query length:", q.length);
     console.log("🔍 Search query type:", typeof q);
     console.log("🔍 Rating filter:", rating);
 
     setLoading(true);
     try {
+      // Select the appropriate endpoint based on search type
+      let baseEndpoint;
+      switch (searchType) {
+        case "expertise":
+          baseEndpoint = EXPERTISE_RESULTS_ENDPOINT;
+          break;
+        case "seeking":
+          baseEndpoint = WISHES_RESULTS_ENDPOINT;
+          break;
+        case "businesses":
+        default:
+          baseEndpoint = BUSINESS_RESULTS_ENDPOINT;
+          break;
+      }
+
       // Build the API URL with query parameter
-      let apiUrl = `${BUSINESS_RESULTS_ENDPOINT}?q=${encodeURIComponent(q)}`;
+      let apiUrl = `${baseEndpoint}?q=${encodeURIComponent(q)}`;
 
       // Add min_rating parameter if rating filter is set
       if (rating !== null) {
         apiUrl += `&min_rating=${rating}`;
       }
 
-      // const apiUrl = `${TAG_SEARCH_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
-      // const apiUrl = `${TAG_CATEGORY_DISTINCT_ENDPOINT}/${encodeURIComponent(q)}`;
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
 
       const res = await fetch(apiUrl);
@@ -186,20 +203,100 @@ export default function SearchScreen({ route }) {
       const resultsArray = Array.isArray(json) ? json : json.results || json.result || [];
       // console.log("🔍 Results array length:", resultsArray.length);
 
-      const list = resultsArray.map((b, i) => ({
-        id: `${b.business_uid || i}`,
-        company: b.business_name || b.company || "Unknown Business",
-        // Use score as rating if rating_star not available, convert to 1-5 scale
-        rating: typeof b.rating_star === "number" ? b.rating_star : typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
-        hasPriceTag: b.has_price_tag || false,
-        hasX: b.has_x || false,
-        hasDollar: b.has_dollar_sign || false,
-        // Add additional fields from the API response
-        business_short_bio: b.business_short_bio || "",
-        business_tag_line: b.business_tag_line || "",
-        tags: b.tags || [],
-        score: b.score || 0,
-      }));
+      // Process results based on search type
+      let list;
+      if (searchType === "seeking") {
+        // For seeking/wishes, the response includes profile data directly
+        list = resultsArray.map((item, i) => ({
+          id: `${item.profile_wish_uid || i}`,
+          company: item.profile_wish_title || "Untitled Wish",
+          rating: typeof item.score === "number" ? Math.min(5, Math.max(1, Math.round(item.score * 5))) : 4,
+          hasPriceTag: false,
+          hasX: false,
+          hasDollar: false,
+          business_short_bio: item.profile_wish_description || "",
+          business_tag_line: item.profile_wish_title || "",
+          tags: [],
+          score: item.score || 0,
+          itemType: "seeking",
+          profile_uid: item.profile_wish_profile_personal_id,
+          // Store wish data
+          wishData: {
+            title: item.profile_wish_title,
+            description: item.profile_wish_description,
+            bounty: item.profile_wish_bounty,
+            cost: item.profile_wish_cost,
+            wish_uid: item.profile_wish_uid,
+          },
+          // Store profile data for MiniCard-like display
+          profileData: {
+            firstName: item.profile_personal_first_name || "",
+            lastName: item.profile_personal_last_name || "",
+            email: item.user_email_id || "",
+            phone: item.profile_personal_phone_number || "",
+            image: item.profile_personal_image || "",
+            tagLine: item.profile_personal_tag_line || "",
+            emailIsPublic: item.profile_personal_email_is_public == 1,
+            phoneIsPublic: item.profile_personal_phone_number_is_public == 1,
+            imageIsPublic: item.profile_personal_image_is_public == 1,
+            tagLineIsPublic: item.profile_personal_tag_line_is_public == 1,
+          },
+        }));
+      } else if (searchType === "expertise") {
+        // For expertise, the response includes profile data directly
+        list = resultsArray.map((item, i) => ({
+          id: `${item.profile_expertise_uid || i}`,
+          company: item.profile_expertise_title || "Untitled Expertise",
+          rating: typeof item.score === "number" ? Math.min(5, Math.max(1, Math.round(item.score * 5))) : 4,
+          hasPriceTag: false,
+          hasX: false,
+          hasDollar: false,
+          business_short_bio: item.profile_expertise_description || "",
+          business_tag_line: item.profile_expertise_title || "",
+          tags: [],
+          score: item.score || 0,
+          itemType: "expertise",
+          profile_uid: item.profile_expertise_profile_personal_id,
+          // Store expertise data
+          expertiseData: {
+            title: item.profile_expertise_title,
+            description: item.profile_expertise_description,
+            bounty: item.profile_expertise_bounty,
+            cost: item.profile_expertise_cost,
+            expertise_uid: item.profile_expertise_uid,
+          },
+          // Store profile data for MiniCard-like display
+          profileData: {
+            firstName: item.profile_personal_first_name || "",
+            lastName: item.profile_personal_last_name || "",
+            email: item.user_email_id || "",
+            phone: item.profile_personal_phone_number || "",
+            image: item.profile_personal_image || "",
+            tagLine: item.profile_personal_tag_line || "",
+            emailIsPublic: item.profile_personal_email_is_public == 1,
+            phoneIsPublic: item.profile_personal_phone_number_is_public == 1,
+            imageIsPublic: item.profile_personal_image_is_public == 1,
+            tagLineIsPublic: item.profile_personal_tag_line_is_public == 1,
+          },
+        }));
+      } else {
+        // For businesses, use the existing mapping
+        list = resultsArray.map((b, i) => ({
+          id: `${b.business_uid || i}`,
+          company: b.business_name || b.company || "Unknown Business",
+          // Use score as rating if rating_star not available, convert to 1-5 scale
+          rating: typeof b.rating_star === "number" ? b.rating_star : typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
+          hasPriceTag: b.has_price_tag || false,
+          hasX: b.has_x || false,
+          hasDollar: b.has_dollar_sign || false,
+          // Add additional fields from the API response
+          business_short_bio: b.business_short_bio || "",
+          business_tag_line: b.business_tag_line || "",
+          tags: b.tags || [],
+          score: b.score || 0,
+          itemType: "businesses",
+        }));
+      }
 
       console.log("✅ Processed search results:", list);
       console.log("✅ Number of processed results:", list.length);
@@ -316,7 +413,136 @@ export default function SearchScreen({ route }) {
     );
   };
 
+  const renderWishItem = (item, idx) => {
+    // Render wish item with MiniCard-like profile display
+    const profile = item.profileData || {};
+    const wish = item.wishData || {};
+
+    return (
+      <View key={`${item.id}-${idx}`} style={[styles.wishItem, darkMode && styles.darkWishItem]}>
+        {/* Profile Image and Info (MiniCard-like) - Clickable */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
+            if (item.profile_uid) {
+              navigation.navigate("Profile", { profile_uid: item.profile_uid });
+            } else {
+              console.warn("No profile_uid found for wish item");
+            }
+          }}
+        >
+          <View style={styles.wishProfileContainer}>
+            <Image
+              source={profile.image && profile.imageIsPublic && profile.image.trim() !== "" ? { uri: profile.image } : require("../assets/profile.png")}
+              style={[styles.wishProfileImage, darkMode && styles.darkWishProfileImage]}
+              onError={(error) => {
+                console.log("Wish profile image failed to load:", error.nativeEvent.error);
+              }}
+              defaultSource={require("../assets/profile.png")}
+            />
+            <View style={styles.wishProfileInfo}>
+              {/* Name is always visible */}
+              <Text style={[styles.wishProfileName, darkMode && styles.darkWishProfileName]}>
+                {profile.firstName} {profile.lastName}
+              </Text>
+              {/* Show email if public */}
+              {profile.emailIsPublic && profile.email && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.email}</Text>}
+              {/* Show phone if public */}
+              {profile.phoneIsPublic && profile.phone && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.phone}</Text>}
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Wish Information */}
+        <View style={[styles.wishInfoContainer, darkMode && styles.darkWishInfoContainer]}>
+          <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>{wish.title || item.company}</Text>
+          {wish.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{wish.description}</Text>}
+          {wish.bounty && (
+            <View style={styles.wishBountyContainer}>
+              <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: </Text>
+              <Text style={[styles.wishBountyValue, darkMode && styles.darkWishBountyValue]}>${wish.bounty}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderExpertiseItem = (item, idx) => {
+    // Render expertise item with MiniCard-like profile display
+    const profile = item.profileData || {};
+    const expertise = item.expertiseData || {};
+
+    return (
+      <View key={`${item.id}-${idx}`} style={[styles.wishItem, darkMode && styles.darkWishItem]}>
+        {/* Profile Image and Info (MiniCard-like) - Clickable */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
+            if (item.profile_uid) {
+              navigation.navigate("Profile", { profile_uid: item.profile_uid });
+            } else {
+              console.warn("No profile_uid found for expertise item");
+            }
+          }}
+        >
+          <View style={styles.wishProfileContainer}>
+            <Image
+              source={profile.image && profile.imageIsPublic && profile.image.trim() !== "" ? { uri: profile.image } : require("../assets/profile.png")}
+              style={[styles.wishProfileImage, darkMode && styles.darkWishProfileImage]}
+              onError={(error) => {
+                console.log("Expertise profile image failed to load:", error.nativeEvent.error);
+              }}
+              defaultSource={require("../assets/profile.png")}
+            />
+            <View style={styles.wishProfileInfo}>
+              {/* Name is always visible */}
+              <Text style={[styles.wishProfileName, darkMode && styles.darkWishProfileName]}>
+                {profile.firstName} {profile.lastName}
+              </Text>
+              {/* Show email if public */}
+              {profile.emailIsPublic && profile.email && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.email}</Text>}
+              {/* Show phone if public */}
+              {profile.phoneIsPublic && profile.phone && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.phone}</Text>}
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Expertise Information */}
+        <View style={[styles.wishInfoContainer, darkMode && styles.darkWishInfoContainer]}>
+          <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>{expertise.title || item.company}</Text>
+          {expertise.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{expertise.description}</Text>}
+          <View style={styles.expertiseDetailsContainer}>
+            {expertise.bounty && (
+              <View style={styles.wishBountyContainer}>
+                <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: </Text>
+                <Text style={[styles.wishBountyValue, darkMode && styles.darkWishBountyValue]}>${expertise.bounty}</Text>
+              </View>
+            )}
+            {expertise.cost && (
+              <View style={styles.wishBountyContainer}>
+                <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Cost: </Text>
+                <Text style={[styles.wishBountyValue, darkMode && styles.darkWishBountyValue]}>{expertise.cost}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderResultItem = (item, idx) => {
+    // If it's a wish/seeking item, use the special wish renderer
+    if (item.itemType === "seeking" && item.wishData) {
+      return renderWishItem(item, idx);
+    }
+    // If it's an expertise item, use the special expertise renderer
+    if (item.itemType === "expertise" && item.expertiseData) {
+      return renderExpertiseItem(item, idx);
+    }
+
     // console.log(`🎨 Rendering item ${idx}:`, item.company, "ID:", item.id);
     return (
       <TouchableOpacity
@@ -324,8 +550,17 @@ export default function SearchScreen({ route }) {
         style={[styles.resultItem, darkMode && styles.darkResultItem]}
         activeOpacity={0.7}
         onPress={() => {
-          console.log("🏢 Navigating to business profile for:", item.company, "ID:", item.id);
-          navigation.navigate("BusinessProfile", { business_uid: item.id });
+          console.log("🏢 Navigating to profile for:", item.company, "ID:", item.id, "Type:", item.itemType);
+          if (item.itemType === "businesses") {
+            navigation.navigate("BusinessProfile", { business_uid: item.id });
+          } else if (item.itemType === "expertise" || item.itemType === "seeking") {
+            // Navigate to user profile if we have profile_uid
+            if (item.profile_uid) {
+              navigation.navigate("Profile", { profile_uid: item.profile_uid });
+            } else {
+              console.warn("No profile_uid found for expertise/seeking item");
+            }
+          }
         }}
       >
         <View style={styles.resultContent}>
@@ -522,13 +757,53 @@ export default function SearchScreen({ route }) {
                   {rating !== null ? `> ${rating}` : "Rating"}
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButtonOption,
+                  darkMode && styles.darkFilterButtonOption,
+                  searchType === "businesses" && styles.searchTypeButtonBusinesses,
+                  searchType === "expertise" && styles.searchTypeButtonExpertise,
+                  searchType === "seeking" && styles.searchTypeButtonSeeking,
+                  darkMode && searchType === "businesses" && styles.darkSearchTypeButtonBusinesses,
+                  darkMode && searchType === "expertise" && styles.darkSearchTypeButtonExpertise,
+                  darkMode && searchType === "seeking" && styles.darkSearchTypeButtonSeeking,
+                ]}
+                onPress={() => {
+                  // Cycle through: businesses -> expertise -> seeking -> businesses
+                  if (searchType === "businesses") {
+                    setSearchType("expertise");
+                  } else if (searchType === "expertise") {
+                    setSearchType("seeking");
+                  } else {
+                    setSearchType("businesses");
+                  }
+                }}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    darkMode && styles.darkFilterButtonText,
+                    searchType === "businesses" && styles.searchTypeButtonTextBusinesses,
+                    searchType === "expertise" && styles.searchTypeButtonTextExpertise,
+                    searchType === "seeking" && styles.searchTypeButtonTextSeeking,
+                    darkMode && searchType === "businesses" && styles.darkSearchTypeButtonTextBusinesses,
+                    darkMode && searchType === "expertise" && styles.darkSearchTypeButtonTextExpertise,
+                    darkMode && searchType === "seeking" && styles.darkSearchTypeButtonTextSeeking,
+                  ]}
+                >
+                  {searchType === "businesses" ? "Businesses" : searchType === "expertise" ? "Expertise" : "Seeking"}
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
-          <View style={[styles.tableHeader, darkMode && styles.darkTableHeader]}>
-            <Text style={[styles.tableHeaderText, darkMode && styles.darkTableHeaderText]}>Company</Text>
-            <Text style={[styles.tableHeaderText, darkMode && styles.darkTableHeaderText]}>Rating</Text>
-          </View>
+          {/* Only show table header for businesses, not for expertise or seeking */}
+          {searchType === "businesses" && (
+            <View style={[styles.tableHeader, darkMode && styles.darkTableHeader]}>
+              <Text style={[styles.tableHeaderText, darkMode && styles.darkTableHeaderText]}>Company</Text>
+              <Text style={[styles.tableHeaderText, darkMode && styles.darkTableHeaderText]}>Rating</Text>
+            </View>
+          )}
 
           <ScrollView style={styles.resultsContainer}>
             {loading ? <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading…</Text> : results.map((item, idx) => renderResultItem(item, idx))}
@@ -835,21 +1110,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     marginBottom: 15,
-    gap: 10,
+    gap: 6,
   },
   filterButtonOption: {
     backgroundColor: "#f0f0f0",
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    marginBottom: 8,
-    minWidth: 80,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginRight: 4,
+    marginBottom: 4,
+    minWidth: 60,
     alignItems: "center",
     justifyContent: "center",
   },
   filterButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
     color: "#333",
   },
@@ -1023,5 +1298,155 @@ const styles = StyleSheet.create({
   },
   darkSelectedOptionText: {
     color: "#9C45F7",
+  },
+
+  // Wish item styles
+  wishItem: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    marginVertical: 8,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  wishProfileContainer: {
+    flexDirection: "row",
+    marginBottom: 15,
+    alignItems: "center",
+  },
+  wishProfileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  wishProfileInfo: {
+    flex: 1,
+  },
+  wishProfileName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
+    color: "#333",
+  },
+  wishProfileText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  wishInfoContainer: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+  wishTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
+  },
+  wishDescription: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 10,
+    lineHeight: 20,
+  },
+  wishBountyContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 5,
+  },
+  wishBountyLabel: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  wishBountyValue: {
+    fontSize: 16,
+    color: "#8b58f9",
+    fontWeight: "bold",
+  },
+  // Dark mode wish styles
+  darkWishItem: {
+    backgroundColor: "#2d2d2d",
+    shadowOpacity: 0.3,
+  },
+  darkWishProfileImage: {
+    tintColor: "#ffffff",
+  },
+  darkWishProfileName: {
+    color: "#ffffff",
+  },
+  darkWishProfileText: {
+    color: "#cccccc",
+  },
+  darkWishTitle: {
+    color: "#ffffff",
+  },
+  darkWishDescription: {
+    color: "#cccccc",
+  },
+  darkWishBountyLabel: {
+    color: "#cccccc",
+  },
+  darkWishBountyValue: {
+    color: "#9C45F7",
+  },
+  darkWishInfoContainer: {
+    borderTopColor: "#404040",
+  },
+  expertiseDetailsContainer: {
+    flexDirection: "row",
+    gap: 15,
+    marginTop: 5,
+  },
+
+  // Search type button styles
+  searchTypeButtonBusinesses: {
+    backgroundColor: "#8b58f9", // Same as header color
+  },
+  searchTypeButtonExpertise: {
+    backgroundColor: "#FFCD3C", // Yellow like rating star
+  },
+  searchTypeButtonSeeking: {
+    backgroundColor: "#9C45F7", // Purple like selected options
+  },
+  searchTypeButtonTextBusinesses: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  searchTypeButtonTextExpertise: {
+    color: "#000",
+    fontWeight: "600",
+  },
+  searchTypeButtonTextSeeking: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  // Dark mode search type button styles
+  darkSearchTypeButtonBusinesses: {
+    backgroundColor: "#8b58f9",
+  },
+  darkSearchTypeButtonExpertise: {
+    backgroundColor: "#FFCD3C",
+  },
+  darkSearchTypeButtonSeeking: {
+    backgroundColor: "#9C45F7",
+  },
+  darkSearchTypeButtonTextBusinesses: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  darkSearchTypeButtonTextExpertise: {
+    color: "#000",
+    fontWeight: "600",
+  },
+  darkSearchTypeButtonTextSeeking: {
+    color: "#fff",
+    fontWeight: "600",
   },
 });
