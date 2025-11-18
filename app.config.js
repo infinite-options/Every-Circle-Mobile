@@ -8,7 +8,7 @@ module.exports = ({ config: expoConfig }) => ({
   expo: {
     name: process.env.EXPO_PUBLIC_APP_NAME || "EveryCircle",
     slug: process.env.EXPO_PUBLIC_APP_SLUG || "everycircle",
-    version: "1.0.1",
+    version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -38,7 +38,7 @@ module.exports = ({ config: expoConfig }) => ({
         googleServicesFile: "./GoogleService-Info.plist", // Add this if you have it
       },
       usesAppleSignIn: true,
-      buildNumber: "1",
+      buildNumber: "2",
       deploymentTarget: "13.0",
     },
     android: {
@@ -53,9 +53,9 @@ module.exports = ({ config: expoConfig }) => ({
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAPoq8L-jM4diZmj80ayQj6_8Gd8z5XwJY",
         },
       },
-      buildToolsVersion: "34.0.0",
-      compileSdkVersion: 34,
-      targetSdkVersion: 34,
+      buildToolsVersion: "35.0.0",
+      compileSdkVersion: 35,
+      targetSdkVersion: 35,
       minSdkVersion: 24,
     },
     web: {
