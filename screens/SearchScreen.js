@@ -999,7 +999,7 @@ const styles = StyleSheet.create({
   },
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingVertical: 15,
     alignItems: "center",
     flexDirection: "row",
@@ -1145,7 +1145,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   activeFilterButton: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
   },
   activeFilterButtonText: {
     color: "#fff",
@@ -1278,7 +1278,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   darkActiveFilterButton: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
   },
   darkActiveFilterButtonText: {
     color: "#ffffff",
@@ -1383,7 +1383,7 @@ const styles = StyleSheet.create({
   },
   wishBountyValue: {
     fontSize: 16,
-    color: "#8b58f9",
+    color: "#AF52DE",
     fontWeight: "bold",
   },
   // Dark mode wish styles
@@ -1423,7 +1423,7 @@ const styles = StyleSheet.create({
 
   // Search type button styles
   searchTypeButtonBusinesses: {
-    backgroundColor: "#8b58f9", // Same as header color
+    backgroundColor: "#AF52DE", // Same as header color
   },
   searchTypeButtonExpertise: {
     backgroundColor: "#FFCD3C", // Yellow like rating star
@@ -1445,7 +1445,7 @@ const styles = StyleSheet.create({
   },
   // Dark mode search type button styles
   darkSearchTypeButtonBusinesses: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
   },
   darkSearchTypeButtonExpertise: {
     backgroundColor: "#FFCD3C",

@@ -135,7 +135,7 @@ export default function SettingsScreen() {
               <MaterialIcons name='notifications' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
               <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Allow notifications</Text>
             </View>
-            <Switch value={allowNotifications} onValueChange={setAllowNotifications} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={allowNotifications ? "#fff" : "#f4f3f4"} />
+            <Switch value={allowNotifications} onValueChange={setAllowNotifications} trackColor={{ false: "#ccc", true: "#AF52DE" }} thumbColor={allowNotifications ? "#fff" : "#f4f3f4"} />
           </View>
 
           {/* Dark Mode */}
@@ -144,7 +144,7 @@ export default function SettingsScreen() {
               <MaterialIcons name='brightness-2' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
               <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Dark mode</Text>
             </View>
-            <Switch value={darkMode} onValueChange={toggleDarkMode} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={darkMode ? "#fff" : "#f4f3f4"} />
+            <Switch value={darkMode} onValueChange={toggleDarkMode} trackColor={{ false: "#ccc", true: "#AF52DE" }} thumbColor={darkMode ? "#fff" : "#f4f3f4"} />
           </View>
 
           {/* Allow Cookies */}
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
               <MaterialIcons name='cookie' size={20} style={styles.icon} color={darkMode ? "#fff" : "#666"} />
               <Text style={[styles.itemText, darkMode && styles.darkItemText]}>Allow Cookies</Text>
             </View>
-            <Switch value={allowCookies} onValueChange={setAllowCookies} trackColor={{ false: "#ccc", true: "#8b58f9" }} thumbColor={allowCookies ? "#fff" : "#f4f3f4"} />
+            <Switch value={allowCookies} onValueChange={setAllowCookies} trackColor={{ false: "#ccc", true: "#AF52DE" }} thumbColor={allowCookies ? "#fff" : "#f4f3f4"} />
           </View>
 
           {/* Generate QR Code */}
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#222",
   },
   header: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingVertical: 15,
     alignItems: "center",
     borderBottomLeftRadius: 30,
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" },
   modalBox: { backgroundColor: "#fff", padding: 20, borderRadius: 10, alignItems: "center" },
   modalText: { fontSize: 18, fontWeight: "bold" },
-  closeModalButton: { marginTop: 15, backgroundColor: "#8b58f9", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 },
+  closeModalButton: { marginTop: 15, backgroundColor: "#AF52DE", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 6 },
   closeButtonText: { color: "#fff", fontWeight: "bold" },
   logoutButton: {
     backgroundColor: "#fff",
