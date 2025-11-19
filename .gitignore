@@ -46,3 +46,7 @@ android/
 secrets.json
 *.sh
 *.plist/ios/
+
+# JetBrains IDEs
+.idea/
+*.iml
