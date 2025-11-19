@@ -659,7 +659,7 @@ export default function SearchScreen({ route }) {
               })
             }
           >
-            <Ionicons name='cart-outline' size={24} color='black' />
+            <Ionicons name='cart-outline' size={18} color='black' />
             {cartCount > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -1017,10 +1017,12 @@ const styles = StyleSheet.create({
   },
   cartButton: {
     backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 5,
+    borderRadius: 18,
+    padding: 4,
     marginLeft: 10,
     position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   cartBadge: {
     position: "absolute",

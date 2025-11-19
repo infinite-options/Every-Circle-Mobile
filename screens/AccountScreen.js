@@ -6,7 +6,9 @@ import { BOUNTY_RESULTS_ENDPOINT, API_BASE_URL } from "../apiConfig";
 import Svg, { Circle, Line, Text as SvgText, G, Path } from "react-native-svg";
 import { useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { useDarkMode } from "../contexts/DarkModeContext";
 export default function AccountScreen({ navigation }) {
+  const { darkMode } = useDarkMode();
   const [userUID, setUserUID] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [bountyData, setBountyData] = useState(null);
@@ -382,9 +384,9 @@ export default function AccountScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, darkMode && styles.darkContainer]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, darkMode && styles.darkHeader]}>
         <Text style={styles.title}>Account</Text>
       </View>
 
@@ -535,15 +537,19 @@ export default function AccountScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
-    backgroundColor: "#9C45F7",
-    paddingTop: 50,
-    paddingBottom: 20,
+    backgroundColor: "#8b58f9",
+    paddingVertical: 15,
     alignItems: "center",
-    justifyContent: "center",
-    borderBottomLeftRadius: 100,
-    borderBottomRightRadius: 100,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  title: { fontSize: 24, fontWeight: "bold", color: "#fff" },
+  title: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+  darkContainer: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkHeader: {
+    backgroundColor: "#4b2c91",
+  },
   contentContainer: { flex: 1, padding: 20 },
   scrollContentContainer: {
     paddingBottom: 120, // Extra padding to ensure content is visible above BottomNavBar
