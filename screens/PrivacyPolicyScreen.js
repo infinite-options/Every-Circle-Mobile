@@ -87,13 +87,13 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 30,
     alignSelf: "center",
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderRadius: 6,
   },
   darkCloseButton: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
   },
   closeButtonText: {
     color: "#fff",

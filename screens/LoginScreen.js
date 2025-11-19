@@ -224,7 +224,7 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Welcome to Every Circle!</Text>
+        <Text style={styles.title}>Welcome to everyCircle!</Text>
         <Text style={styles.subtitle}>Please choose a login option to continue.</Text>
       </View>
 

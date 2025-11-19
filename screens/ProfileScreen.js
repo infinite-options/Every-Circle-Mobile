@@ -557,14 +557,14 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
   scrollContainer: { flex: 1 },
   headerBg: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingVertical: 15,
     alignItems: "center",
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
   headerBgOtherUser: {
-    backgroundColor: "#FF3B30",
+    backgroundColor: "#FF9500",
   },
   headerContent: {
     flexDirection: "row",
@@ -650,10 +650,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a1a1a",
   },
   darkHeaderBg: {
-    backgroundColor: "#4b2c91",
+    backgroundColor: "#8B4C9F",
   },
   darkHeaderBgOtherUser: {
-    backgroundColor: "#CC2E24",
+    backgroundColor: "#CC7700",
   },
   darkHeader: {
     color: "#ffffff",

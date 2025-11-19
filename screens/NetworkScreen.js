@@ -475,7 +475,7 @@ const NetworkScreen = ({ navigation }) => {
         shape: hasUserImage ? "image" : "dot",
         image: hasUserImage ? userImage : undefined,
         size: userNodeSize,
-        color: hasUserImage ? undefined : { border: "#8b58f9", background: "#b894ff" },
+        color: hasUserImage ? undefined : { border: "#AF52DE", background: "#b894ff" },
         font: { color: "#ffffff", size: 10 },
         level: 0,
       },
@@ -498,7 +498,7 @@ const NetworkScreen = ({ navigation }) => {
         shape: hasImg ? "image" : "dot",
         image: hasImg ? img : undefined,
         size: hasImg ? 18 : 10,
-        color: hasImg ? undefined : { border: "#8b58f9", background: "#e9d4ff" },
+        color: hasImg ? undefined : { border: "#AF52DE", background: "#e9d4ff" },
         font: { size: 10, color: "#444" },
         level: Number(n.degree) || 1,
       });
@@ -711,7 +711,7 @@ const NetworkScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            {loading && <ActivityIndicator size='large' color='#8b58f9' />}
+            {loading && <ActivityIndicator size='large' color='#AF52DE' />}
             {error && <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>{error}</Text>}
 
             {viewMode === "graph" && networkData.length > 0 && (
@@ -751,7 +751,7 @@ const NetworkScreen = ({ navigation }) => {
                   </View>
                 ) : (
                   <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <ActivityIndicator size='large' color='#8b58f9' />
+                    <ActivityIndicator size='large' color='#AF52DE' />
                     <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading graph view...</Text>
                   </View>
                 )}
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: "#fff" },
   safeArea: { flex: 1, backgroundColor: "#fff" },
   headerBg: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingVertical: 15,
     alignItems: "center",
     borderBottomLeftRadius: 30,
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   fetchButton: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 8,
@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   toggleButton: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,

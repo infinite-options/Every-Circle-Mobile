@@ -537,7 +537,7 @@ export default function AccountScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
-    backgroundColor: "#8b58f9",
+    backgroundColor: "#AF52DE",
     paddingVertical: 15,
     alignItems: "center",
     borderBottomLeftRadius: 30,
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   bountyTableHeader: {
     flexDirection: "row",
-    backgroundColor: "#9C45F7",
+    backgroundColor: "#AF52DE",
     paddingVertical: 6,
     paddingHorizontal: 4,
     borderRadius: 8,
