@@ -350,26 +350,22 @@ const ProfileScreen = ({ route, navigation }) => {
         <View style={[
           styles.headerBg, 
           darkMode && styles.darkHeaderBg,
-          routeProfileUID && styles.headerBgOtherUser,
-          routeProfileUID && darkMode && styles.darkHeaderBgOtherUser
+          routeProfileUID && !isCurrentUserProfile && styles.headerBgOtherUser,
+          routeProfileUID && !isCurrentUserProfile && darkMode && styles.darkHeaderBgOtherUser
         ]}>
           <View style={styles.headerContent}>
-            {routeProfileUID && (
+            {routeProfileUID && !isCurrentUserProfile && (
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => {
-                  if (navigation.canGoBack()) {
-                    navigation.goBack();
-                  } else {
-                    // If there's no screen to go back to, navigate to Network screen
-                    navigation.navigate("Network");
-                  }
+                  // Navigate directly to Network screen when viewing another user's profile
+                  navigation.navigate("Network");
                 }}
               >
                 <Ionicons name="arrow-back" size={24} color="#fff" />
               </TouchableOpacity>
             )}
-            <Text style={[styles.header, darkMode && styles.darkHeader, routeProfileUID && styles.headerWithBack]}>
+            <Text style={[styles.header, darkMode && styles.darkHeader, routeProfileUID && !isCurrentUserProfile && styles.headerWithBack]}>
               {isCurrentUserProfile ? "Your Profile" : "Profile"}
             </Text>
             {isCurrentUserProfile && (
