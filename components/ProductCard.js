@@ -18,7 +18,7 @@ const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
         <View style={styles.row}>
           {service.bs_cost ? (
             <Text style={styles.amountText}>
-              💰 Cost: {service.bs_cost_currency || "USD"} {service.bs_cost}
+              $ Cost: {service.bs_cost_currency || "USD"} {service.bs_cost}
             </Text>
           ) : null}
           {service.bs_bounty ? (
