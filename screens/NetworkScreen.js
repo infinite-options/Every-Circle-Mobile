@@ -1,9 +1,11 @@
 // NetworkScreen.js
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, TextInput, Platform } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import MiniCard from "../components/MiniCard";
 import QRCode from "react-native-qrcode-svg";
@@ -61,6 +63,109 @@ const NetworkScreen = ({ navigation }) => {
   const [WebViewComponent, setWebViewComponent] = useState(null);
   const [userProfileData, setUserProfileData] = useState(null);
   const [qrCodeData, setQrCodeData] = useState("");
+  const [showAsyncStorage, setShowAsyncStorage] = useState(true);
+
+  // Load persisted Network screen settings
+  const loadNetworkSettings = async () => {
+    try {
+      console.log("📥 Loading Network screen settings from AsyncStorage...");
+      const [showAsyncStorageValue, degreeValue, viewModeValue, networkDataValue, groupedNetworkValue] = await Promise.all([
+        AsyncStorage.getItem("network_showAsyncStorage"),
+        AsyncStorage.getItem("network_degree"),
+        AsyncStorage.getItem("network_viewMode"),
+        AsyncStorage.getItem("network_data"),
+        AsyncStorage.getItem("network_grouped"),
+      ]);
+
+      console.log("📥 Loaded values:", {
+        showAsyncStorage: showAsyncStorageValue,
+        degree: degreeValue,
+        viewMode: viewModeValue,
+        hasNetworkData: networkDataValue !== null,
+        hasGroupedNetwork: groupedNetworkValue !== null,
+      });
+
+      if (showAsyncStorageValue !== null) {
+        const parsedValue = JSON.parse(showAsyncStorageValue);
+        console.log("📥 Setting showAsyncStorage to:", parsedValue);
+        setShowAsyncStorage(parsedValue);
+      } else {
+        console.log("📥 No persisted showAsyncStorage value, using default: true");
+      }
+      if (degreeValue !== null) {
+        console.log("📥 Setting degree to:", degreeValue);
+        setDegree(degreeValue);
+      } else {
+        console.log("📥 No persisted degree value, using default: 2");
+      }
+      if (viewModeValue !== null) {
+        console.log("📥 Setting viewMode to:", viewModeValue);
+        setViewMode(viewModeValue);
+      } else {
+        console.log("📥 No persisted viewMode value, using default: list");
+      }
+
+      // Load network data if available
+      if (networkDataValue !== null) {
+        try {
+          const parsedNetworkData = JSON.parse(networkDataValue);
+          console.log("📥 Loading network data, items:", parsedNetworkData.length);
+          setNetworkData(parsedNetworkData);
+        } catch (e) {
+          console.error("❌ Error parsing network data:", e);
+        }
+      } else {
+        console.log("📥 No persisted network data");
+      }
+
+      if (groupedNetworkValue !== null) {
+        try {
+          const parsedGroupedNetwork = JSON.parse(groupedNetworkValue);
+          console.log("📥 Loading grouped network data, degrees:", Object.keys(parsedGroupedNetwork).length);
+          setGroupedNetwork(parsedGroupedNetwork);
+        } catch (e) {
+          console.error("❌ Error parsing grouped network data:", e);
+        }
+      } else {
+        console.log("📥 No persisted grouped network data");
+      }
+
+      // Mark settings as loaded so we can start saving changes
+      setSettingsLoaded(true);
+      console.log("✅ Settings loaded, now tracking changes for persistence");
+    } catch (e) {
+      console.error("❌ Error loading network settings:", e);
+    }
+  };
+
+  // Track if settings have been loaded to avoid saving defaults
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  // Save Network screen settings when they change (but only after initial load)
+  useEffect(() => {
+    if (!settingsLoaded) {
+      // Don't save on initial render before settings are loaded
+      return;
+    }
+    const saveSettings = async () => {
+      try {
+        console.log("💾 Saving Network screen settings:", {
+          showAsyncStorage,
+          degree,
+          viewMode,
+        });
+        await Promise.all([
+          AsyncStorage.setItem("network_showAsyncStorage", JSON.stringify(showAsyncStorage)),
+          AsyncStorage.setItem("network_degree", degree),
+          AsyncStorage.setItem("network_viewMode", viewMode),
+        ]);
+        console.log("✅ Network screen settings saved successfully");
+      } catch (e) {
+        console.error("❌ Error saving network settings:", e);
+      }
+    };
+    saveSettings();
+  }, [showAsyncStorage, degree, viewMode, settingsLoaded]);
 
   useEffect(() => {
     const loadAsyncStorage = async () => {
@@ -80,6 +185,20 @@ const NetworkScreen = ({ navigation }) => {
       }
     };
     loadAsyncStorage();
+  }, []);
+
+  // Load settings when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("🔄 Network screen focused - loading settings...");
+      loadNetworkSettings();
+    }, [])
+  );
+
+  // Also load settings on initial mount
+  useEffect(() => {
+    console.log("🔄 Network screen mounted - loading settings...");
+    loadNetworkSettings();
   }, []);
 
   // Fetch user profile data to create QR code with public miniCard info
@@ -304,6 +423,16 @@ const NetworkScreen = ({ navigation }) => {
 
       setNetworkData(enrichedData);
       setGroupedNetwork(groupByDegree(enrichedData));
+
+      // Save network data for persistence
+      try {
+        console.log("💾 Saving network data for persistence...");
+        await AsyncStorage.setItem("network_data", JSON.stringify(enrichedData));
+        await AsyncStorage.setItem("network_grouped", JSON.stringify(groupByDegree(enrichedData)));
+        console.log("✅ Network data saved successfully");
+      } catch (e) {
+        console.error("❌ Error saving network data:", e);
+      }
     } catch (err) {
       console.error("❌ Network fetch failed:", err);
       console.error("❌ Error message:", err.message);
@@ -324,13 +453,29 @@ const NetworkScreen = ({ navigation }) => {
 
   /** ✅ Build vis-network HTML (hierarchical layout by degree) */
   const generateVisHTML = (data, youId) => {
+    // Get user's profile image if available
+    const userImage = userProfileData?.profileImage || "";
+    const hasUserImage = userImage && String(userImage).trim() !== "";
+
+    // Calculate base size for other nodes (max of image nodes or dot nodes)
+    const otherNodeSizes = data.map((n) => {
+      const img = n.__mc?.personal_info?.profile_personal_image || n.__mc?.profileImage || n.profile_image || "";
+      const hasImg = img && String(img).trim() !== "";
+      return hasImg ? 18 : 10;
+    });
+    const maxOtherSize = otherNodeSizes.length > 0 ? Math.max(...otherNodeSizes) : 18;
+
+    // User's node should be 150% of the max other node size
+    const userNodeSize = Math.round(maxOtherSize * 1.5);
+
     const nodes = [
       {
         id: youId || "YOU",
         label: "You",
-        shape: "dot",
-        size: 14,
-        color: { border: "#8b58f9", background: "#b894ff" },
+        shape: hasUserImage ? "image" : "dot",
+        image: hasUserImage ? userImage : undefined,
+        size: userNodeSize,
+        color: hasUserImage ? undefined : { border: "#8b58f9", background: "#b894ff" },
         font: { color: "#ffffff", size: 10 },
         level: 0,
       },
@@ -510,16 +655,36 @@ const NetworkScreen = ({ navigation }) => {
           )}
 
           <View>
-            <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>AsyncStorage Contents:</Text>
-            {storageData.length === 0 ? (
-              <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No data in AsyncStorage.</Text>
-            ) : (
-              storageData.map(([key, value]) => (
-                <View key={key} style={{ marginBottom: 8 }}>
-                  <Text style={[styles.keyText, darkMode && styles.darkKeyText]}>{key}:</Text>
-                  <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{value}</Text>
-                </View>
-              ))
+            <View style={styles.sectionTitleRow}>
+              <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>AsyncStorage Contents:</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  const newValue = !showAsyncStorage;
+                  console.log("👁️ Toggling AsyncStorage visibility from", showAsyncStorage, "to", newValue);
+                  setShowAsyncStorage(newValue);
+                }}
+                style={styles.eyeIconButton}
+              >
+                <Ionicons name={showAsyncStorage ? "eye" : "eye-off"} size={20} color={darkMode ? "#ffffff" : "#333"} />
+              </TouchableOpacity>
+            </View>
+            {(() => {
+              console.log("🎨 Rendering AsyncStorage section, showAsyncStorage =", showAsyncStorage);
+              return null;
+            })()}
+            {showAsyncStorage && (
+              <>
+                {storageData.length === 0 ? (
+                  <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No data in AsyncStorage.</Text>
+                ) : (
+                  storageData.map(([key, value]) => (
+                    <View key={key} style={{ marginBottom: 8 }}>
+                      <Text style={[styles.keyText, darkMode && styles.darkKeyText]}>{key}:</Text>
+                      <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{value}</Text>
+                    </View>
+                  ))
+                )}
+              </>
             )}
           </View>
 
@@ -646,7 +811,16 @@ const styles = StyleSheet.create({
   header: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   scrollContainer: { flex: 1 },
   darkScrollContainer: { backgroundColor: "#1a1a1a" },
-  sectionTitle: { fontWeight: "bold", fontSize: 16, marginBottom: 10, color: "#333" },
+  sectionTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  sectionTitle: { fontWeight: "bold", fontSize: 16, color: "#333" },
+  eyeIconButton: {
+    padding: 4,
+  },
   keyText: { fontWeight: "bold", color: "#333" },
   valueText: { color: "#555", fontSize: 13 },
   inputRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
@@ -741,7 +915,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   qrCodeInfoText: {
-    fontSize: 14,
+    fontSize: 18,
     color: "#333",
     marginBottom: 4,
   },
