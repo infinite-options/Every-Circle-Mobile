@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, ScrollView, Image } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, ScrollView, Image, SafeAreaView } from "react-native";
 // import axios from 'axios';
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
@@ -345,7 +345,7 @@ const ProfileScreen = ({ route, navigation }) => {
 
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
-      <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={{ paddingBottom: 100 }}>
+      <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
         {/* modified on 11/08 - show back button when viewing another user's profile */}
         {routeProfileUID && (
           <TouchableOpacity
@@ -354,6 +354,7 @@ const ProfileScreen = ({ route, navigation }) => {
               padding: 8,
               borderRadius: 8,
               marginBottom: 12,
+              marginTop: 10,
               alignSelf: "center",
             }}
             onPress={() => navigation.navigate("Profile", { profile_uid: null })}
@@ -362,22 +363,26 @@ const ProfileScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         )}
 
-        <View style={styles.headerContainer}>
-          <Text style={[styles.header, darkMode && styles.darkHeader]}>{isCurrentUserProfile ? "Your Profile" : "Profile"}</Text>
-          {isCurrentUserProfile && (
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() =>
-                navigation.navigate("EditProfile", {
-                  user: user,
-                  profile_uid: profileUID,
-                })
-              }
-            >
-              <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
-            </TouchableOpacity>
-          )}
+        <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
+          <View style={styles.headerContent}>
+            <Text style={[styles.header, darkMode && styles.darkHeader]}>{isCurrentUserProfile ? "Your Profile" : "Profile"}</Text>
+            {isCurrentUserProfile && (
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() =>
+                  navigation.navigate("EditProfile", {
+                    user: user,
+                    profile_uid: profileUID,
+                  })
+                }
+              >
+                <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
+
+        <ScrollView style={[styles.scrollContainer, darkMode && styles.darkScrollContainer]} contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
 
         <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
           <Image
@@ -533,25 +538,33 @@ const ProfileScreen = ({ route, navigation }) => {
             )}
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
 
-      <BottomNavBar navigation={navigation} />
+        <BottomNavBar navigation={navigation} />
+      </SafeAreaView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: "#fff", padding: 0 },
-  scrollContainer: { paddingBottom: 20 },
-  container: { flex: 1, backgroundColor: "#fff", padding: 20 },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  safeArea: { flex: 1, backgroundColor: "#fff" },
+  scrollContainer: { flex: 1 },
+  headerBg: {
+    backgroundColor: "#8b58f9",
+    paddingVertical: 15,
     alignItems: "center",
-    marginBottom: 10,
-    paddingTop: 40,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  header: { fontSize: 24, fontWeight: "bold" },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 20,
+  },
+  header: { color: "#fff", fontSize: 20, fontWeight: "bold", flex: 1, textAlign: "center" },
   fieldContainer: { marginTop: 15, marginBottom: 0 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
   inputContainer: {
@@ -565,12 +578,12 @@ const styles = StyleSheet.create({
   inputText: { fontSize: 15, color: "#333", marginBottom: 4 },
   plainText: { fontSize: 15, color: "#333", marginBottom: 10 },
   editButton: {
-    padding: 10,
-    marginTop: 5,
+    padding: 4,
     alignItems: "center",
     justifyContent: "center",
+    marginLeft: 10,
   },
-  editIcon: { width: 30, height: 30 },
+  editIcon: { width: 20, height: 20 },
   errorText: { fontSize: 18, color: "red", textAlign: "center", marginTop: 20 },
   cardContainer: {
     padding: 0,
@@ -611,8 +624,14 @@ const styles = StyleSheet.create({
   darkPageContainer: {
     backgroundColor: "#1a1a1a",
   },
-  darkContainer: {
+  darkSafeArea: {
     backgroundColor: "#1a1a1a",
+  },
+  darkScrollContainer: {
+    backgroundColor: "#1a1a1a",
+  },
+  darkHeaderBg: {
+    backgroundColor: "#4b2c91",
   },
   darkHeader: {
     color: "#ffffff",
