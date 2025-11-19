@@ -458,7 +458,7 @@ export default function SearchScreen({ route }) {
           onPress={() => {
             console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
             if (item.profile_uid) {
-              navigation.navigate("Profile", { 
+              navigation.navigate("Profile", {
                 profile_uid: item.profile_uid,
                 returnTo: "Search",
                 searchState: {
@@ -469,7 +469,7 @@ export default function SearchScreen({ route }) {
                   network,
                   bounty,
                   rating,
-                }
+                },
               });
             } else {
               console.warn("No profile_uid found for wish item");
@@ -504,8 +504,10 @@ export default function SearchScreen({ route }) {
           {wish.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{wish.description}</Text>}
           {wish.bounty && (
             <View style={styles.wishBountyContainer}>
-              <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: </Text>
-              <Text style={[styles.wishBountyValue, darkMode && styles.darkWishBountyValue]}>${wish.bounty}</Text>
+              <View style={styles.moneyBagIconContainer}>
+                <Text style={styles.moneyBagDollarSymbol}>$</Text>
+              </View>
+              <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: USD {wish.bounty}</Text>
             </View>
           )}
         </View>
@@ -526,7 +528,7 @@ export default function SearchScreen({ route }) {
           onPress={() => {
             console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
             if (item.profile_uid) {
-              navigation.navigate("Profile", { 
+              navigation.navigate("Profile", {
                 profile_uid: item.profile_uid,
                 returnTo: "Search",
                 searchState: {
@@ -537,7 +539,7 @@ export default function SearchScreen({ route }) {
                   network,
                   bounty,
                   rating,
-                }
+                },
               });
             } else {
               console.warn("No profile_uid found for expertise item");
@@ -571,16 +573,20 @@ export default function SearchScreen({ route }) {
           <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>{expertise.title || item.company}</Text>
           {expertise.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{expertise.description}</Text>}
           <View style={styles.expertiseDetailsContainer}>
-            {expertise.bounty && (
-              <View style={styles.wishBountyContainer}>
-                <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: </Text>
-                <Text style={[styles.wishBountyValue, darkMode && styles.darkWishBountyValue]}>${expertise.bounty}</Text>
-              </View>
-            )}
             {expertise.cost && (
               <View style={styles.wishBountyContainer}>
-                <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Cost: </Text>
-                <Text style={[styles.wishBountyValue, darkMode && styles.darkWishBountyValue]}>{expertise.cost}</Text>
+                <View style={styles.moneyBagIconContainer}>
+                  <Text style={styles.moneyBagDollarSymbol}>$</Text>
+                </View>
+                <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Cost: {expertise.cost}</Text>
+              </View>
+            )}
+            {expertise.bounty && (
+              <View style={styles.wishBountyContainer}>
+                <View style={styles.moneyBagIconContainer}>
+                  <Text style={styles.moneyBagDollarSymbol}>$</Text>
+                </View>
+                <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: USD {expertise.bounty}</Text>
               </View>
             )}
           </View>
@@ -612,7 +618,7 @@ export default function SearchScreen({ route }) {
           } else if (item.itemType === "expertise" || item.itemType === "seeking") {
             // Navigate to user profile if we have profile_uid
             if (item.profile_uid) {
-              navigation.navigate("Profile", { 
+              navigation.navigate("Profile", {
                 profile_uid: item.profile_uid,
                 returnTo: "Search",
                 searchState: {
@@ -623,7 +629,7 @@ export default function SearchScreen({ route }) {
                   network,
                   bounty,
                   rating,
-                }
+                },
               });
             } else {
               console.warn("No profile_uid found for expertise/seeking item");
@@ -1431,6 +1437,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 5,
+  },
+  moneyBagIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FFCD3C",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+  },
+  moneyBagDollarSymbol: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#ffffff",
   },
   wishBountyLabel: {
     fontSize: 14,
