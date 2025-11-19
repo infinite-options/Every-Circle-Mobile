@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cf4370dd-3228-4c89-af46-d26822a30204" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/NetworkScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/NetworkScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/app.config.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,7 +37,7 @@
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "vr__1107",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/ramyasribhattaram/Desktop/Internship/Every-Circle-Mobile",
+    "last_opened_file_path": "/Users/pmarathay/code/Every-Circle-Mobile",
     "node.js.selected.package.tslint": "(autodetect)"
   }
 }]]></component>
