@@ -504,9 +504,7 @@ export default function SearchScreen({ route }) {
           {wish.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{wish.description}</Text>}
           {wish.bounty && (
             <View style={styles.wishBountyContainer}>
-              <View style={styles.moneyBagIconContainer}>
-                <Text style={styles.moneyBagDollarSymbol}>$</Text>
-              </View>
+              <Text style={styles.bountyEmojiIcon}>💰</Text>
               <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: USD {wish.bounty}</Text>
             </View>
           )}
@@ -583,9 +581,7 @@ export default function SearchScreen({ route }) {
             )}
             {expertise.bounty && (
               <View style={styles.wishBountyContainer}>
-                <View style={styles.moneyBagIconContainer}>
-                  <Text style={styles.moneyBagDollarSymbol}>$</Text>
-                </View>
+                <Text style={styles.bountyEmojiIcon}>💰</Text>
                 <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: USD {expertise.bounty}</Text>
               </View>
             )}
@@ -1451,6 +1447,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
     color: "#ffffff",
+  },
+  bountyEmojiIcon: {
+    fontSize: 20,
+    marginRight: 6,
   },
   wishBountyLabel: {
     fontSize: 14,
