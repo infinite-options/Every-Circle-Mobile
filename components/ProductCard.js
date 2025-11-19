@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 
 const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
   return (
@@ -8,21 +8,23 @@ const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
       <View style={styles.header}>
         <Text style={styles.name}>{service.bs_service_name}</Text>
         {showEditButton && onEdit && (
-        <TouchableOpacity onPress={() => onEdit(service)} style={styles.editButton}>
-          <Ionicons name="pencil" size={20} color="#007AFF" />
-        </TouchableOpacity>
+          <TouchableOpacity onPress={() => onEdit(service)} style={styles.editButton}>
+            <Ionicons name='pencil' size={20} color='#007AFF' />
+          </TouchableOpacity>
         )}
       </View>
       <View style={styles.textContainer}>
-        {service.bs_service_desc ? (
-          <Text style={styles.desc}>{service.bs_service_desc}</Text>
-        ) : null}
+        {service.bs_service_desc ? <Text style={styles.desc}>{service.bs_service_desc}</Text> : null}
         <View style={styles.row}>
           {service.bs_cost ? (
-            <Text style={styles.amountText}>💰 Cost: {service.bs_cost_currency || 'USD'} {service.bs_cost}</Text>
+            <Text style={styles.amountText}>
+              💰 Cost: {service.bs_cost_currency || "USD"} {service.bs_cost}
+            </Text>
           ) : null}
           {service.bs_bounty ? (
-            <Text style={[styles.amountText, { marginLeft: 12 }]}>💰 Bounty: {service.bs_bounty_currency || 'USD'} {service.bs_bounty}</Text>
+            <Text style={[styles.amountText, { marginLeft: 12 }]}>
+              💰 Bounty: {service.bs_bounty_currency || "USD"} {service.bs_bounty}
+            </Text>
           ) : null}
         </View>
         {/* Placeholder for future transaction button or details */}
@@ -46,9 +48,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 5,
   },
   name: {
@@ -69,15 +71,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 4,
   },
   amountText: {
     fontSize: 15,
-    color: '#333',
-    fontWeight: '600',
+    color: "#333",
+    fontWeight: "600",
   },
 });
 
-export default ProductCard; 
+export default ProductCard;
