@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList, ActivityIndicator, Alert, Dimensions, Modal, Image } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BUSINESS_RESULTS_ENDPOINT, EXPERTISE_RESULTS_ENDPOINT, WISHES_RESULTS_ENDPOINT, TAG_SEARCH_DISTINCT_ENDPOINT, TAG_CATEGORY_DISTINCT_ENDPOINT, SEARCH_BASE_URL } from "../apiConfig";
@@ -13,6 +13,24 @@ export default function SearchScreen({ route }) {
   const { darkMode } = useDarkMode();
   const [cartItems, setCartItems] = useState([]);
   const [cartCount, setCartCount] = useState(0);
+
+  // Restore search state when returning from Profile
+  useFocusEffect(
+    React.useCallback(() => {
+      if (route.params?.restoreState && route.params?.searchState) {
+        const state = route.params.searchState;
+        console.log("🔄 Restoring Search screen state:", state);
+        if (state.searchQuery !== undefined) setSearchQuery(state.searchQuery);
+        if (state.searchType !== undefined) setSearchType(state.searchType);
+        if (state.results !== undefined) setResults(state.results);
+        if (state.distance !== undefined) setDistance(state.distance);
+        if (state.network !== undefined) setNetwork(state.network);
+        if (state.bounty !== undefined) setBounty(state.bounty);
+        if (state.rating !== undefined) setRating(state.rating);
+        console.log("✅ Search screen state restored");
+      }
+    }, [route.params?.restoreState, route.params?.searchState])
+  );
 
   // Load cart items when component mounts and when screen is focused
   useEffect(() => {
@@ -440,7 +458,19 @@ export default function SearchScreen({ route }) {
           onPress={() => {
             console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
             if (item.profile_uid) {
-              navigation.navigate("Profile", { profile_uid: item.profile_uid });
+              navigation.navigate("Profile", { 
+                profile_uid: item.profile_uid,
+                returnTo: "Search",
+                searchState: {
+                  searchQuery,
+                  searchType,
+                  results,
+                  distance,
+                  network,
+                  bounty,
+                  rating,
+                }
+              });
             } else {
               console.warn("No profile_uid found for wish item");
             }
@@ -496,7 +526,19 @@ export default function SearchScreen({ route }) {
           onPress={() => {
             console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
             if (item.profile_uid) {
-              navigation.navigate("Profile", { profile_uid: item.profile_uid });
+              navigation.navigate("Profile", { 
+                profile_uid: item.profile_uid,
+                returnTo: "Search",
+                searchState: {
+                  searchQuery,
+                  searchType,
+                  results,
+                  distance,
+                  network,
+                  bounty,
+                  rating,
+                }
+              });
             } else {
               console.warn("No profile_uid found for expertise item");
             }
@@ -570,7 +612,19 @@ export default function SearchScreen({ route }) {
           } else if (item.itemType === "expertise" || item.itemType === "seeking") {
             // Navigate to user profile if we have profile_uid
             if (item.profile_uid) {
-              navigation.navigate("Profile", { profile_uid: item.profile_uid });
+              navigation.navigate("Profile", { 
+                profile_uid: item.profile_uid,
+                returnTo: "Search",
+                searchState: {
+                  searchQuery,
+                  searchType,
+                  results,
+                  distance,
+                  network,
+                  bounty,
+                  rating,
+                }
+              });
             } else {
               console.warn("No profile_uid found for expertise/seeking item");
             }
@@ -1322,6 +1376,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginVertical: 8,
     padding: 15,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -1389,6 +1445,7 @@ const styles = StyleSheet.create({
   // Dark mode wish styles
   darkWishItem: {
     backgroundColor: "#2d2d2d",
+    borderColor: "#404040",
     shadowOpacity: 0.3,
   },
   darkWishProfileImage: {

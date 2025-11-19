@@ -15,7 +15,7 @@ console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
 const ProfileScreen = ({ route, navigation }) => {
   // modified on 11/08 - for network profile navigation
   // Allows opening a specific user's profile when navigating from the Network screen
-  const { profile_uid: routeProfileUID } = route.params || {};
+  const { profile_uid: routeProfileUID, returnTo, searchState } = route.params || {};
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -358,8 +358,21 @@ const ProfileScreen = ({ route, navigation }) => {
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => {
-                  // Navigate directly to Network screen when viewing another user's profile
-                  navigation.navigate("Network");
+                  // Navigate back to the screen we came from with preserved state
+                  if (returnTo === "Search" && searchState) {
+                    console.log("🔙 Returning to Search with preserved state:", searchState);
+                    navigation.navigate("Search", { 
+                      restoreState: true,
+                      searchState: searchState
+                    });
+                  } else if (returnTo === "Network") {
+                    // Navigate back to Network screen
+                    console.log("🔙 Returning to Network");
+                    navigation.navigate("Network");
+                  } else {
+                    // Default: Navigate to Network screen when viewing another user's profile
+                    navigation.navigate("Network");
+                  }
                 }}
               >
                 <Ionicons name="arrow-back" size={24} color="#fff" />

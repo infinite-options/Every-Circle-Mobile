@@ -730,7 +730,10 @@ const NetworkScreen = ({ navigation }) => {
                     onMessage={(event) => {
                       const uid = event?.nativeEvent?.data;
                       if (uid && uid !== (profileUid || "YOU")) {
-                        navigation.navigate("Profile", { profile_uid: uid });
+                        navigation.navigate("Profile", {
+                          profile_uid: uid,
+                          returnTo: "Network",
+                        });
                       }
                     }}
                     javaScriptEnabled
@@ -775,6 +778,7 @@ const NetworkScreen = ({ navigation }) => {
                             onPress={() =>
                               navigation.navigate("Profile", {
                                 profile_uid: node.network_profile_personal_uid,
+                                returnTo: "Network",
                               })
                             }
                             style={{ marginVertical: 6 }}
