@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, ScrollView, Image, SafeAreaView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 // import axios from 'axios';
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
@@ -346,26 +347,31 @@ const ProfileScreen = ({ route, navigation }) => {
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
-        {/* modified on 11/08 - show back button when viewing another user's profile */}
-        {routeProfileUID && (
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#8b58f9",
-              padding: 8,
-              borderRadius: 8,
-              marginBottom: 12,
-              marginTop: 10,
-              alignSelf: "center",
-            }}
-            onPress={() => navigation.navigate("Profile", { profile_uid: null })}
-          >
-            <Text style={{ color: "#fff", fontWeight: "600" }}>Back to My Profile</Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
+        <View style={[
+          styles.headerBg, 
+          darkMode && styles.darkHeaderBg,
+          routeProfileUID && styles.headerBgOtherUser,
+          routeProfileUID && darkMode && styles.darkHeaderBgOtherUser
+        ]}>
           <View style={styles.headerContent}>
-            <Text style={[styles.header, darkMode && styles.darkHeader]}>{isCurrentUserProfile ? "Your Profile" : "Profile"}</Text>
+            {routeProfileUID && (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  if (navigation.canGoBack()) {
+                    navigation.goBack();
+                  } else {
+                    // If there's no screen to go back to, navigate to Network screen
+                    navigation.navigate("Network");
+                  }
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+            )}
+            <Text style={[styles.header, darkMode && styles.darkHeader, routeProfileUID && styles.headerWithBack]}>
+              {isCurrentUserProfile ? "Your Profile" : "Profile"}
+            </Text>
             {isCurrentUserProfile && (
               <TouchableOpacity
                 style={styles.editButton}
@@ -557,14 +563,27 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
+  headerBgOtherUser: {
+    backgroundColor: "#FF3B30",
+  },
   headerContent: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 20,
+    position: "relative",
+  },
+  backButton: {
+    position: "absolute",
+    left: 20,
+    padding: 4,
+    zIndex: 1,
   },
   header: { color: "#fff", fontSize: 20, fontWeight: "bold", flex: 1, textAlign: "center" },
+  headerWithBack: {
+    marginLeft: 0,
+  },
   fieldContainer: { marginTop: 15, marginBottom: 0 },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
   inputContainer: {
@@ -632,6 +651,9 @@ const styles = StyleSheet.create({
   },
   darkHeaderBg: {
     backgroundColor: "#4b2c91",
+  },
+  darkHeaderBgOtherUser: {
+    backgroundColor: "#CC2E24",
   },
   darkHeader: {
     color: "#ffffff",
