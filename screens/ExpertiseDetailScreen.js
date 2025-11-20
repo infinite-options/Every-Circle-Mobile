@@ -76,7 +76,7 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
       });
 
       const data = await response.json();
-      console.log("Payment intent created:", data);
+      console.log("Expertise Payment intent created:", data);
 
       if (typeof data !== "string") {
         throw new Error("Invalid response format from payment intent creation");
@@ -159,7 +159,7 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
       if (amount <= 0) {
         Alert.alert("Error", "Invalid cost amount");
         setLoading(false);
-        return false;
+        return { success: false, clientSecret: null };
       }
 
       const clientSecret = await createPaymentIntent(amount);
@@ -184,16 +184,16 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
         console.error("Payment initialization error:", initError);
         Alert.alert("Error", "Failed to initialize payment. Please try again.");
         setLoading(false);
-        return false;
+        return { success: false, clientSecret: null };
       }
 
       setLoading(false);
-      return true;
+      return { success: true, clientSecret: clientSecret };
     } catch (error) {
       console.error("Error initializing payment:", error);
       Alert.alert("Error", "Failed to initialize payment. Please try again.");
       setLoading(false);
-      return false;
+      return { success: false, clientSecret: null };
     }
   };
 
@@ -225,10 +225,15 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
         return;
       }
 
-      const initialized = await initializePayment(amount);
-      if (!initialized) {
+      const initResult = await initializePayment(amount);
+      if (!initResult.success || !initResult.clientSecret) {
+        console.error("Payment initialization failed or client secret not returned");
         return;
       }
+
+      // Store the client secret locally to avoid state timing issues
+      const clientSecret = initResult.clientSecret;
+      console.log("Stored client secret for transaction:", clientSecret);
 
       console.log("Presenting payment sheet...");
       const result = await presentPaymentSheet();
@@ -248,8 +253,26 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
         throw new Error("User ID not found");
       }
 
+      // Extract payment intent ID from client secret
+      // Client secret format: pi_xxx_secret_yyy
+      // We need just the payment intent ID: pi_xxx
+      if (!clientSecret) {
+        console.error("clientSecret is null or undefined");
+        throw new Error("Payment intent not found. Please try again.");
+      }
+
+      // Extract payment intent ID (the part before _secret_)
+      const paymentIntentId = clientSecret.split("_secret_")[0];
+      console.log("Extracted payment intent ID:", paymentIntentId);
+      console.log("Full client secret:", clientSecret);
+
+      if (!paymentIntentId || paymentIntentId.trim() === "") {
+        console.error("Failed to extract payment intent ID from:", clientSecret);
+        throw new Error("Invalid payment intent. Please try again.");
+      }
+
       // Use the same amount that was used for payment
-      await recordTransaction(buyerUid, currentClientSecret, amount);
+      await recordTransaction(buyerUid, paymentIntentId, amount);
 
       // Navigate back to Search page with preserved state
       if (searchState) {
