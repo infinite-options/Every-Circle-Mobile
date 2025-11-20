@@ -365,6 +365,16 @@ const ProfileScreen = ({ route, navigation }) => {
                       restoreState: true,
                       searchState: searchState
                     });
+                  } else if (returnTo === "ExpertiseDetail" && route.params?.expertiseDetailState) {
+                    // Navigate back to ExpertiseDetail screen
+                    console.log("🔙 Returning to ExpertiseDetail");
+                    const { expertiseData, profileData, profile_uid, searchState } = route.params.expertiseDetailState;
+                    navigation.navigate("ExpertiseDetail", {
+                      expertiseData,
+                      profileData,
+                      profile_uid,
+                      searchState,
+                    });
                   } else if (returnTo === "Network") {
                     // Navigate back to Network screen
                     console.log("🔙 Returning to Network");
@@ -401,7 +411,14 @@ const ProfileScreen = ({ route, navigation }) => {
 
         <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
           <Image
-            source={user.profileImage && user.profileImage !== "" && String(user.profileImage).trim() !== "" ? { uri: String(user.profileImage) } : require("../assets/profile.png")}
+            source={
+              user.profileImage &&
+              (isCurrentUserProfile || user.imageIsPublic) &&
+              user.profileImage !== "" &&
+              String(user.profileImage).trim() !== ""
+                ? { uri: String(user.profileImage) }
+                : require("../assets/profile.png")
+            }
             style={styles.profileImage}
             onError={(error) => {
               console.log("ProfileScreen image failed to load:", error.nativeEvent.error);
@@ -413,17 +430,17 @@ const ProfileScreen = ({ route, navigation }) => {
             {user.firstName} {user.lastName}
           </Text>
           <Text style={[styles.profileId, darkMode && styles.darkProfileId]}>Profile ID: {profileUID}</Text>
-          {user.tagLine && user.tagLineIsPublic && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
-          {user.shortBio && user.shortBioIsPublic && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
-          {user.phoneNumber && user.phoneIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.phoneNumber}</Text>}
-          {user.email && user.emailIsPublic && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.email}</Text>}
+          {user.tagLine && (isCurrentUserProfile || user.tagLineIsPublic) && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
+          {user.shortBio && (isCurrentUserProfile || user.shortBioIsPublic) && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
+          {user.phoneNumber && (isCurrentUserProfile || user.phoneIsPublic) && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.phoneNumber}</Text>}
+          {user.email && (isCurrentUserProfile || user.emailIsPublic) && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.email}</Text>}
         </View>
 
         <MiniCard
           user={{
             ...user,
             imageIsPublic: user.imageIsPublic,
-            profileImage: user.imageIsPublic ? user.profileImage : "",
+            profileImage: isCurrentUserProfile || user.imageIsPublic ? user.profileImage : "",
           }}
         />
 

@@ -1,15 +1,34 @@
 // ExpertiseDetailScreen.js
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
+import { REACT_APP_STRIPE_PUBLIC_KEY } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { CREATE_PAYMENT_INTENT_ENDPOINT, TRANSACTIONS_ENDPOINT } from "../apiConfig";
 
-export default function ExpertiseDetailScreen({ route, navigation }) {
+const STRIPE_PUBLISHABLE_KEY = REACT_APP_STRIPE_PUBLIC_KEY;
+
+const ExpertiseDetailScreenContent = ({ route, navigation }) => {
   const { expertiseData, profileData, profile_uid, searchState } = route.params;
   const { darkMode } = useDarkMode();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
+  const [stripeInitialized, setStripeInitialized] = useState(false);
+  const [currentClientSecret, setCurrentClientSecret] = useState(null);
+
+  // Initialize Stripe on mount
+  useEffect(() => {
+    if (STRIPE_PUBLISHABLE_KEY) {
+      console.log("Initializing Stripe with publishable key");
+      setStripeInitialized(true);
+    } else {
+      console.error("Stripe publishable key not found");
+    }
+  }, []);
 
   // Create user object for MiniCard
   const userForMiniCard = {
@@ -25,10 +44,229 @@ export default function ExpertiseDetailScreen({ route, navigation }) {
     imageIsPublic: profileData?.imageIsPublic || false,
   };
 
-  const handleBuyNow = () => {
-    // TODO: Implement buy now functionality
+  const createPaymentIntent = async (amount) => {
+    try {
+      console.log("Creating payment intent for expertise purchase...");
+      const profile_uid = await AsyncStorage.getItem("profile_uid");
+      console.log("User profile UID:", profile_uid);
+
+      if (!profile_uid) {
+        throw new Error("User profile not found");
+      }
+
+      console.log("Creating payment intent for amount:", amount);
+
+      const requestBody = {
+        customer_uid: profile_uid,
+        business_code: "ECTEST",
+        payment_summary: {
+          tax: 0,
+          total: amount.toString(),
+        },
+      };
+
+      console.log("Payment Intent Request:", JSON.stringify(requestBody, null, 2));
+
+      const response = await fetch(CREATE_PAYMENT_INTENT_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      console.log("Payment intent created:", data);
+
+      if (typeof data !== "string") {
+        throw new Error("Invalid response format from payment intent creation");
+      }
+
+      return data; // Return the client secret
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      throw error;
+    }
+  };
+
+  const recordTransaction = async (buyerUid, paymentIntent, amount) => {
+    try {
+      console.log("Recording transaction...");
+      console.log("Buyer UID:", buyerUid);
+      console.log("Seller UID:", profile_uid);
+      console.log("Payment Intent:", paymentIntent);
+      console.log("Expertise UID:", expertiseData?.expertise_uid);
+      console.log("Amount:", amount);
+      console.log("Transaction Type:", "expertise_purchase");
+
+      // Format transaction data to match the API's expected format
+      // For expertise purchases, we'll use a format similar to business transactions
+      // Use seller UID (profile_uid) as business_id for expertise transactions
+      const transactionData = {
+        profile_id: buyerUid,
+        business_id: profile_uid, // Use seller's profile UID as business_id for expertise
+        stripe_payment_intent: paymentIntent,
+        total_amount_paid: parseFloat(amount),
+        total_costs: parseFloat(amount),
+        total_taxes: 0,
+        items: [
+          {
+            expertise_uid: expertiseData?.expertise_uid,
+            bounty: parseFloat(expertiseData?.bounty) || 0,
+            quantity: 1,
+            recommender_profile_id: null, // No recommender for direct expertise purchases
+          },
+        ],
+      };
+
+      console.log("============================================");
+      console.log("ENDPOINT: RECORD_TRANSACTIONS");
+      console.log("URL:", TRANSACTIONS_ENDPOINT);
+      console.log("METHOD: POST");
+      console.log("REQUEST BODY:", JSON.stringify(transactionData, null, 2));
+      console.log("============================================");
+
+      const response = await fetch(TRANSACTIONS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(transactionData),
+      });
+
+      console.log("RESPONSE STATUS:", response.status);
+      console.log("RESPONSE OK:", response.ok);
+
+      const result = await response.json();
+      console.log("RESPONSE BODY:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(`Failed to record transaction: ${result.message || "Unknown error"}`);
+      }
+
+      console.log("Transaction recorded successfully");
+    } catch (error) {
+      console.error("Error recording transaction:", error);
+      throw error;
+    }
+  };
+
+  const initializePayment = async (amount) => {
+    try {
+      console.log("Initializing payment...");
+      setLoading(true);
+
+      if (amount <= 0) {
+        Alert.alert("Error", "Invalid cost amount");
+        setLoading(false);
+        return false;
+      }
+
+      const clientSecret = await createPaymentIntent(amount);
+      console.log("Initializing payment sheet with client secret");
+
+      setCurrentClientSecret(clientSecret);
+
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: expertiseData?.title || "Expertise Purchase",
+        paymentIntentClientSecret: clientSecret,
+        defaultBillingDetails: {
+          name: `${profileData?.firstName || ""} ${profileData?.lastName || ""}`.trim() || "Customer Name",
+        },
+        appearance: {
+          colors: {
+            primary: "#9C45F7",
+          },
+        },
+      });
+
+      if (initError) {
+        console.error("Payment initialization error:", initError);
+        Alert.alert("Error", "Failed to initialize payment. Please try again.");
+        setLoading(false);
+        return false;
+      }
+
+      setLoading(false);
+      return true;
+    } catch (error) {
+      console.error("Error initializing payment:", error);
+      Alert.alert("Error", "Failed to initialize payment. Please try again.");
+      setLoading(false);
+      return false;
+    }
+  };
+
+  const handleBuyNow = async () => {
     console.log("Buy Now clicked for expertise:", expertiseData?.expertise_uid);
-    // This could navigate to a checkout screen or initiate a purchase flow
+
+    if (!stripeInitialized) {
+      Alert.alert("Error", "Payment system is not ready. Please try again.");
+      return;
+    }
+
+    if (!expertiseData?.cost) {
+      Alert.alert("Error", "Cost information is not available for this expertise.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Parse cost amount (handle formats like "25/hr", "USD 15", "$15", etc.)
+      const costString = expertiseData?.cost || "0";
+      // Extract the first number (before any "/" or space)
+      const match = costString.match(/[\d.]+/);
+      const amount = match ? parseFloat(match[0]) : 0;
+
+      if (amount <= 0) {
+        Alert.alert("Error", "Invalid cost amount");
+        setLoading(false);
+        return;
+      }
+
+      const initialized = await initializePayment(amount);
+      if (!initialized) {
+        return;
+      }
+
+      console.log("Presenting payment sheet...");
+      const result = await presentPaymentSheet();
+
+      if (result.error) {
+        console.error("Payment error:", result.error);
+        Alert.alert("Error", "Payment failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("Payment successful!");
+
+      // Record the transaction
+      const buyerUid = await AsyncStorage.getItem("profile_uid");
+      if (!buyerUid) {
+        throw new Error("User ID not found");
+      }
+
+      // Use the same amount that was used for payment
+      await recordTransaction(buyerUid, currentClientSecret, amount);
+
+      // Navigate back to Search page with preserved state
+      if (searchState) {
+        console.log("🔙 Returning to Search after payment with preserved state");
+        navigation.navigate("Search", {
+          restoreState: true,
+          searchState: searchState,
+        });
+      } else {
+        navigation.navigate("Search");
+      }
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      Alert.alert("Error", "An error occurred during payment. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -57,10 +295,29 @@ export default function ExpertiseDetailScreen({ route, navigation }) {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* User MiniCard */}
-        <View style={[styles.card, darkMode && styles.darkCard]}>
-          <MiniCard user={userForMiniCard} />
-        </View>
+        {/* User MiniCard - Clickable */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            console.log("🏢 Navigating to Profile from MiniCard in ExpertiseDetail");
+            if (profile_uid) {
+              navigation.navigate("Profile", {
+                profile_uid: profile_uid,
+                returnTo: "ExpertiseDetail",
+                expertiseDetailState: {
+                  expertiseData,
+                  profileData,
+                  profile_uid,
+                  searchState,
+                },
+              });
+            }
+          }}
+        >
+          <View style={[styles.card, darkMode && styles.darkCard]}>
+            <MiniCard user={userForMiniCard} />
+          </View>
+        </TouchableOpacity>
 
         {/* Expertise Description */}
         <View style={[styles.card, darkMode && styles.darkCard]}>
@@ -100,11 +357,19 @@ export default function ExpertiseDetailScreen({ route, navigation }) {
 
       {/* Buy Now Button */}
       <View style={[styles.buyNowContainer, darkMode && styles.darkBuyNowContainer]}>
-        <TouchableOpacity style={[styles.buyNowButton, darkMode && styles.darkBuyNowButton]} onPress={handleBuyNow}>
-          <Text style={styles.buyNowButtonText}>Buy Now</Text>
+        <TouchableOpacity style={[styles.buyNowButton, darkMode && styles.darkBuyNowButton, loading && styles.disabledButton]} onPress={handleBuyNow} disabled={loading}>
+          <Text style={styles.buyNowButtonText}>{loading ? "Processing..." : "Buy Now"}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+  );
+};
+
+export default function ExpertiseDetailScreen({ route, navigation }) {
+  return (
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+      <ExpertiseDetailScreenContent route={route} navigation={navigation} />
+    </StripeProvider>
   );
 }
 
@@ -290,5 +555,8 @@ const styles = StyleSheet.create({
   },
   darkBuyNowButton: {
     backgroundColor: "#00A69C",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
