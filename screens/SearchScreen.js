@@ -285,6 +285,7 @@ export default function SearchScreen({ route }) {
           expertiseData: {
             title: item.profile_expertise_title,
             description: item.profile_expertise_description,
+            details: item.profile_expertise_details,
             bounty: item.profile_expertise_bounty,
             cost: item.profile_expertise_cost,
             expertise_uid: item.profile_expertise_uid,
@@ -503,7 +504,7 @@ export default function SearchScreen({ route }) {
           <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>{wish.title || item.company}</Text>
           {wish.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{wish.description}</Text>}
           {wish.bounty && (
-            <View style={styles.wishBountyContainer}>
+            <View style={styles.wishBountyContainerRight}>
               <Text style={styles.bountyEmojiIcon}>💰</Text>
               <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: USD {wish.bounty}</Text>
             </View>
@@ -519,52 +520,53 @@ export default function SearchScreen({ route }) {
     const expertise = item.expertiseData || {};
 
     return (
-      <View key={`${item.id}-${idx}`} style={[styles.wishItem, darkMode && styles.darkWishItem]}>
-        {/* Profile Image and Info (MiniCard-like) - Clickable */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => {
-            console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
-            if (item.profile_uid) {
-              navigation.navigate("Profile", {
-                profile_uid: item.profile_uid,
-                returnTo: "Search",
-                searchState: {
-                  searchQuery,
-                  searchType,
-                  results,
-                  distance,
-                  network,
-                  bounty,
-                  rating,
-                },
-              });
-            } else {
-              console.warn("No profile_uid found for expertise item");
-            }
-          }}
-        >
-          <View style={styles.wishProfileContainer}>
-            <Image
-              source={profile.image && profile.imageIsPublic && profile.image.trim() !== "" ? { uri: profile.image } : require("../assets/profile.png")}
-              style={[styles.wishProfileImage, darkMode && styles.darkWishProfileImage]}
-              onError={(error) => {
-                console.log("Expertise profile image failed to load:", error.nativeEvent.error);
-              }}
-              defaultSource={require("../assets/profile.png")}
-            />
-            <View style={styles.wishProfileInfo}>
-              {/* Name is always visible */}
-              <Text style={[styles.wishProfileName, darkMode && styles.darkWishProfileName]}>
-                {profile.firstName} {profile.lastName}
-              </Text>
-              {/* Show email if public */}
-              {profile.emailIsPublic && profile.email && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.email}</Text>}
-              {/* Show phone if public */}
-              {profile.phoneIsPublic && profile.phone && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.phone}</Text>}
-            </View>
+      <TouchableOpacity
+        key={`${item.id}-${idx}`}
+        activeOpacity={0.7}
+        style={[styles.wishItem, darkMode && styles.darkWishItem]}
+        onPress={() => {
+          console.log("🏢 Navigating to ExpertiseDetail from expertise card:", expertise.title, "Profile ID:", item.profile_uid);
+          if (item.profile_uid && expertise) {
+            navigation.navigate("ExpertiseDetail", {
+              expertiseData: expertise,
+              profileData: profile,
+              profile_uid: item.profile_uid,
+              searchState: {
+                searchQuery,
+                searchType,
+                results,
+                distance,
+                network,
+                bounty,
+                rating,
+              },
+            });
+          } else {
+            console.warn("No profile_uid or expertise data found for expertise item");
+          }
+        }}
+      >
+        {/* Profile Image and Info (MiniCard-like) */}
+        <View style={styles.wishProfileContainer}>
+          <Image
+            source={profile.image && profile.imageIsPublic && profile.image.trim() !== "" ? { uri: profile.image } : require("../assets/profile.png")}
+            style={[styles.wishProfileImage, darkMode && styles.darkWishProfileImage]}
+            onError={(error) => {
+              console.log("Expertise profile image failed to load:", error.nativeEvent.error);
+            }}
+            defaultSource={require("../assets/profile.png")}
+          />
+          <View style={styles.wishProfileInfo}>
+            {/* Name is always visible */}
+            <Text style={[styles.wishProfileName, darkMode && styles.darkWishProfileName]}>
+              {profile.firstName} {profile.lastName}
+            </Text>
+            {/* Show email if public */}
+            {profile.emailIsPublic && profile.email && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.email}</Text>}
+            {/* Show phone if public */}
+            {profile.phoneIsPublic && profile.phone && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.phone}</Text>}
           </View>
-        </TouchableOpacity>
+        </View>
 
         {/* Expertise Information */}
         <View style={[styles.wishInfoContainer, darkMode && styles.darkWishInfoContainer]}>
@@ -580,14 +582,14 @@ export default function SearchScreen({ route }) {
               </View>
             )}
             {expertise.bounty && (
-              <View style={styles.wishBountyContainer}>
+              <View style={styles.wishBountyContainerRight}>
                 <Text style={styles.bountyEmojiIcon}>💰</Text>
                 <Text style={[styles.wishBountyLabel, darkMode && styles.darkWishBountyLabel]}>Bounty: USD {expertise.bounty}</Text>
               </View>
             )}
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -1434,6 +1436,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 5,
   },
+  wishBountyContainerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 5,
+    alignSelf: "flex-end",
+  },
   moneyBagIconContainer: {
     width: 20,
     height: 20,
@@ -1494,7 +1502,8 @@ const styles = StyleSheet.create({
   },
   expertiseDetailsContainer: {
     flexDirection: "row",
-    gap: 15,
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 5,
   },
 
