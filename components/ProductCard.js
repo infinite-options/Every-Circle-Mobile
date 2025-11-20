@@ -15,16 +15,24 @@ const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
       </View>
       <View style={styles.textContainer}>
         {service.bs_service_desc ? <Text style={styles.desc}>{service.bs_service_desc}</Text> : null}
-        <View style={styles.row}>
+        <View style={styles.pricingContainer}>
           {service.bs_cost ? (
-            <Text style={styles.amountText}>
-              $ Cost: {service.bs_cost_currency || "USD"} {service.bs_cost}
-            </Text>
+            <View style={styles.costContainer}>
+              <View style={styles.moneyBagIconContainer}>
+                <Text style={styles.moneyBagDollarSymbol}>$</Text>
+              </View>
+              <Text style={styles.amountText}>
+                Cost: {service.bs_cost_currency || "USD"} {service.bs_cost}
+              </Text>
+            </View>
           ) : null}
           {service.bs_bounty ? (
-            <Text style={[styles.amountText, { marginLeft: 12 }]}>
-              💰 Bounty: {service.bs_bounty_currency || "USD"} {service.bs_bounty}
-            </Text>
+            <View style={styles.bountyContainerRight}>
+              <Text style={styles.bountyEmojiIcon}>💰</Text>
+              <Text style={styles.amountText}>
+                Bounty: {service.bs_bounty_currency || "USD"} {service.bs_bounty}
+              </Text>
+            </View>
           ) : null}
         </View>
         {/* Placeholder for future transaction button or details */}
@@ -70,10 +78,38 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 4,
   },
-  row: {
+  pricingContainer: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginTop: 4,
+  },
+  costContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  moneyBagIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FFCD3C",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+  },
+  moneyBagDollarSymbol: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#ffffff",
+  },
+  bountyContainerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-end",
+  },
+  bountyEmojiIcon: {
+    fontSize: 20,
+    marginRight: 6,
   },
   amountText: {
     fontSize: 15,
