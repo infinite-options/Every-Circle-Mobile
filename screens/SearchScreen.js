@@ -479,7 +479,7 @@ export default function SearchScreen({ route }) {
         >
           <View style={styles.wishProfileContainer}>
             <Image
-              source={profile.image && profile.imageIsPublic && profile.image.trim() !== "" ? { uri: profile.image } : require("../assets/profile.png")}
+              source={profile.image && profile.imageIsPublic && profile.image !== "" && String(profile.image).trim() !== "" ? { uri: String(profile.image) } : require("../assets/profile.png")}
               style={[styles.wishProfileImage, darkMode && styles.darkWishProfileImage]}
               onError={(error) => {
                 console.log("Wish profile image failed to load:", error.nativeEvent.error);
@@ -549,7 +549,7 @@ export default function SearchScreen({ route }) {
         {/* Profile Image and Info (MiniCard-like) */}
         <View style={styles.wishProfileContainer}>
           <Image
-            source={profile.image && profile.imageIsPublic && profile.image.trim() !== "" ? { uri: profile.image } : require("../assets/profile.png")}
+            source={profile.image && profile.imageIsPublic && profile.image !== "" && String(profile.image).trim() !== "" ? { uri: String(profile.image) } : require("../assets/profile.png")}
             style={[styles.wishProfileImage, darkMode && styles.darkWishProfileImage]}
             onError={(error) => {
               console.log("Expertise profile image failed to load:", error.nativeEvent.error);

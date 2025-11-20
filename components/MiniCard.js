@@ -79,9 +79,9 @@ const MiniCard = ({ user, business }) => {
 
   return (
     <View style={[styles.cardContainer, darkMode && styles.darkCardContainer]}>
-      {/* Profile Image */}
+      {/* Profile Image - Only show if public */}
       <Image
-        source={profileImage && profileImage !== "" && String(profileImage).trim() !== "" ? { uri: String(profileImage) } : require("../assets/profile.png")}
+        source={profileImage && imageIsPublic && profileImage !== "" && String(profileImage).trim() !== "" ? { uri: String(profileImage) } : require("../assets/profile.png")}
         style={[styles.profileImage, darkMode && styles.darkProfileImage]}
         onError={(error) => {
           console.log("MiniCard user image failed to load:", error.nativeEvent.error);
