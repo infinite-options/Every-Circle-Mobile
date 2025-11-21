@@ -9,7 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TRANSACTIONS_ENDPOINT } from "../apiConfig";
 
 const WishDetailScreenContent = ({ route, navigation }) => {
-  const { wishData, profileData, profile_uid, searchState } = route.params;
+  const { wishData, profileData, profile_uid, searchState, returnTo, profileState } = route.params;
   const { darkMode } = useDarkMode();
   const [loading, setLoading] = useState(false);
   const [howICanHelp, setHowICanHelp] = useState("");
@@ -92,8 +92,12 @@ const WishDetailScreenContent = ({ route, navigation }) => {
   const handleAccept = () => {
     console.log("Submit clicked for wish:", wishData?.wish_uid);
 
-    // Navigate back to Search page with preserved state
-    if (searchState) {
+    // Navigate back to Profile if that's where we came from
+    if (returnTo === "Profile" && profileState) {
+      console.log("🔙 Returning to Profile after submitting wish with preserved state");
+      navigation.navigate("Profile", profileState);
+    } else if (searchState) {
+      // Navigate back to Search page with preserved state
       console.log("🔙 Returning to Search after submitting wish with preserved state");
       navigation.navigate("Search", {
         restoreState: true,
@@ -105,8 +109,12 @@ const WishDetailScreenContent = ({ route, navigation }) => {
   };
 
   const handleBack = () => {
-    // Return to Search screen with preserved state
-    if (searchState) {
+    // Return to Profile screen if that's where we came from
+    if (returnTo === "Profile" && profileState) {
+      console.log("🔙 Returning to Profile with preserved state:", profileState);
+      navigation.navigate("Profile", profileState);
+    } else if (searchState) {
+      // Return to Search screen with preserved state
       console.log("🔙 Returning to Search with preserved state:", searchState);
       navigation.navigate("Search", {
         restoreState: true,
@@ -138,12 +146,14 @@ const WishDetailScreenContent = ({ route, navigation }) => {
             if (profile_uid) {
               navigation.navigate("Profile", {
                 profile_uid: profile_uid,
-                returnTo: "WishDetail",
+                returnTo: returnTo === "Profile" ? "WishDetail" : "WishDetail",
                 wishDetailState: {
                   wishData,
                   profileData,
                   profile_uid,
                   searchState,
+                  returnTo,
+                  profileState,
                 },
               });
             }
