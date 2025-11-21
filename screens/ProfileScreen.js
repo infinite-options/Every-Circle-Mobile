@@ -375,6 +375,16 @@ const ProfileScreen = ({ route, navigation }) => {
                       profile_uid,
                       searchState,
                     });
+                  } else if (returnTo === "WishDetail" && route.params?.wishDetailState) {
+                    // Navigate back to WishDetail screen
+                    console.log("🔙 Returning to WishDetail");
+                    const { wishData, profileData, profile_uid, searchState } = route.params.wishDetailState;
+                    navigation.navigate("WishDetail", {
+                      wishData,
+                      profileData,
+                      profile_uid,
+                      searchState,
+                    });
                   } else if (returnTo === "Network") {
                     // Navigate back to Network screen
                     console.log("🔙 Returning to Network");

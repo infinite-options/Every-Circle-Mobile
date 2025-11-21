@@ -359,8 +359,8 @@ export default function ReviewDetailScreen({ route, navigation }) {
               navigation.goBack();
             }}
           >
-            <Ionicons name='arrow-back' size={24} color='#fff' />
-          </TouchableOpacity>
+          <Ionicons name='arrow-back' size={24} color='#fff' />
+        </TouchableOpacity>
           <Text style={[styles.header, darkMode && styles.darkHeader, styles.headerWithBack]}>Review Details</Text>
         </View>
       </View>
