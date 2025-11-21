@@ -114,7 +114,7 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
             expertise_uid: expertiseData?.expertise_uid,
             bounty: parseFloat(expertiseData?.bounty) || 0,
             quantity: 1,
-            recommender_profile_id: null, // No recommender for direct expertise purchases
+            recommender_profile_id: profile_uid, // Use seller UID as recommender for expertise purchases
           },
         ],
       };
