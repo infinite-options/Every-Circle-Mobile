@@ -306,7 +306,7 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
+    <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       {/* Header with Back Button */}
       <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
         <View style={styles.headerContent}>
@@ -317,74 +317,76 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
         </View>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* User MiniCard - Clickable */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => {
-            console.log("🏢 Navigating to Profile from MiniCard in ExpertiseDetail");
-            if (profile_uid) {
-              navigation.navigate("Profile", {
-                profile_uid: profile_uid,
-                returnTo: "ExpertiseDetail",
-                expertiseDetailState: {
-                  expertiseData,
-                  profileData,
-                  profile_uid,
-                  searchState,
-                },
-              });
-            }
-          }}
-        >
-          <View style={[styles.card, darkMode && styles.darkCard]}>
-            <MiniCard user={userForMiniCard} />
-          </View>
-        </TouchableOpacity>
-
-        {/* Expertise Description */}
-        <View style={[styles.card, darkMode && styles.darkCard]}>
-          <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Expertise Description</Text>
-
-          {expertiseData?.title && <Text style={[styles.expertiseTitle, darkMode && styles.darkExpertiseTitle]}>{expertiseData.title}</Text>}
-
-          {expertiseData?.description && <Text style={[styles.expertiseDescription, darkMode && styles.darkExpertiseDescription]}>{expertiseData.description}</Text>}
-
-          {/* Expertise Details */}
-          {expertiseData?.details && (
-            <View style={styles.detailsContainer}>
-              <Text style={[styles.detailsTitle, darkMode && styles.darkDetailsTitle]}>Expertise Details</Text>
-              <Text style={[styles.detailsText, darkMode && styles.darkDetailsText]}>{expertiseData.details}</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+          {/* User MiniCard - Clickable */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              console.log("🏢 Navigating to Profile from MiniCard in ExpertiseDetail");
+              if (profile_uid) {
+                navigation.navigate("Profile", {
+                  profile_uid: profile_uid,
+                  returnTo: "ExpertiseDetail",
+                  expertiseDetailState: {
+                    expertiseData,
+                    profileData,
+                    profile_uid,
+                    searchState,
+                  },
+                });
+              }
+            }}
+          >
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <MiniCard user={userForMiniCard} />
             </View>
-          )}
+          </TouchableOpacity>
 
-          {/* Cost and Bounty */}
-          <View style={styles.pricingContainer}>
-            {expertiseData?.cost && (
-              <View style={styles.pricingRow}>
-                <View style={styles.moneyBagIconContainer}>
-                  <Text style={styles.moneyBagDollarSymbol}>$</Text>
+          {/* Expertise Description */}
+          <View style={[styles.card, darkMode && styles.darkCard]}>
+            <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Expertise Description</Text>
+
+            {expertiseData?.title && <Text style={[styles.expertiseTitle, darkMode && styles.darkExpertiseTitle]}>{expertiseData.title}</Text>}
+
+            {expertiseData?.description && <Text style={[styles.expertiseDescription, darkMode && styles.darkExpertiseDescription]}>{expertiseData.description}</Text>}
+
+            {/* Expertise Details */}
+            {expertiseData?.details && (
+              <View style={styles.detailsContainer}>
+                <Text style={[styles.detailsTitle, darkMode && styles.darkDetailsTitle]}>Expertise Details</Text>
+                <Text style={[styles.detailsText, darkMode && styles.darkDetailsText]}>{expertiseData.details}</Text>
+              </View>
+            )}
+
+            {/* Cost and Bounty */}
+            <View style={styles.pricingContainer}>
+              {expertiseData?.cost && (
+                <View style={styles.pricingRow}>
+                  <View style={styles.moneyBagIconContainer}>
+                    <Text style={styles.moneyBagDollarSymbol}>$</Text>
+                  </View>
+                  <Text style={[styles.pricingLabel, darkMode && styles.darkPricingLabel]}>Cost: {expertiseData.cost}</Text>
                 </View>
-                <Text style={[styles.pricingLabel, darkMode && styles.darkPricingLabel]}>Cost: {expertiseData.cost}</Text>
-              </View>
-            )}
-            {expertiseData?.bounty && (
-              <View style={styles.pricingRow}>
-                <Text style={styles.bountyEmojiIcon}>💰</Text>
-                <Text style={[styles.pricingLabel, darkMode && styles.darkPricingLabel]}>Bounty: USD {expertiseData.bounty}</Text>
-              </View>
-            )}
+              )}
+              {expertiseData?.bounty && (
+                <View style={styles.pricingRow}>
+                  <Text style={styles.bountyEmojiIcon}>💰</Text>
+                  <Text style={[styles.pricingLabel, darkMode && styles.darkPricingLabel]}>Bounty: USD {expertiseData.bounty}</Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* Buy Now Button */}
-      <View style={[styles.buyNowContainer, darkMode && styles.darkBuyNowContainer]}>
-        <TouchableOpacity style={[styles.buyNowButton, darkMode && styles.darkBuyNowButton, loading && styles.disabledButton]} onPress={handleBuyNow} disabled={loading}>
-          <Text style={styles.buyNowButtonText}>{loading ? "Processing..." : "Buy Now"}</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        {/* Buy Now Button */}
+        <View style={[styles.buyNowContainer, darkMode && styles.darkBuyNowContainer]}>
+          <TouchableOpacity style={[styles.buyNowButton, darkMode && styles.darkBuyNowButton, loading && styles.disabledButton]} onPress={handleBuyNow} disabled={loading}>
+            <Text style={styles.buyNowButtonText}>{loading ? "Processing..." : "Buy Now"}</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -403,10 +405,14 @@ const styles = StyleSheet.create({
   },
   headerBg: {
     backgroundColor: "#FF9500",
-    paddingVertical: 15,
+    paddingTop: 30,
+    paddingBottom: 15,
     alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
+  },
+  darkHeaderBg: {
+    backgroundColor: "#CC7700",
   },
   headerContent: {
     flexDirection: "row",
@@ -418,9 +424,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    left: 20,
+    left: 53,
     padding: 4,
     zIndex: 1,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     color: "#fff",

@@ -348,7 +348,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
+    <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       {/* Header with Back Button - Matching Profile Screen style */}
       <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
         <View style={styles.headerContent}>
@@ -365,7 +365,8 @@ export default function ReviewDetailScreen({ route, navigation }) {
         </View>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Reviewer Information Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Reviewer Information</Text>
@@ -613,7 +614,8 @@ export default function ReviewDetailScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -624,10 +626,14 @@ const styles = StyleSheet.create({
   },
   headerBg: {
     backgroundColor: "#FF9500",
-    paddingVertical: 15,
+    paddingTop: 30,
+    paddingBottom: 15,
     alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
+  },
+  darkHeaderBg: {
+    backgroundColor: "#CC7700",
   },
   headerContent: {
     flexDirection: "row",
@@ -639,9 +645,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    left: 20,
+    left: 53,
     padding: 4,
     zIndex: 1,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     color: "#fff",

@@ -120,14 +120,14 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={[styles.safeArea, darkMode && styles.darkContainer]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Settings</Text>
-        </View>
+    <View style={[styles.container, darkMode && styles.darkContainer]}>
+      {/* Header */}
+      <View style={[styles.header, darkMode && styles.darkHeader]}>
+        <Text style={styles.headerText}>Settings</Text>
+      </View>
 
-        {/* Settings Options */}
+      {/* Settings Options */}
+      <SafeAreaView style={[styles.safeArea, darkMode && styles.darkContainer]}>
         <ScrollView contentContainerStyle={styles.settingsContainer}>
           {/* Allow Notifications */}
           <View style={[styles.settingItem, darkMode && styles.darkSettingItem]}>
@@ -241,20 +241,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
+    backgroundColor: "#fff",
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#f8f8f8",
   },
   darkContainer: {
-    backgroundColor: "#222",
+    backgroundColor: "#1a1a1a",
   },
   header: {
     backgroundColor: "#AF52DE",
-    paddingVertical: 15,
+    paddingTop: 30,
+    paddingBottom: 15,
     alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
+  },
+  darkHeader: {
+    backgroundColor: "#4b2c91",
   },
   headerText: {
     color: "#fff",

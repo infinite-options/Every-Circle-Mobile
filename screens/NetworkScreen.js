@@ -624,11 +624,12 @@ const NetworkScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
-      <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
-        <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
-          <Text style={[styles.header, darkMode && styles.darkHeader]}>Network</Text>
-        </View>
+      {/* Header */}
+      <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
+        <Text style={[styles.header, darkMode && styles.darkHeader]}>Network</Text>
+      </View>
 
+      <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
         <ScrollView
           style={[styles.scrollContainer, darkMode && styles.darkScrollContainer]}
           contentContainerStyle={{ padding: 10, paddingBottom: 120 }}
@@ -804,13 +805,14 @@ const NetworkScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: "#fff" },
-  safeArea: { flex: 1, backgroundColor: "#fff" },
+  safeArea: { flex: 1 },
   headerBg: {
     backgroundColor: "#AF52DE",
-    paddingVertical: 15,
+    paddingTop: 30,
+    paddingBottom: 15,
     alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
   },
   header: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   scrollContainer: { flex: 1 },

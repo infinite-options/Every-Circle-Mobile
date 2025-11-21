@@ -711,13 +711,12 @@ export default function SearchScreen({ route }) {
 
   return (
     <View style={[styles.container, darkMode && styles.darkContainer]}>
-      <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Search</Text>
-          <TouchableOpacity
-            style={styles.cartButton}
-            onPress={() =>
+      {/* Header */}
+      <View style={[styles.header, darkMode && styles.darkHeader]}>
+        <Text style={styles.title}>Search</Text>
+        <TouchableOpacity
+          style={styles.cartButton}
+          onPress={() =>
               navigation.navigate("ShoppingCart", {
                 cartItems: cartItems,
                 onRemoveItem: async (index) => {
@@ -752,6 +751,7 @@ export default function SearchScreen({ route }) {
           </TouchableOpacity>
         </View>
 
+      <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
         {/* Main Content */}
         <View style={styles.contentContainer}>
           <View style={styles.searchContainer}>
@@ -1084,13 +1084,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
     backgroundColor: "#AF52DE",
-    paddingVertical: 15,
+    paddingTop: 30,
+    paddingBottom: 15,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
+  },
+  darkHeader: {
+    backgroundColor: "#4b2c91",
   },
   title: {
     color: "#fff",
@@ -1103,10 +1107,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 18,
     padding: 4,
-    marginLeft: 10,
-    position: "relative",
+    position: "absolute",
+    right: 53,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 1,
   },
   cartBadge: {
     position: "absolute",

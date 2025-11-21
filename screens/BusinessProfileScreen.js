@@ -1,6 +1,7 @@
 // BusinessProfileScreen.js
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity, Alert, Modal } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import ProductCard from "../components/ProductCard";
@@ -554,7 +555,8 @@ export default function BusinessProfileScreen({ route, navigation }) {
         <Text style={styles.headerText}>Business Profile</Text>
       </View>
 
-      <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={styles.content}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView style={[styles.container, darkMode && styles.darkContainer]} contentContainerStyle={styles.content}>
         {/* Edit Button - Only show if user owns the business */}
         {isOwner && (
           <View style={styles.editButtonContainer}>
@@ -960,6 +962,7 @@ export default function BusinessProfileScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
+      </SafeAreaView>
     </View>
   );
 }
@@ -971,16 +974,22 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#00C721",
-    paddingVertical: 15,
+    paddingTop: 30,
+    paddingBottom: 15,
     alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
   },
-
+  darkHeader: {
+    backgroundColor: "#009919",
+  },
   headerText: {
     color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
+  },
+  safeArea: {
+    flex: 1,
   },
   container: {
     flex: 1,
