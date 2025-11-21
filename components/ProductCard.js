@@ -21,9 +21,9 @@ const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
               <View style={styles.moneyBagIconContainer}>
                 <Text style={styles.moneyBagDollarSymbol}>$</Text>
               </View>
-              <Text style={styles.amountText}>
+            <Text style={styles.amountText}>
                 Cost: {service.bs_cost_currency || "USD"} {service.bs_cost}
-              </Text>
+            </Text>
             </View>
           ) : null}
           {service.bs_bounty ? (
@@ -31,7 +31,7 @@ const ProductCard = ({ service, onPress, onEdit, showEditButton }) => {
               <Text style={styles.bountyEmojiIcon}>💰</Text>
               <Text style={styles.amountText}>
                 Bounty: {service.bs_bounty_currency || "USD"} {service.bs_bounty}
-              </Text>
+            </Text>
             </View>
           ) : null}
         </View>

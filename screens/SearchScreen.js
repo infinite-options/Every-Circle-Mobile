@@ -452,11 +452,37 @@ export default function SearchScreen({ route }) {
     const wish = item.wishData || {};
 
     return (
-      <View key={`${item.id}-${idx}`} style={[styles.wishItem, darkMode && styles.darkWishItem]}>
+      <TouchableOpacity
+        key={`${item.id}-${idx}`}
+        activeOpacity={0.7}
+        style={[styles.wishItem, darkMode && styles.darkWishItem]}
+        onPress={() => {
+          console.log("🏢 Navigating to WishDetail from wish card:", wish.title, "Profile ID:", item.profile_uid);
+          if (item.profile_uid && wish) {
+            navigation.navigate("WishDetail", {
+              wishData: wish,
+              profileData: profile,
+              profile_uid: item.profile_uid,
+              searchState: {
+                searchQuery,
+                searchType,
+                results,
+                distance,
+                network,
+                bounty,
+                rating,
+              },
+            });
+          } else {
+            console.warn("No profile_uid or wish data found for wish item");
+          }
+        }}
+      >
         {/* Profile Image and Info (MiniCard-like) - Clickable */}
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => {
+          onPress={(e) => {
+            e.stopPropagation(); // Prevent triggering parent onPress
             console.log("🏢 Navigating to profile from MiniCard:", profile.firstName, profile.lastName, "Profile ID:", item.profile_uid);
             if (item.profile_uid) {
               navigation.navigate("Profile", {
@@ -510,7 +536,7 @@ export default function SearchScreen({ route }) {
             </View>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
