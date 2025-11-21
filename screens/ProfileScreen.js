@@ -370,22 +370,26 @@ const ProfileScreen = ({ route, navigation }) => {
                 } else if (returnTo === "ExpertiseDetail" && route.params?.expertiseDetailState) {
                   // Navigate back to ExpertiseDetail screen
                   console.log("🔙 Returning to ExpertiseDetail");
-                  const { expertiseData, profileData, profile_uid, searchState } = route.params.expertiseDetailState;
+                  const { expertiseData, profileData, profile_uid, searchState, returnTo: detailReturnTo, profileState: detailProfileState } = route.params.expertiseDetailState;
                   navigation.navigate("ExpertiseDetail", {
                     expertiseData,
                     profileData,
                     profile_uid,
                     searchState,
+                    returnTo: detailReturnTo,
+                    profileState: detailProfileState,
                   });
                 } else if (returnTo === "WishDetail" && route.params?.wishDetailState) {
                   // Navigate back to WishDetail screen
                   console.log("🔙 Returning to WishDetail");
-                  const { wishData, profileData, profile_uid, searchState } = route.params.wishDetailState;
+                  const { wishData, profileData, profile_uid, searchState, returnTo: detailReturnTo, profileState: detailProfileState } = route.params.wishDetailState;
                   navigation.navigate("WishDetail", {
                     wishData,
                     profileData,
                     profile_uid,
                     searchState,
+                    returnTo: detailReturnTo,
+                    profileState: detailProfileState,
                   });
                 } else if (returnTo === "Network") {
                   // Navigate back to Network screen
@@ -507,20 +511,77 @@ const ProfileScreen = ({ route, navigation }) => {
               {user.expertise && user.expertise.filter((exp) => exp.isPublic).length > 0 ? (
                 user.expertise
                   .filter((exp) => exp.isPublic)
-                  .map((exp, index) => (
-                    <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
-                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                          {exp.cost && exp.cost.toLowerCase() !== "free" ? `cost: $${exp.cost}` : exp.cost ? `cost: ${exp.cost}` : ""}
-                        </Text>
-                        <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
-                          {exp.bounty && exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : exp.bounty ? `💰 ${exp.bounty}` : ""}
-                        </Text>
+                  .map((exp, index) => {
+                    const expertiseItem = (
+                      <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
+                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                          {exp.cost && (
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                              <View style={styles.moneyBagIconContainer}>
+                                <Text style={styles.moneyBagDollarSymbol}>$</Text>
+                              </View>
+                              <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.cost.toLowerCase() !== "free" ? `Cost: ${exp.cost}` : `Cost: ${exp.cost}`}</Text>
+                            </View>
+                          )}
+                          {exp.bounty && (
+                            <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>
+                              {exp.bounty.toLowerCase() !== "free" ? `💰 $${exp.bounty}` : `💰 ${exp.bounty}`}
+                            </Text>
+                          )}
+                        </View>
                       </View>
-                    </View>
-                  ))
+                    );
+
+                    // Make clickable when viewing another user's profile
+                    if (routeProfileUID && !isCurrentUserProfile) {
+                      return (
+                        <TouchableOpacity
+                          key={index}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            console.log("🏢 Navigating to ExpertiseDetail from Profile expertise:", exp.name, "Profile ID:", profileUID);
+                            // Prepare expertise data in the format expected by ExpertiseDetailScreen
+                            const expertiseData = {
+                              expertise_uid: exp.profile_expertise_uid,
+                              title: exp.name,
+                              description: exp.description,
+                              cost: exp.cost,
+                              bounty: exp.bounty,
+                            };
+                            // Prepare profile data
+                            const profileData = {
+                              firstName: user.firstName,
+                              lastName: user.lastName,
+                              email: user.email,
+                              phone: user.phoneNumber,
+                              image: user.profileImage,
+                              tagLine: user.tagLine,
+                              emailIsPublic: user.emailIsPublic,
+                              phoneIsPublic: user.phoneIsPublic,
+                              imageIsPublic: user.imageIsPublic,
+                              tagLineIsPublic: user.tagLineIsPublic,
+                            };
+                            navigation.navigate("ExpertiseDetail", {
+                              expertiseData,
+                              profileData,
+                              profile_uid: profileUID,
+                              returnTo: "Profile",
+                              profileState: {
+                                profile_uid: profileUID,
+                                returnTo,
+                                searchState,
+                              },
+                            });
+                          }}
+                        >
+                          {expertiseItem}
+                        </TouchableOpacity>
+                      );
+                    }
+                    return expertiseItem;
+                  })
               ) : (
                 <Text style={[styles.inputText, darkMode && styles.darkInputText, { fontStyle: "italic", color: darkMode ? "#999" : "#666" }]}>No expertise added yet</Text>
               )}
@@ -534,15 +595,64 @@ const ProfileScreen = ({ route, navigation }) => {
               {user.wishes && user.wishes.filter((wish) => wish.isPublic).length > 0 ? (
                 user.wishes
                   .filter((wish) => wish.isPublic)
-                  .map((wish, index) => (
-                    <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
-                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
-                      <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-                        <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+                  .map((wish, index) => {
+                    const wishItem = (
+                      <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
+                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
+                        <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
+                          <Text style={[styles.inputText, { textAlign: "right", minWidth: 60 }, darkMode && styles.darkInputText]}>{wish.amount ? `💰 $${wish.amount}` : ""}</Text>
+                        </View>
                       </View>
-                    </View>
-                  ))
+                    );
+
+                    // Make clickable when viewing another user's profile
+                    if (routeProfileUID && !isCurrentUserProfile) {
+                      return (
+                        <TouchableOpacity
+                          key={index}
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            console.log("🏢 Navigating to WishDetail from Profile wish:", wish.helpNeeds, "Profile ID:", profileUID);
+                            // Prepare wish data in the format expected by WishDetailScreen
+                            const wishData = {
+                              wish_uid: wish.profile_wish_uid,
+                              title: wish.helpNeeds,
+                              description: wish.details,
+                              bounty: wish.amount,
+                            };
+                            // Prepare profile data
+                            const profileData = {
+                              firstName: user.firstName,
+                              lastName: user.lastName,
+                              email: user.email,
+                              phone: user.phoneNumber,
+                              image: user.profileImage,
+                              tagLine: user.tagLine,
+                              emailIsPublic: user.emailIsPublic,
+                              phoneIsPublic: user.phoneIsPublic,
+                              imageIsPublic: user.imageIsPublic,
+                              tagLineIsPublic: user.tagLineIsPublic,
+                            };
+                            navigation.navigate("WishDetail", {
+                              wishData,
+                              profileData,
+                              profile_uid: profileUID,
+                              returnTo: "Profile",
+                              profileState: {
+                                profile_uid: profileUID,
+                                returnTo,
+                                searchState,
+                              },
+                            });
+                          }}
+                        >
+                          {wishItem}
+                        </TouchableOpacity>
+                      );
+                    }
+                    return wishItem;
+                  })
               ) : (
                 <Text style={[styles.inputText, darkMode && styles.darkInputText, { fontStyle: "italic", color: darkMode ? "#999" : "#666" }]}>No seeking added yet</Text>
               )}
@@ -747,6 +857,20 @@ const styles = StyleSheet.create({
   },
   darkRoleText: {
     color: "#999",
+  },
+  moneyBagIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FFCD3C",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+  },
+  moneyBagDollarSymbol: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#ffffff",
   },
 });
 

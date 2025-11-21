@@ -13,7 +13,7 @@ import { CREATE_PAYMENT_INTENT_ENDPOINT, TRANSACTIONS_ENDPOINT } from "../apiCon
 const STRIPE_PUBLISHABLE_KEY = REACT_APP_STRIPE_PUBLIC_KEY;
 
 const ExpertiseDetailScreenContent = ({ route, navigation }) => {
-  const { expertiseData, profileData, profile_uid, searchState } = route.params;
+  const { expertiseData, profileData, profile_uid, searchState, returnTo, profileState } = route.params;
   const { darkMode } = useDarkMode();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
@@ -274,8 +274,12 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
       // Use the same amount that was used for payment
       await recordTransaction(buyerUid, paymentIntentId, amount);
 
-      // Navigate back to Search page with preserved state
-      if (searchState) {
+      // Navigate back to Profile if that's where we came from
+      if (returnTo === "Profile" && profileState) {
+        console.log("🔙 Returning to Profile after payment with preserved state");
+        navigation.navigate("Profile", profileState);
+      } else if (searchState) {
+        // Navigate back to Search page with preserved state
         console.log("🔙 Returning to Search after payment with preserved state");
         navigation.navigate("Search", {
           restoreState: true,
@@ -293,8 +297,12 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
   };
 
   const handleBack = () => {
-    // Return to Search screen with preserved state
-    if (searchState) {
+    // Return to Profile screen if that's where we came from
+    if (returnTo === "Profile" && profileState) {
+      console.log("🔙 Returning to Profile with preserved state:", profileState);
+      navigation.navigate("Profile", profileState);
+    } else if (searchState) {
+      // Return to Search screen with preserved state
       console.log("🔙 Returning to Search with preserved state:", searchState);
       navigation.navigate("Search", {
         restoreState: true,
@@ -327,12 +335,14 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
               if (profile_uid) {
                 navigation.navigate("Profile", {
                   profile_uid: profile_uid,
-                  returnTo: "ExpertiseDetail",
+                  returnTo: returnTo === "Profile" ? "ExpertiseDetail" : "ExpertiseDetail",
                   expertiseDetailState: {
                     expertiseData,
                     profileData,
                     profile_uid,
                     searchState,
+                    returnTo,
+                    profileState,
                   },
                 });
               }
