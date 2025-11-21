@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
@@ -443,6 +444,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
   return (
     <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
       <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Ionicons name='arrow-back' size={24} color='#fff' />
@@ -451,7 +453,8 @@ const ShoppingCartScreen = ({ route, navigation }) => {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        <SafeAreaView style={styles.safeArea}>
+          <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
           {cartItems.length === 0 ? (
             <Text style={styles.emptyCart}>Your cart is empty</Text>
           ) : (
@@ -537,6 +540,7 @@ const ShoppingCartScreen = ({ route, navigation }) => {
         )}
 
         <BottomNavBar navigation={navigation} />
+        </SafeAreaView>
       </View>
     </StripeProvider>
   );
@@ -549,17 +553,20 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#9C45F7",
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 15,
     paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
   },
   backButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    position: "absolute",
+    left: 53,
+    padding: 4,
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 20,
@@ -570,6 +577,9 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 40,
+  },
+  safeArea: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,

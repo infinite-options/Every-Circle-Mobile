@@ -538,10 +538,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
     backgroundColor: "#AF52DE",
-    paddingVertical: 15,
+    paddingTop: 30,
+    paddingBottom: 15,
     alignItems: "center",
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 300,
+    borderBottomRightRadius: 300,
   },
   title: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   darkContainer: {
