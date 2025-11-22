@@ -40,6 +40,7 @@ import ReviewBusinessScreen from "./screens/ReviewBusinessScreen";
 import ReviewDetailScreen from "./screens/ReviewDetailScreen";
 import ExpertiseDetailScreen from "./screens/ExpertiseDetailScreen";
 import WishDetailScreen from "./screens/WishDetailScreen";
+import WishResponsesScreen from "./screens/WishResponsesScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -572,6 +573,7 @@ export default function App() {
           <Stack.Screen name='ReviewDetail' component={ReviewDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name='ExpertiseDetail' component={ExpertiseDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name='WishDetail' component={WishDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name='WishResponses' component={WishResponsesScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </DarkModeProvider>

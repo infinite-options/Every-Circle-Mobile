@@ -172,6 +172,7 @@ const ProfileScreen = ({ route, navigation }) => {
             details: wish.profile_wish_description || "",
             amount: wish.profile_wish_bounty || "",
             isPublic: wish.profile_wish_is_public === 1 || wish.isPublic === true,
+            wish_responses: wish.wish_responses || 0,
           }))
         : [];
       const socialLinks = apiUser.social_links && typeof apiUser.social_links === "string" ? JSON.parse(apiUser.social_links) : {};
@@ -391,6 +392,16 @@ const ProfileScreen = ({ route, navigation }) => {
                     returnTo: detailReturnTo,
                     profileState: detailProfileState,
                   });
+                } else if (returnTo === "WishResponses" && route.params?.wishResponsesState) {
+                  // Navigate back to WishResponses screen
+                  console.log("🔙 Returning to WishResponses");
+                  const { wishData, profileData, profile_uid, profileState: wishResponsesProfileState } = route.params.wishResponsesState;
+                  navigation.navigate("WishResponses", {
+                    wishData,
+                    profileData,
+                    profile_uid,
+                    profileState: wishResponsesProfileState,
+                  });
                 } else if (returnTo === "Network") {
                   // Navigate back to Network screen
                   console.log("🔙 Returning to Network");
@@ -598,6 +609,48 @@ const ProfileScreen = ({ route, navigation }) => {
                   .map((wish, index) => {
                     const wishItem = (
                       <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
+                        {/* Wish Responses Badge - Only show for logged in user's own profile */}
+                        {isCurrentUserProfile && wish.wish_responses !== undefined && wish.wish_responses > 0 && (
+                          <TouchableOpacity
+                            style={styles.wishResponseBadge}
+                            onPress={() => {
+                              console.log("Wish responses badge clicked for wish:", wish.profile_wish_uid);
+                              // Prepare wish data for navigation
+                              const wishDataForNavigation = {
+                                wish_uid: wish.profile_wish_uid,
+                                title: wish.helpNeeds,
+                                description: wish.details,
+                                bounty: wish.amount,
+                              };
+                              // Prepare profile data
+                              const profileDataForNavigation = {
+                                firstName: user.firstName,
+                                lastName: user.lastName,
+                                email: user.email,
+                                phone: user.phoneNumber,
+                                image: user.profileImage,
+                                tagLine: user.tagLine,
+                                emailIsPublic: user.emailIsPublic,
+                                phoneIsPublic: user.phoneIsPublic,
+                                imageIsPublic: user.imageIsPublic,
+                                tagLineIsPublic: user.tagLineIsPublic,
+                              };
+                              navigation.navigate("WishResponses", {
+                                wishData: wishDataForNavigation,
+                                profileData: profileDataForNavigation,
+                                profile_uid: profileUID,
+                                profileState: {
+                                  profile_uid: profileUID,
+                                  returnTo,
+                                  searchState,
+                                },
+                              });
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.wishResponseBadgeText}>{wish.wish_responses || 0}</Text>
+                          </TouchableOpacity>
+                        )}
                         <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.helpNeeds || ""}</Text>
                         <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{wish.details || ""}</Text>
                         <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
@@ -871,6 +924,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
     color: "#ffffff",
+  },
+  wishResponseBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#AF52DE",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  wishResponseBadgeText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });
 
