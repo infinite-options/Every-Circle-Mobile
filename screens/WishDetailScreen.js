@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import { useDarkMode } from "../contexts/DarkModeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { TRANSACTIONS_ENDPOINT } from "../apiConfig";
+import { TRANSACTIONS_ENDPOINT, PROFILE_WISH_INFO_ENDPOINT } from "../apiConfig";
 
 const WishDetailScreenContent = ({ route, navigation }) => {
   const { wishData, profileData, profile_uid, searchState, returnTo, profileState } = route.params;
@@ -89,22 +89,83 @@ const WishDetailScreenContent = ({ route, navigation }) => {
     }
   };
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     console.log("Submit clicked for wish:", wishData?.wish_uid);
 
-    // Navigate back to Profile if that's where we came from
-    if (returnTo === "Profile" && profileState) {
-      console.log("🔙 Returning to Profile after submitting wish with preserved state");
-      navigation.navigate("Profile", profileState);
-    } else if (searchState) {
-      // Navigate back to Search page with preserved state
-      console.log("🔙 Returning to Search after submitting wish with preserved state");
-      navigation.navigate("Search", {
-        restoreState: true,
-        searchState: searchState,
+    try {
+      setLoading(true);
+
+      // Get the current user's profile_uid
+      const responder_id = await AsyncStorage.getItem("profile_uid");
+      if (!responder_id) {
+        Alert.alert("Error", "User profile not found. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Get the profile_wish_id from wishData
+      const profile_wish_id = wishData?.wish_uid || wishData?.profile_wish_id;
+      if (!profile_wish_id) {
+        Alert.alert("Error", "Wish information not found. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Prepare the request body
+      const requestBody = {
+        profile_wish_id: profile_wish_id,
+        responder_id: responder_id,
+        responder_note: howICanHelp || "I can do this for you!",
+      };
+
+      console.log("============================================");
+      console.log("ENDPOINT: PROFILE_WISH_INFO");
+      console.log("URL:", PROFILE_WISH_INFO_ENDPOINT);
+      console.log("METHOD: POST");
+      console.log("REQUEST BODY:", JSON.stringify(requestBody, null, 2));
+      console.log("============================================");
+
+      // Make the API call
+      const response = await fetch(PROFILE_WISH_INFO_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       });
-    } else {
-      navigation.navigate("Search");
+
+      console.log("RESPONSE STATUS:", response.status);
+      console.log("RESPONSE OK:", response.ok);
+
+      const result = await response.json();
+      console.log("RESPONSE BODY:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to submit response");
+      }
+
+      console.log("Response submitted successfully");
+      Alert.alert("Success", "Your response has been submitted!");
+
+      // Navigate back to Profile if that's where we came from
+      if (returnTo === "Profile" && profileState) {
+        console.log("🔙 Returning to Profile after submitting wish with preserved state");
+        navigation.navigate("Profile", profileState);
+      } else if (searchState) {
+        // Navigate back to Search page with preserved state
+        console.log("🔙 Returning to Search after submitting wish with preserved state");
+        navigation.navigate("Search", {
+          restoreState: true,
+          searchState: searchState,
+        });
+      } else {
+        navigation.navigate("Search");
+      }
+    } catch (error) {
+      console.error("Error submitting response:", error);
+      Alert.alert("Error", error.message || "Failed to submit response. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -196,21 +257,21 @@ const WishDetailScreenContent = ({ route, navigation }) => {
           <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>How I Can Help</Text>
           <TextInput
             style={[styles.textInput, darkMode && styles.darkTextInput]}
-            placeholder="Explain why you are perfect for this gig..."
+            placeholder='Explain why you are perfect for this gig...'
             placeholderTextColor={darkMode ? "#888" : "#999"}
             multiline
             numberOfLines={6}
             value={howICanHelp}
             onChangeText={setHowICanHelp}
-            textAlignVertical="top"
+            textAlignVertical='top'
           />
         </View>
       </ScrollView>
 
       {/* Submit Button */}
       <View style={[styles.acceptContainer, darkMode && styles.darkAcceptContainer]}>
-        <TouchableOpacity style={[styles.acceptButton, darkMode && styles.darkAcceptButton]} onPress={handleAccept}>
-          <Text style={styles.acceptButtonText}>Submit</Text>
+        <TouchableOpacity style={[styles.acceptButton, darkMode && styles.darkAcceptButton, loading && styles.disabledButton]} onPress={handleAccept} disabled={loading}>
+          <Text style={styles.acceptButtonText}>{loading ? "Submitting..." : "Submit"}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -410,5 +471,3 @@ const styles = StyleSheet.create({
     borderColor: "#404040",
   },
 });
-
-
