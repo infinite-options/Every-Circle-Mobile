@@ -5,14 +5,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import { useDarkMode } from "../contexts/DarkModeContext";
-import { PROFILE_WISH_INFO_ENDPOINT } from "../apiConfig";
+import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
+import { REACT_APP_STRIPE_PUBLIC_KEY } from "@env";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { PROFILE_WISH_INFO_ENDPOINT, CREATE_PAYMENT_INTENT_ENDPOINT, TRANSACTIONS_ENDPOINT } from "../apiConfig";
 
-const WishResponsesScreen = ({ route, navigation }) => {
+const STRIPE_PUBLISHABLE_KEY = REACT_APP_STRIPE_PUBLIC_KEY;
+
+const WishResponsesScreenContent = ({ route, navigation }) => {
   const { wishData, profileData, profile_uid, profileState } = route.params;
   const { darkMode } = useDarkMode();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(true);
   const [responses, setResponses] = useState([]);
   const [accepting, setAccepting] = useState(null);
+  const [stripeInitialized, setStripeInitialized] = useState(false);
+  const [currentClientSecret, setCurrentClientSecret] = useState(null);
 
   // Create user object for MiniCard
   const userForMiniCard = {
@@ -27,6 +35,16 @@ const WishResponsesScreen = ({ route, navigation }) => {
     tagLineIsPublic: profileData?.tagLineIsPublic || false,
     imageIsPublic: profileData?.imageIsPublic || false,
   };
+
+  // Initialize Stripe on mount
+  useEffect(() => {
+    if (STRIPE_PUBLISHABLE_KEY) {
+      console.log("WishResponsesScreen - Initializing Stripe with publishable key");
+      setStripeInitialized(true);
+    } else {
+      console.error("WishResponsesScreen - Stripe publishable key not found");
+    }
+  }, []);
 
   useEffect(() => {
     fetchWishResponses();
@@ -68,16 +86,257 @@ const WishResponsesScreen = ({ route, navigation }) => {
     }
   };
 
+  const createPaymentIntent = async (amount) => {
+    try {
+      console.log("WishResponsesScreen - Creating payment intent for wish acceptance...");
+      const buyer_profile_uid = await AsyncStorage.getItem("profile_uid");
+      console.log("WishResponsesScreen - Buyer profile UID:", buyer_profile_uid);
+
+      if (!buyer_profile_uid) {
+        throw new Error("User profile not found");
+      }
+
+      console.log("WishResponsesScreen - Creating payment intent for amount:", amount);
+
+      const requestBody = {
+        customer_uid: buyer_profile_uid,
+        business_code: "ECTEST",
+        payment_summary: {
+          tax: 0,
+          total: amount.toString(),
+        },
+      };
+
+      console.log("WishResponsesScreen - Payment Intent Request:", JSON.stringify(requestBody, null, 2));
+
+      const response = await fetch(CREATE_PAYMENT_INTENT_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      console.log("WishResponsesScreen - Payment intent created:", data);
+
+      if (typeof data !== "string") {
+        throw new Error("Invalid response format from payment intent creation");
+      }
+
+      return data; // Return the client secret
+    } catch (error) {
+      console.error("WishResponsesScreen - Error creating payment intent:", error);
+      throw error;
+    }
+  };
+
+  const recordTransaction = async (buyerUid, paymentIntent, amount, responderProfileUid, wishResponseUid) => {
+    try {
+      console.log("WishResponsesScreen - Recording transaction...");
+      console.log("WishResponsesScreen - Buyer UID:", buyerUid);
+      console.log("WishResponsesScreen - Responder Profile UID (user_profile_id):", responderProfileUid);
+      console.log("WishResponsesScreen - Payment Intent:", paymentIntent);
+      console.log("WishResponsesScreen - Wish Response UID (ti_bs_id):", wishResponseUid);
+      console.log("WishResponsesScreen - Amount (bounty):", amount);
+      console.log("WishResponsesScreen - Transaction Type:", "wish_response_acceptance");
+
+      // Format transaction data to match the API's expected format
+      // For wish response acceptance, use responder's profile UID as business_id
+      const transactionData = {
+        profile_id: buyerUid,
+        business_id: responderProfileUid, // Use responder's profile UID as business_id
+        stripe_payment_intent: paymentIntent,
+        total_amount_paid: parseFloat(amount),
+        total_costs: parseFloat(amount),
+        total_taxes: 0,
+        items: [
+          {
+            wish_response_uid: wishResponseUid, // Use wish_response_uid as ti_bs_id
+            bounty: parseFloat(amount),
+            quantity: 1,
+            recommender_profile_id: responderProfileUid, // Use responder's profile UID
+          },
+        ],
+      };
+
+      console.log("WishResponsesScreen - ============================================");
+      console.log("WishResponsesScreen - ENDPOINT: RECORD_TRANSACTIONS");
+      console.log("WishResponsesScreen - URL:", TRANSACTIONS_ENDPOINT);
+      console.log("WishResponsesScreen - METHOD: POST");
+      console.log("WishResponsesScreen - REQUEST BODY:", JSON.stringify(transactionData, null, 2));
+      console.log("WishResponsesScreen - ============================================");
+
+      const response = await fetch(TRANSACTIONS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(transactionData),
+      });
+
+      console.log("WishResponsesScreen - RESPONSE STATUS:", response.status);
+      console.log("WishResponsesScreen - RESPONSE OK:", response.ok);
+
+      const result = await response.json();
+      console.log("WishResponsesScreen - RESPONSE BODY:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(`Failed to record transaction: ${result.message || "Unknown error"}`);
+      }
+
+      console.log("WishResponsesScreen - Transaction recorded successfully");
+    } catch (error) {
+      console.error("WishResponsesScreen - Error recording transaction:", error);
+      throw error;
+    }
+  };
+
+  const initializePayment = async (amount) => {
+    try {
+      console.log("WishResponsesScreen - Initializing payment...");
+
+      if (amount <= 0) {
+        Alert.alert("Error", "Invalid bounty amount");
+        return { success: false, clientSecret: null };
+      }
+
+      const clientSecret = await createPaymentIntent(amount);
+      console.log("WishResponsesScreen - Initializing payment sheet with client secret");
+
+      setCurrentClientSecret(clientSecret);
+
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: wishData?.title || "Wish Response Acceptance",
+        paymentIntentClientSecret: clientSecret,
+        defaultBillingDetails: {
+          name: `${profileData?.firstName || ""} ${profileData?.lastName || ""}`.trim() || "Customer Name",
+        },
+        appearance: {
+          colors: {
+            primary: "#9C45F7",
+          },
+        },
+      });
+
+      if (initError) {
+        console.error("WishResponsesScreen - Payment initialization error:", initError);
+        Alert.alert("Error", "Failed to initialize payment. Please try again.");
+        return { success: false, clientSecret: null };
+      }
+
+      return { success: true, clientSecret: clientSecret };
+    } catch (error) {
+      console.error("WishResponsesScreen - Error initializing payment:", error);
+      Alert.alert("Error", "Failed to initialize payment. Please try again.");
+      return { success: false, clientSecret: null };
+    }
+  };
+
   const handleAccept = async (response) => {
+    console.log("WishResponsesScreen - Accept clicked for response:", response.wish_response_uid);
+    console.log("WishResponsesScreen - Response data:", JSON.stringify(response, null, 2));
+
+    if (!stripeInitialized) {
+      Alert.alert("Error", "Payment system is not ready. Please try again.");
+      return;
+    }
+
+    if (!wishData?.bounty) {
+      Alert.alert("Error", "Bounty information is not available for this wish.");
+      return;
+    }
+
     try {
       setAccepting(response.wish_response_uid);
-      // TODO: Implement accept functionality - this might require a new endpoint
-      console.log("Accepting response:", response.wish_response_uid);
-      Alert.alert("Success", "Response accepted! This feature will be implemented soon.");
-      // After accepting, you might want to refresh the list or navigate away
+
+      // Parse bounty amount (handle formats like "5", "USD 5", "$5", etc.)
+      const bountyString = wishData?.bounty || "0";
+      // Extract the first number
+      const match = bountyString.match(/[\d.]+/);
+      const amount = match ? parseFloat(match[0]) : 0;
+
+      console.log("WishResponsesScreen - Parsed bounty amount:", amount);
+      console.log("WishResponsesScreen - Original bounty string:", bountyString);
+
+      if (amount <= 0) {
+        Alert.alert("Error", "Invalid bounty amount");
+        setAccepting(null);
+        return;
+      }
+
+      const initResult = await initializePayment(amount);
+      if (!initResult.success || !initResult.clientSecret) {
+        console.error("WishResponsesScreen - Payment initialization failed or client secret not returned");
+        setAccepting(null);
+        return;
+      }
+
+      // Store the client secret locally to avoid state timing issues
+      const clientSecret = initResult.clientSecret;
+      console.log("WishResponsesScreen - Stored client secret for transaction:", clientSecret);
+
+      console.log("WishResponsesScreen - Presenting payment sheet...");
+      const result = await presentPaymentSheet();
+
+      if (result.error) {
+        console.error("WishResponsesScreen - Payment error:", result.error);
+        Alert.alert("Error", "Payment failed. Please try again.");
+        setAccepting(null);
+        return;
+      }
+
+      console.log("WishResponsesScreen - Payment successful!");
+
+      // Record the transaction
+      const buyerUid = await AsyncStorage.getItem("profile_uid");
+      if (!buyerUid) {
+        throw new Error("User ID not found");
+      }
+
+      // Extract payment intent ID from client secret
+      // Client secret format: pi_xxx_secret_yyy
+      // We need just the payment intent ID: pi_xxx
+      if (!clientSecret) {
+        console.error("WishResponsesScreen - clientSecret is null or undefined");
+        throw new Error("Payment intent not found. Please try again.");
+      }
+
+      // Extract payment intent ID (the part before _secret_)
+      const paymentIntentId = clientSecret.split("_secret_")[0];
+      console.log("WishResponsesScreen - Extracted payment intent ID:", paymentIntentId);
+      console.log("WishResponsesScreen - Full client secret:", clientSecret);
+
+      if (!paymentIntentId || paymentIntentId.trim() === "") {
+        console.error("WishResponsesScreen - Failed to extract payment intent ID from:", clientSecret);
+        throw new Error("Invalid payment intent. Please try again.");
+      }
+
+      // Get the wish response UID and responder profile UID
+      const wishResponseUid = response.wish_response_uid;
+      const responderProfileUid = response.profile_personal_uid;
+
+      console.log("WishResponsesScreen - Wish Response UID (ti_bs_id):", wishResponseUid);
+      console.log("WishResponsesScreen - Responder Profile UID (user_profile_id):", responderProfileUid);
+
+      if (!wishResponseUid) {
+        throw new Error("Wish Response ID not found");
+      }
+
+      if (!responderProfileUid) {
+        throw new Error("Responder profile ID not found");
+      }
+
+      // Use the same amount that was used for payment
+      await recordTransaction(buyerUid, paymentIntentId, amount, responderProfileUid, wishResponseUid);
+
+      Alert.alert("Success", "Response accepted and payment processed successfully!");
+
+      // Refresh the responses list
+      await fetchWishResponses();
     } catch (error) {
-      console.error("Error accepting response:", error);
-      Alert.alert("Error", "Failed to accept response. Please try again.");
+      console.error("WishResponsesScreen - Error processing payment:", error);
+      Alert.alert("Error", error.message || "An error occurred during payment. Please try again.");
     } finally {
       setAccepting(null);
     }
@@ -185,11 +444,7 @@ const WishResponsesScreen = ({ route, navigation }) => {
                       onPress={() => handleAccept(response)}
                       disabled={accepting === response.wish_response_uid}
                     >
-                      {accepting === response.wish_response_uid ? (
-                        <ActivityIndicator size='small' color='#fff' />
-                      ) : (
-                        <Text style={styles.acceptButtonText}>Accept</Text>
-                      )}
+                      {accepting === response.wish_response_uid ? <ActivityIndicator size='small' color='#fff' /> : <Text style={styles.acceptButtonText}>Accept</Text>}
                     </TouchableOpacity>
                   </View>
                 );
@@ -442,5 +697,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WishResponsesScreen;
-
+export default function WishResponsesScreen({ route, navigation }) {
+  return (
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+      <WishResponsesScreenContent route={route} navigation={navigation} />
+    </StripeProvider>
+  );
+}
