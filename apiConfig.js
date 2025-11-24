@@ -55,6 +55,9 @@ export const RATINGS_ENDPOINT = `${API_BASE_URL}/ratings`;
 // Profile Wish Info Endpoint
 export const PROFILE_WISH_INFO_ENDPOINT = `${API_BASE_URL}/api/profilewishinfo`;
 
+// Circles Endpoint
+export const CIRCLES_ENDPOINT = `${API_BASE_URL}/api/v1/circles`;
+
 console.log("API Configuration loaded:");
 console.log("Base URL:", API_BASE_URL);
 console.log("Legacy Base URL:", API_BASE_URL);
