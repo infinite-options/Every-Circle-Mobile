@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, ScrollView, Image, SafeAreaView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator, ScrollView, Image, SafeAreaView, TouchableWithoutFeedback } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 // import axios from 'axios';
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT, BUSINESS_INFO_ENDPOINT } from "../apiConfig";
+import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT, BUSINESS_INFO_ENDPOINT, CIRCLES_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
 
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
@@ -22,6 +22,7 @@ const ProfileScreen = ({ route, navigation }) => {
   const [profileUID, setProfileUID] = useState("");
   const [businessesData, setBusinessesData] = useState([]);
   const [isCurrentUserProfile, setIsCurrentUserProfile] = useState(false);
+  const [showRelationshipDropdown, setShowRelationshipDropdown] = useState(false);
   const { darkMode } = useDarkMode();
 
   useFocusEffect(
@@ -319,6 +320,74 @@ const ProfileScreen = ({ route, navigation }) => {
     return null;
   };
 
+  const handleRelationshipSelect = async (relationship) => {
+    try {
+      console.log("ProfileScreen - Selected relationship:", relationship);
+      setShowRelationshipDropdown(false);
+
+      // Get the current logged-in user's profile_uid
+      const loggedInProfileUID = await AsyncStorage.getItem("profile_uid");
+      if (!loggedInProfileUID) {
+        Alert.alert("Error", "User profile not found. Please try again.");
+        return;
+      }
+
+      // Get the profile_uid of the user being viewed
+      const viewedProfileUID = routeProfileUID || profileUID;
+      if (!viewedProfileUID) {
+        Alert.alert("Error", "Profile information not found.");
+        return;
+      }
+
+      // Format current date (YYYY-MM-DD)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const circleDate = `${year}-${month}-${day}`;
+
+      // Prepare request body
+      const requestBody = {
+        circle_profile_id: loggedInProfileUID,
+        circle_related_person_id: viewedProfileUID,
+        circle_relationship: relationship,
+        circle_date: circleDate,
+      };
+
+      console.log("ProfileScreen - ============================================");
+      console.log("ProfileScreen - ENDPOINT: CIRCLES");
+      console.log("ProfileScreen - URL:", CIRCLES_ENDPOINT);
+      console.log("ProfileScreen - METHOD: POST");
+      console.log("ProfileScreen - REQUEST BODY:", JSON.stringify(requestBody, null, 2));
+      console.log("ProfileScreen - ============================================");
+
+      // Make the API call
+      const response = await fetch(CIRCLES_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("ProfileScreen - RESPONSE STATUS:", response.status);
+      console.log("ProfileScreen - RESPONSE OK:", response.ok);
+
+      const result = await response.json();
+      console.log("ProfileScreen - RESPONSE BODY:", JSON.stringify(result, null, 2));
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to save relationship");
+      }
+
+      console.log("ProfileScreen - Relationship saved successfully");
+      Alert.alert("Success", `Relationship saved as ${relationship.charAt(0).toUpperCase() + relationship.slice(1)}!`);
+    } catch (error) {
+      console.error("ProfileScreen - Error saving relationship:", error);
+      Alert.alert("Error", error.message || "Failed to save relationship. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.pageContainer, darkMode && styles.darkPageContainer, { flex: 1, justifyContent: "center", alignItems: "center" }]}>
@@ -347,6 +416,12 @@ const ProfileScreen = ({ route, navigation }) => {
 
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
+      {/* Close dropdown when clicking outside */}
+      {showRelationshipDropdown && (
+        <TouchableWithoutFeedback onPress={() => setShowRelationshipDropdown(false)}>
+          <View style={styles.dropdownOverlay} />
+        </TouchableWithoutFeedback>
+      )}
       {/* Header */}
       <View
         style={[
@@ -428,6 +503,34 @@ const ProfileScreen = ({ route, navigation }) => {
             >
               <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
             </TouchableOpacity>
+          )}
+          {routeProfileUID && !isCurrentUserProfile && (
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  console.log("Dropdown button clicked for profile:", profileUID);
+                  setShowRelationshipDropdown(!showRelationshipDropdown);
+                }}
+              >
+                <Ionicons name='chevron-down' size={28} color='#fff' />
+              </TouchableOpacity>
+              {showRelationshipDropdown && (
+                <View style={[styles.dropdownMenu, darkMode && styles.darkDropdownMenu]}>
+                  <TouchableOpacity style={styles.dropdownItem} onPress={() => handleRelationshipSelect("friend")}>
+                    <Text style={[styles.dropdownItemText, darkMode && styles.darkDropdownItemText]}>Friend</Text>
+                  </TouchableOpacity>
+                  <View style={[styles.dropdownDivider, darkMode && styles.darkDropdownDivider]} />
+                  <TouchableOpacity style={styles.dropdownItem} onPress={() => handleRelationshipSelect("colleague")}>
+                    <Text style={[styles.dropdownItemText, darkMode && styles.darkDropdownItemText]}>Colleague</Text>
+                  </TouchableOpacity>
+                  <View style={[styles.dropdownDivider, darkMode && styles.darkDropdownDivider]} />
+                  <TouchableOpacity style={styles.dropdownItem} onPress={() => handleRelationshipSelect("family")}>
+                    <Text style={[styles.dropdownItemText, darkMode && styles.darkDropdownItemText]}>Family</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           )}
         </View>
       </View>
@@ -802,6 +905,65 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   editIcon: { width: 20, height: 20 },
+  addButton: {
+    position: "absolute",
+    right: 20,
+    padding: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  dropdownContainer: {
+    position: "absolute",
+    right: 20,
+    top: 0,
+    zIndex: 10,
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 40,
+    right: 0,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    minWidth: 150,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    marginTop: 4,
+  },
+  darkDropdownMenu: {
+    backgroundColor: "#2d2d2d",
+    borderColor: "#404040",
+    borderWidth: 1,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  darkDropdownItemText: {
+    color: "#fff",
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: "#e0e0e0",
+  },
+  darkDropdownDivider: {
+    backgroundColor: "#404040",
+  },
+  dropdownOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9,
+  },
   errorText: { fontSize: 18, color: "red", textAlign: "center", marginTop: 20 },
   cardContainer: {
     padding: 0,
