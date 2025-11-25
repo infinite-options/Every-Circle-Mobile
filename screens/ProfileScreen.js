@@ -23,6 +23,9 @@ const ProfileScreen = ({ route, navigation }) => {
   const [businessesData, setBusinessesData] = useState([]);
   const [isCurrentUserProfile, setIsCurrentUserProfile] = useState(false);
   const [showRelationshipDropdown, setShowRelationshipDropdown] = useState(false);
+  const [existingRelationship, setExistingRelationship] = useState(null);
+  const [relationshipType, setRelationshipType] = useState(null);
+  const [circleUid, setCircleUid] = useState(null);
   const { darkMode } = useDarkMode();
 
   useFocusEffect(
@@ -41,6 +44,10 @@ const ProfileScreen = ({ route, navigation }) => {
           // Check if the profile being viewed matches the logged-in user's profile
           setIsCurrentUserProfile(routeProfileUID === loggedInProfileUID);
           await fetchUserData(routeProfileUID);
+          // Fetch relationship if viewing another user's profile
+          if (loggedInProfileUID && routeProfileUID !== loggedInProfileUID) {
+            await fetchRelationship(loggedInProfileUID, routeProfileUID);
+          }
           return;
         }
 
@@ -308,6 +315,68 @@ const ProfileScreen = ({ route, navigation }) => {
     }
   };
 
+  const fetchRelationship = async (loggedInProfileUID, viewedProfileUID) => {
+    try {
+      console.log("ProfileScreen - Fetching relationship...");
+      console.log("ProfileScreen - Logged in profile UID:", loggedInProfileUID);
+      console.log("ProfileScreen - Viewed profile UID:", viewedProfileUID);
+
+      const endpoint = `${CIRCLES_ENDPOINT}/${loggedInProfileUID}?circle_related_person_id=${viewedProfileUID}`;
+      console.log("ProfileScreen - Relationship endpoint:", endpoint);
+
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("ProfileScreen - Relationship response status:", response.status);
+      console.log("ProfileScreen - Relationship response ok:", response.ok);
+
+      const result = await response.json();
+      console.log("ProfileScreen - ============================================");
+      console.log("ProfileScreen - ENDPOINT RETURN (GET Relationship):");
+      console.log("ProfileScreen - URL:", endpoint);
+      console.log("ProfileScreen - RESPONSE STATUS:", response.status);
+      console.log("ProfileScreen - RESPONSE BODY:", JSON.stringify(result, null, 2));
+      console.log("ProfileScreen - ============================================");
+
+      if (response.ok && result && result.data && result.data.length > 0) {
+        // Extract relationship data from the first item in the data array
+        const relationshipData = result.data[0];
+        const relationship = relationshipData.circle_relationship;
+        const uid = relationshipData.circle_uid;
+
+        // Store the full relationship data, relationship type, and circle_uid
+        setExistingRelationship(relationshipData);
+        setRelationshipType(relationship);
+        setCircleUid(uid);
+
+        console.log("ProfileScreen - Relationship found:", relationshipData);
+        console.log("ProfileScreen - Relationship type extracted:", relationship);
+        console.log("ProfileScreen - Circle UID extracted:", uid);
+        console.log("ProfileScreen - Data passed to ProfileScreen - relationshipType:", relationship);
+        console.log("ProfileScreen - Data passed to ProfileScreen - circleUid:", uid);
+      } else {
+        // No relationship found or error
+        setExistingRelationship(null);
+        setRelationshipType(null);
+        setCircleUid(null);
+        console.log("ProfileScreen - No relationship found or error");
+        console.log("ProfileScreen - Data passed to ProfileScreen - relationshipType: null");
+        console.log("ProfileScreen - Data passed to ProfileScreen - circleUid: null");
+      }
+    } catch (error) {
+      console.error("ProfileScreen - Error fetching relationship:", error);
+      setExistingRelationship(null);
+      setRelationshipType(null);
+      setCircleUid(null);
+      console.log("ProfileScreen - Data passed to ProfileScreen - relationshipType: null (error)");
+      console.log("ProfileScreen - Data passed to ProfileScreen - circleUid: null (error)");
+    }
+  };
+
   const renderField = (label, value, isPublic) => {
     if (isPublic && value && value.trim() !== "") {
       return (
@@ -323,7 +392,15 @@ const ProfileScreen = ({ route, navigation }) => {
   const handleRelationshipSelect = async (relationship) => {
     try {
       console.log("ProfileScreen - Selected relationship:", relationship);
+      console.log("ProfileScreen - Current relationshipType:", relationshipType);
+      console.log("ProfileScreen - Current circleUid:", circleUid);
       setShowRelationshipDropdown(false);
+
+      // Check if the relationship has changed
+      if (relationshipType === relationship) {
+        console.log("ProfileScreen - Relationship unchanged, no update needed");
+        return;
+      }
 
       // Get the current logged-in user's profile_uid
       const loggedInProfileUID = await AsyncStorage.getItem("profile_uid");
@@ -339,51 +416,96 @@ const ProfileScreen = ({ route, navigation }) => {
         return;
       }
 
-      // Format current date (YYYY-MM-DD)
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      const circleDate = `${year}-${month}-${day}`;
+      // If a relationship already exists (circleUid exists), use PUT to update
+      if (circleUid) {
+        const updateEndpoint = `${CIRCLES_ENDPOINT}/${circleUid}`;
+        const updateRequestBody = {
+          circle_relationship: relationship,
+        };
 
-      // Prepare request body
-      const requestBody = {
-        circle_profile_id: loggedInProfileUID,
-        circle_related_person_id: viewedProfileUID,
-        circle_relationship: relationship,
-        circle_date: circleDate,
-      };
+        console.log("ProfileScreen - ============================================");
+        console.log("ProfileScreen - ENDPOINT: CIRCLES (UPDATE)");
+        console.log("ProfileScreen - URL:", updateEndpoint);
+        console.log("ProfileScreen - METHOD: PUT");
+        console.log("ProfileScreen - REQUEST BODY:", JSON.stringify(updateRequestBody, null, 2));
+        console.log("ProfileScreen - ============================================");
 
-      console.log("ProfileScreen - ============================================");
-      console.log("ProfileScreen - ENDPOINT: CIRCLES");
-      console.log("ProfileScreen - URL:", CIRCLES_ENDPOINT);
-      console.log("ProfileScreen - METHOD: POST");
-      console.log("ProfileScreen - REQUEST BODY:", JSON.stringify(requestBody, null, 2));
-      console.log("ProfileScreen - ============================================");
+        const response = await fetch(updateEndpoint, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updateRequestBody),
+        });
 
-      // Make the API call
-      const response = await fetch(CIRCLES_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+        console.log("ProfileScreen - UPDATE RESPONSE STATUS:", response.status);
+        console.log("ProfileScreen - UPDATE RESPONSE OK:", response.ok);
 
-      console.log("ProfileScreen - RESPONSE STATUS:", response.status);
-      console.log("ProfileScreen - RESPONSE OK:", response.ok);
+        const result = await response.json();
+        console.log("ProfileScreen - UPDATE RESPONSE BODY:", JSON.stringify(result, null, 2));
 
-      const result = await response.json();
-      console.log("ProfileScreen - RESPONSE BODY:", JSON.stringify(result, null, 2));
+        if (!response.ok) {
+          throw new Error(result.message || "Failed to update relationship");
+        }
 
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to save relationship");
+        console.log("ProfileScreen - Relationship updated successfully");
+        Alert.alert("Success", `Relationship updated to ${relationship.charAt(0).toUpperCase() + relationship.slice(1)}!`);
+      } else {
+        // No existing relationship, create new one with POST
+        // Format current date (YYYY-MM-DD)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const day = String(now.getDate()).padStart(2, "0");
+        const circleDate = `${year}-${month}-${day}`;
+
+        // Prepare request body
+        const requestBody = {
+          circle_profile_id: loggedInProfileUID,
+          circle_related_person_id: viewedProfileUID,
+          circle_relationship: relationship,
+          circle_date: circleDate,
+        };
+
+        console.log("ProfileScreen - ============================================");
+        console.log("ProfileScreen - ENDPOINT: CIRCLES (CREATE)");
+        console.log("ProfileScreen - URL:", CIRCLES_ENDPOINT);
+        console.log("ProfileScreen - METHOD: POST");
+        console.log("ProfileScreen - REQUEST BODY:", JSON.stringify(requestBody, null, 2));
+        console.log("ProfileScreen - ============================================");
+
+        // Make the API call
+        const response = await fetch(CIRCLES_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        console.log("ProfileScreen - CREATE RESPONSE STATUS:", response.status);
+        console.log("ProfileScreen - CREATE RESPONSE OK:", response.ok);
+
+        const result = await response.json();
+        console.log("ProfileScreen - CREATE RESPONSE BODY:", JSON.stringify(result, null, 2));
+
+        if (!response.ok) {
+          throw new Error(result.message || "Failed to save relationship");
+        }
+
+        console.log("ProfileScreen - Relationship saved successfully");
+        Alert.alert("Success", `Relationship saved as ${relationship.charAt(0).toUpperCase() + relationship.slice(1)}!`);
       }
 
-      console.log("ProfileScreen - Relationship saved successfully");
-      Alert.alert("Success", `Relationship saved as ${relationship.charAt(0).toUpperCase() + relationship.slice(1)}!`);
+      // Refresh the relationship data
+      if (loggedInProfileUID && viewedProfileUID) {
+        await fetchRelationship(loggedInProfileUID, viewedProfileUID);
+        console.log("ProfileScreen - Relationship refreshed after save/update");
+        console.log("ProfileScreen - Data passed to ProfileScreen - relationshipType:", relationshipType);
+        console.log("ProfileScreen - Data passed to ProfileScreen - circleUid:", circleUid);
+      }
     } catch (error) {
-      console.error("ProfileScreen - Error saving relationship:", error);
+      console.error("ProfileScreen - Error saving/updating relationship:", error);
       Alert.alert("Error", error.message || "Failed to save relationship. Please try again.");
     }
   };
@@ -510,6 +632,7 @@ const ProfileScreen = ({ route, navigation }) => {
                 style={styles.addButton}
                 onPress={() => {
                   console.log("Dropdown button clicked for profile:", profileUID);
+                  console.log("ProfileScreen - Current relationshipType:", relationshipType);
                   setShowRelationshipDropdown(!showRelationshipDropdown);
                 }}
               >
@@ -555,6 +678,9 @@ const ProfileScreen = ({ route, navigation }) => {
               {user.firstName} {user.lastName}
             </Text>
             <Text style={[styles.profileId, darkMode && styles.darkProfileId]}>Profile ID: {profileUID}</Text>
+            {relationshipType && (
+              <Text style={[styles.relationshipText, darkMode && styles.darkRelationshipText]}>Relationship: {relationshipType.charAt(0).toUpperCase() + relationshipType.slice(1)}</Text>
+            )}
             {user.tagLine && (isCurrentUserProfile || user.tagLineIsPublic) && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
             {user.shortBio && (isCurrentUserProfile || user.shortBioIsPublic) && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
             {user.phoneNumber && (isCurrentUserProfile || user.phoneIsPublic) && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.phoneNumber}</Text>}
@@ -976,6 +1102,15 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 8,
     fontStyle: "italic",
+  },
+  relationshipText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+    fontStyle: "italic",
+  },
+  darkRelationshipText: {
+    color: "#cccccc",
   },
   tagline: {
     fontSize: 18,
