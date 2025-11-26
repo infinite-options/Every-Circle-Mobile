@@ -500,7 +500,7 @@ export default function AccountScreen({ navigation }) {
                 <Text style={styles.bountyTableHeaderCell}>Date</Text>
                 <Text style={styles.bountyTableHeaderCell}>Purchaser</Text>
                 <Text style={styles.bountyTableHeaderCell}>Business</Text>
-                <Text style={styles.bountyTableHeaderCell}>Bounty</Text>
+                <Text style={styles.bountyTableHeaderCell}>Bounty Earned</Text>
               </View>
               {/* Table Rows */}
               {bountyData.data.map((transaction, index) => {
@@ -585,21 +585,22 @@ const styles = StyleSheet.create({
   transactionsContainer: { backgroundColor: "transparent", paddingVertical: 6 },
   transactionHeaderRow: {
     flexDirection: "row",
-    paddingVertical: 8,
-    backgroundColor: "#9C45F7",
-    borderRadius: 4,
-    marginBottom: 4,
+    backgroundColor: "#AF52DE",
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    marginBottom: 2,
   },
   transactionRow: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#eee" },
   transactionDate: { width: 60, fontSize: 11, color: "#333" },
-  transactionId: { width: 90, fontSize: 11, color: "#333" },
+  transactionId: { width: 95, fontSize: 11, color: "#333" },
   transactionBusiness: { flex: 1, fontSize: 11, color: "#333", paddingHorizontal: 4 },
   transactionAmount: { width: 70, fontSize: 11, color: "#333", textAlign: "right" },
   // Header styles
-  transactionHeaderDate: { width: 60, fontSize: 11, color: "#fff", fontWeight: "bold" },
-  transactionHeaderId: { width: 90, fontSize: 11, color: "#fff", fontWeight: "bold" },
-  transactionHeaderBusiness: { flex: 1, fontSize: 11, color: "#fff", fontWeight: "bold", paddingHorizontal: 4 },
-  transactionHeaderAmount: { width: 70, fontSize: 11, color: "#fff", fontWeight: "bold", textAlign: "right" },
+  transactionHeaderDate: { width: 50, fontSize: 13, color: "#fff", fontWeight: "bold" },
+  transactionHeaderId: { width: 100, fontSize: 13, color: "#fff", fontWeight: "bold" },
+  transactionHeaderBusiness: { flex: 1, fontSize: 13, color: "#fff", fontWeight: "bold", paddingHorizontal: 4 },
+  transactionHeaderAmount: { width: 70, fontSize: 13, color: "#fff", fontWeight: "bold", textAlign: "right" },
   centeredContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   // Bounty Results styles

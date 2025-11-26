@@ -210,14 +210,24 @@ const NetworkScreen = ({ navigation }) => {
 
       // Extract public miniCard information
       const p = apiUser?.personal_info || {};
+      const tagLineIsPublic = p.profile_personal_tag_line_is_public === 1 || p.profile_personal_tagline_is_public === 1;
+      const emailIsPublic = p.profile_personal_email_is_public === 1;
+      const phoneIsPublic = p.profile_personal_phone_number_is_public === 1;
+      const imageIsPublic = p.profile_personal_image_is_public === 1;
+
       const publicData = {
         profile_uid: profileUID,
         firstName: p.profile_personal_first_name || "",
         lastName: p.profile_personal_last_name || "",
-        tagLine: p.profile_personal_tag_line_is_public === 1 || p.profile_personal_tagline_is_public === 1 ? p.profile_personal_tag_line || p.profile_personal_tagline || "" : "",
-        email: p.profile_personal_email_is_public === 1 ? apiUser?.user_email || "" : "",
-        phoneNumber: p.profile_personal_phone_number_is_public === 1 ? p.profile_personal_phone_number || "" : "",
-        profileImage: p.profile_personal_image_is_public === 1 ? (p.profile_personal_image ? String(p.profile_personal_image) : "") : "",
+        tagLine: tagLineIsPublic ? p.profile_personal_tag_line || p.profile_personal_tagline || "" : "",
+        email: emailIsPublic ? apiUser?.user_email || "" : "",
+        phoneNumber: phoneIsPublic ? p.profile_personal_phone_number || "" : "",
+        profileImage: imageIsPublic ? (p.profile_personal_image ? String(p.profile_personal_image) : "") : "",
+        // Include visibility flags for MiniCard
+        tagLineIsPublic,
+        emailIsPublic,
+        phoneIsPublic,
+        imageIsPublic,
       };
 
       setUserProfileData(publicData);
@@ -626,7 +636,7 @@ const NetworkScreen = ({ navigation }) => {
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       {/* Header */}
       <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
-        <Text style={[styles.header, darkMode && styles.darkHeader]}>Network</Text>
+        <Text style={[styles.header, darkMode && styles.darkHeader]}>Connect</Text>
       </View>
 
       <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
@@ -637,21 +647,18 @@ const NetworkScreen = ({ navigation }) => {
           showsVerticalScrollIndicator
         >
           {/* QR Code Section */}
-          {qrCodeData && (
+          {qrCodeData && userProfileData && (
             <View style={[styles.qrCodeContainer, darkMode && styles.darkQrCodeContainer]}>
               <Text style={[styles.qrCodeTitle, darkMode && styles.darkQrCodeTitle]}>My Contact QR Code</Text>
-              <Text style={[styles.qrCodeSubtitle, darkMode && styles.darkQrCodeSubtitle]}>Scan to share your public contact information</Text>
+              <Text style={[styles.qrCodeSubtitle, darkMode && styles.darkQrCodeSubtitle]}>Let others scan this to share your public contact information</Text>
               <View style={[styles.qrCodeWrapper, darkMode && styles.darkQrCodeWrapper]}>
                 <QRCode value={qrCodeData} size={200} color={darkMode ? "#ffffff" : "#000000"} backgroundColor={darkMode ? "#1a1a1a" : "#ffffff"} />
               </View>
-              {userProfileData && (
-                <View style={styles.qrCodeInfo}>
-                  <Text style={[styles.qrCodeInfoText, darkMode && styles.darkQrCodeInfoText]}>
-                    {userProfileData.firstName} {userProfileData.lastName}
-                  </Text>
-                  {userProfileData.tagLine && <Text style={[styles.qrCodeInfoText, darkMode && styles.darkQrCodeInfoText]}>{userProfileData.tagLine}</Text>}
-                </View>
-              )}
+
+              {/* Display MiniCard showing what information will be transferred */}
+              <View style={styles.qrCodeMiniCardContainer}>
+                <MiniCard user={userProfileData} />
+              </View>
             </View>
           )}
 
@@ -690,23 +697,14 @@ const NetworkScreen = ({ navigation }) => {
           </View>
 
           <View style={{ marginTop: 20 }}>
-            <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>User Network:</Text>
-            <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{`Profile UID: ${profileUid || "Not found"}`}</Text>
+            <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>My Network{profileUid ? ` (${profileUid})` : ""}</Text>
 
-            <View style={styles.inputRow}>
-              <TextInput
-                style={[styles.input, darkMode && { backgroundColor: "#444", color: "#fff" }]}
-                value={degree}
-                onChangeText={setDegree}
-                placeholder='Enter degree (e.g., 1 or 2)'
-                keyboardType='numeric'
-              />
+            <View style={styles.networkControlsRow}>
+              <Text style={[styles.networkControlLabel, darkMode && styles.darkNetworkControlLabel]}>Levels to Display:</Text>
+              <TextInput style={[styles.networkInput, darkMode && styles.darkNetworkInput]} value={degree} onChangeText={setDegree} placeholder='1' keyboardType='numeric' />
               <TouchableOpacity style={styles.fetchButton} onPress={fetchNetwork}>
-                <Text style={styles.fetchButtonText}>Fetch</Text>
+                <Text style={styles.fetchButtonText}>Show Connections</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={styles.toggleContainer}>
               <TouchableOpacity onPress={() => setViewMode(viewMode === "list" ? "graph" : "list")} style={styles.toggleButton}>
                 <Text style={styles.toggleButtonText}>{viewMode === "list" ? "View as Graph" : "View as List"}</Text>
               </TouchableOpacity>
@@ -838,6 +836,37 @@ const styles = StyleSheet.create({
     padding: 8,
     marginRight: 8,
   },
+  networkControlsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  networkControlLabel: {
+    fontSize: 14,
+    color: "#333",
+    marginRight: 8,
+  },
+  darkNetworkControlLabel: {
+    color: "#cccccc",
+  },
+  networkInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    width: 35,
+    textAlign: "center",
+    backgroundColor: "#fff",
+    height: 36, // Match Fetch button height (8px padding top + 8px padding bottom + ~20px text height)
+  },
+  darkNetworkInput: {
+    backgroundColor: "#444",
+    color: "#fff",
+    borderColor: "#666",
+  },
   fetchButton: {
     backgroundColor: "#AF52DE",
     paddingVertical: 8,
@@ -852,9 +881,10 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     backgroundColor: "#AF52DE",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
+    height: 36, // Match Fetch button height
   },
   toggleButtonText: { color: "#fff", fontWeight: "600" },
   degreeHeader: { fontWeight: "700", fontSize: 15, color: "#6b46c1", marginBottom: 6 },
@@ -927,6 +957,10 @@ const styles = StyleSheet.create({
   },
   darkQrCodeInfoText: {
     color: "#cccccc",
+  },
+  qrCodeMiniCardContainer: {
+    marginTop: 15,
+    width: "100%",
   },
 });
 

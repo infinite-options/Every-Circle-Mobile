@@ -600,8 +600,9 @@ const EditProfileScreen = ({ route, navigation }) => {
     expertiseIsPublic: formData.expertiseIsPublic,
     wishesIsPublic: formData.wishesIsPublic,
     businessIsPublic: formData.businessIsPublic,
-    // Only show the image in MiniCard if imageIsPublic is true
-    profileImage: formData.imageIsPublic ? profileImageUri || "" : "",
+    imageIsPublic: formData.imageIsPublic,
+    // Include the profile image - MiniCard will check imageIsPublic to decide whether to show it
+    profileImage: profileImageUri || "",
   };
 
   // Profile Image Public/Private Toggle Handler
