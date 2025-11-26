@@ -957,11 +957,9 @@ const ProfileScreen = ({ route, navigation }) => {
                     style={[styles.businessCardContainer, darkMode && styles.darkBusinessCardContainer, index > 0 && { marginTop: 10 }]}
                   >
                     <MiniCard business={business} />
-                    {business.role && (
-                      <View style={styles.roleContainer}>
-                        <Text style={[styles.roleText, darkMode && styles.darkRoleText]}>Role: {business.role}</Text>
-                      </View>
-                    )}
+                    <View style={styles.roleContainer}>
+                      <Text style={[styles.roleText, darkMode && styles.darkRoleText]}>Role: {business.role || "No Role Selected"}</Text>
+                    </View>
                   </TouchableOpacity>
                 ))
               ) : (
