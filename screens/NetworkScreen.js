@@ -64,6 +64,7 @@ const NetworkScreen = ({ navigation }) => {
   const [userProfileData, setUserProfileData] = useState(null);
   const [qrCodeData, setQrCodeData] = useState("");
   const [showAsyncStorage, setShowAsyncStorage] = useState(true);
+  const [relationshipFilter, setRelationshipFilter] = useState("All"); // All, Colleagues, Friends, Family
 
   // Load persisted Network screen settings
   const loadNetworkSettings = async () => {
@@ -192,6 +193,22 @@ const NetworkScreen = ({ navigation }) => {
     React.useCallback(() => {
       console.log("🔄 Network screen focused - loading settings...");
       loadNetworkSettings();
+
+      // Refetch network data when screen is focused to get updated relationship information
+      // This ensures relationship changes are reflected immediately
+      const refetchNetworkData = async () => {
+        const currentProfileUid = await AsyncStorage.getItem("profile_uid");
+        const currentDegree = (await AsyncStorage.getItem("network_degree")) || "2";
+        const hasNetworkData = await AsyncStorage.getItem("network_data");
+
+        // Only refetch if we have network data already (user has fetched before)
+        if (currentProfileUid && currentDegree && hasNetworkData) {
+          console.log("🔄 Refetching network data to get updated relationships...");
+          // Use AsyncStorage values directly to avoid state timing issues
+          fetchNetwork(currentProfileUid, currentDegree);
+        }
+      };
+      refetchNetworkData();
     }, [])
   );
 
@@ -352,16 +369,19 @@ const NetworkScreen = ({ navigation }) => {
     );
   };
 
-  const fetchNetwork = async () => {
+  const fetchNetwork = async (overrideProfileUid = null, overrideDegree = null) => {
     console.log("============================================");
-    console.log("🔘 Fetch Button Clicked");
+    console.log("🔘 Fetch Network");
     console.log("============================================");
 
-    if (!profileUid || !degree) {
+    const uidToUse = overrideProfileUid || profileUid;
+    const degreeToUse = overrideDegree || degree;
+
+    if (!uidToUse || !degreeToUse) {
       const errorMsg = "Missing profile UID or degree value";
       console.log("❌ Error:", errorMsg);
-      console.log("Profile UID:", profileUid);
-      console.log("Degree:", degree);
+      console.log("Profile UID:", uidToUse);
+      console.log("Degree:", degreeToUse);
       setError(errorMsg);
       return;
     }
@@ -370,11 +390,11 @@ const NetworkScreen = ({ navigation }) => {
     setError(null);
 
     // Construct endpoint using base URL
-    const endpoint = `${API_BASE_URL}/api/network/${profileUid}/${degree}`;
+    const endpoint = `${API_BASE_URL}/api/network/${uidToUse}/${degreeToUse}`;
 
     console.log("🔗 Endpoint:", endpoint);
-    console.log("📋 Profile UID:", profileUid);
-    console.log("📋 Degree:", degree);
+    console.log("📋 Profile UID:", uidToUse);
+    console.log("📋 Degree:", degreeToUse);
     console.log("📋 Base URL:", API_BASE_URL);
     console.log("============================================");
 
@@ -887,11 +907,68 @@ const NetworkScreen = ({ navigation }) => {
 
             {viewMode === "list" && Object.keys(groupedNetwork).length > 0 && (
               <View style={{ marginTop: 10 }}>
+                {/* Filter Buttons */}
+                <View style={styles.filterContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterButton,
+                      relationshipFilter !== "All" && styles.filterButtonActive,
+                      darkMode && styles.darkFilterButton,
+                      relationshipFilter !== "All" && darkMode && styles.darkFilterButtonActive,
+                    ]}
+                    onPress={() => {
+                      const filters = ["All", "Colleagues", "Friends", "Family"];
+                      const currentIndex = filters.indexOf(relationshipFilter);
+                      const nextIndex = (currentIndex + 1) % filters.length;
+                      setRelationshipFilter(filters[nextIndex]);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterButtonText,
+                        relationshipFilter !== "All" && styles.filterButtonTextActive,
+                        darkMode && styles.darkFilterButtonText,
+                        relationshipFilter !== "All" && darkMode && styles.darkFilterButtonTextActive,
+                      ]}
+                    >
+                      {relationshipFilter === "All" ? "Relationship" : relationshipFilter}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
+                    <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>Date</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
+                    <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>Location</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
+                    <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>Event</Text>
+                  </TouchableOpacity>
+                </View>
+
                 {Object.keys(groupedNetwork)
                   .map((d) => Number(d))
                   .sort((a, b) => a - b)
                   .map((deg) => {
-                    const list = groupedNetwork[deg];
+                    // Filter the list based on relationship type
+                    let list = groupedNetwork[deg];
+                    if (relationshipFilter !== "All") {
+                      list = list.filter((node) => {
+                        const relationship = node.circle_relationship;
+                        if (relationshipFilter === "Colleagues") {
+                          return relationship === "colleague";
+                        } else if (relationshipFilter === "Friends") {
+                          return relationship === "friend";
+                        } else if (relationshipFilter === "Family") {
+                          return relationship === "family";
+                        }
+                        return true;
+                      });
+                    }
+
+                    if (list.length === 0) {
+                      return null; // Don't render degree section if no items after filtering
+                    }
+
                     return (
                       <View key={deg} style={{ marginBottom: 20 }}>
                         <Text style={[styles.degreeHeader, darkMode && styles.darkDegreeHeader]}>{degreeLabel(Number(deg))}</Text>
@@ -1086,6 +1163,61 @@ const styles = StyleSheet.create({
   qrCodeMiniCardContainer: {
     marginTop: 15,
     width: "100%",
+  },
+  filterContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 15,
+    gap: 8,
+  },
+  filterButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  filterButtonActive: {
+    backgroundColor: "#AF52DE",
+    borderColor: "#AF52DE",
+  },
+  filterButtonDisabled: {
+    opacity: 0.5,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  filterButtonTextActive: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  filterButtonTextDisabled: {
+    color: "#999",
+  },
+  darkFilterButton: {
+    backgroundColor: "#2d2d2d",
+    borderColor: "#404040",
+  },
+  darkFilterButtonActive: {
+    backgroundColor: "#AF52DE",
+    borderColor: "#AF52DE",
+  },
+  darkFilterButtonDisabled: {
+    opacity: 0.5,
+  },
+  darkFilterButtonText: {
+    color: "#cccccc",
+  },
+  darkFilterButtonTextActive: {
+    color: "#fff",
+  },
+  darkFilterButtonTextDisabled: {
+    color: "#666",
   },
 });
 
