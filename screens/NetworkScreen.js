@@ -407,11 +407,22 @@ const NetworkScreen = ({ navigation }) => {
             const userData = await userRes.json();
 
             const { firstName, lastName, tagLine, email, phoneNumber, profileImage } = pluckMiniCardFields(userData);
+            const p = userData?.personal_info || {};
 
             return {
               ...node,
               profile_image: profileImage || "",
               __mc: {
+                firstName: firstName || "",
+                lastName: lastName || "",
+                tagLine: tagLine || "",
+                email: email || "",
+                phoneNumber: phoneNumber || "",
+                profileImage: profileImage || "",
+                emailIsPublic: p.profile_personal_email_is_public === 1,
+                phoneIsPublic: p.profile_personal_phone_number_is_public === 1,
+                tagLineIsPublic: p.profile_personal_tag_line_is_public === 1 || p.profile_personal_tagline_is_public === 1,
+                imageIsPublic: p.profile_personal_image_is_public === 1,
                 personal_info: {
                   profile_personal_first_name: firstName || "",
                   profile_personal_last_name: lastName || "",
@@ -419,9 +430,12 @@ const NetworkScreen = ({ navigation }) => {
                   profile_personal_tag_line: tagLine || "",
                   profile_personal_phone_number: phoneNumber || "",
                   profile_personal_image: profileImage || "",
+                  profile_personal_email_is_public: p.profile_personal_email_is_public || 0,
+                  profile_personal_phone_number_is_public: p.profile_personal_phone_number_is_public || 0,
+                  profile_personal_tag_line_is_public: p.profile_personal_tag_line_is_public || p.profile_personal_tagline_is_public || 0,
+                  profile_personal_image_is_public: p.profile_personal_image_is_public || 0,
                 },
                 user_email: email || "",
-                profileImage: profileImage || "",
               },
             };
           } catch (err) {
@@ -463,6 +477,27 @@ const NetworkScreen = ({ navigation }) => {
 
   /** ✅ Build vis-network HTML (hierarchical layout by degree) */
   const generateVisHTML = (data, youId) => {
+    console.log("🔷 generateVisHTML called with:");
+    console.log("  - youId:", youId);
+    console.log("  - data length:", data.length);
+    console.log(
+      "  - data sample (first 3):",
+      JSON.stringify(
+        data.slice(0, 3).map((n) => ({
+          network_profile_personal_uid: n.network_profile_personal_uid,
+          profile_personal_uid: n.profile_personal_uid,
+          target_uid: n.target_uid,
+          degree: n.degree,
+          parent_uid: n.parent_uid,
+          via_uid: n.via_uid,
+          source_uid: n.source_uid,
+          connection_uid: n.connection_uid,
+        })),
+        null,
+        2
+      )
+    );
+
     // Get user's profile image if available
     const userImage = userProfileData?.profileImage || "";
     const hasUserImage = userImage && String(userImage).trim() !== "";
@@ -515,43 +550,133 @@ const NetworkScreen = ({ navigation }) => {
     });
 
     const edges = [];
+    console.log("🔷 Building edges...");
     data.forEach((n) => {
       const deg = Number(n.degree) || 1;
-      const parent = (function () {
+      const nodeUid = n.network_profile_personal_uid;
+      console.log(`\n  Processing node ${nodeUid} (degree ${deg}):`, {
+        profile_personal_referred_by: n.profile_personal_referred_by,
+        profile_personal_uid: n.profile_personal_uid,
+        target_uid: n.target_uid,
+        parent_uid: n.parent_uid,
+        via_uid: n.via_uid,
+      });
+
+      let parent = null;
+
+      // HIGHEST PRIORITY: Use profile_personal_referred_by - this is who referred/connected this person
+      if (n.profile_personal_referred_by && allUids.has(n.profile_personal_referred_by)) {
+        const referredByNode = data.find((x) => x.network_profile_personal_uid === n.profile_personal_referred_by);
+        if (referredByNode) {
+          const referredByDeg = Number(referredByNode.degree) || 1;
+          // For degree 1, the referrer should be YOU or in degree 1
+          // For degree > 1, the referrer should be in degree-1
+          if (deg === 1) {
+            if (n.profile_personal_referred_by === youId || referredByDeg === 1) {
+              parent = n.profile_personal_referred_by;
+              console.log(`    ✅ Found parent via profile_personal_referred_by (degree 1): ${parent}`);
+            }
+          } else if (referredByDeg === deg - 1) {
+            parent = n.profile_personal_referred_by;
+            console.log(`    ✅ Found parent via profile_personal_referred_by (${parent} is in degree ${referredByDeg}): ${parent}`);
+          } else {
+            console.log(`    ⚠️ profile_personal_referred_by ${n.profile_personal_referred_by} exists but is degree ${referredByDeg}, not ${deg - 1}`);
+          }
+        } else if (n.profile_personal_referred_by === youId) {
+          // If referrer is YOU, use it directly
+          parent = youId;
+          console.log(`    ✅ Found parent via profile_personal_referred_by (YOU): ${parent}`);
+        }
+      }
+
+      // Fallback: try getParentUid (checks parent_uid, via_uid, etc.)
+      if (!parent) {
         try {
           const p = getParentUid(n);
-          if (p && allUids.has(p)) return p;
-        } catch {}
-        return null;
-      })();
+          if (p && allUids.has(p)) {
+            parent = p;
+            console.log(`    ✅ Found parent via getParentUid: ${parent}`);
+          }
+        } catch (e) {
+          console.log(`    ❌ Error in getParentUid:`, e);
+        }
+      }
+
+      // Fallback: Check if this node's profile_personal_uid or target_uid points to a valid parent
+      if (!parent && (n.profile_personal_uid || n.target_uid)) {
+        const directParentUid = n.profile_personal_uid || n.target_uid;
+        if (allUids.has(directParentUid)) {
+          const parentNode = data.find((x) => x.network_profile_personal_uid === directParentUid);
+          if (parentNode) {
+            const parentDeg = Number(parentNode.degree) || 1;
+            if (deg === 1) {
+              if (directParentUid === youId || parentDeg === 1) {
+                parent = directParentUid;
+                console.log(`    ✅ Found parent via profile_personal_uid/target_uid (degree 1): ${parent}`);
+              }
+            } else if (parentDeg === deg - 1) {
+              parent = directParentUid;
+              console.log(`    ✅ Found parent via profile_personal_uid/target_uid (${directParentUid} is in degree ${parentDeg}): ${parent}`);
+            }
+          }
+        }
+      }
+
+      // For degree > 1, if still no parent, try reverse lookup
+      // Find a node in degree-1 that has this node's UID as its profile_personal_uid or target_uid
+      if (!parent && deg > 1) {
+        const connectingNode = data.find((x) => {
+          const xDeg = Number(x.degree) || 1;
+          const connectsToThisNode = x.profile_personal_uid === nodeUid || x.target_uid === nodeUid;
+          const isPreviousDegree = xDeg === deg - 1;
+          return connectsToThisNode && isPreviousDegree;
+        });
+
+        if (connectingNode && allUids.has(connectingNode.network_profile_personal_uid)) {
+          parent = connectingNode.network_profile_personal_uid;
+          console.log(`    ✅ Found parent via reverse lookup (node ${parent} connects to ${nodeUid}): ${parent}`);
+        }
+      }
+
+      // For degree 1, connect to YOU if no parent found
+      if (!parent && deg === 1) {
+        parent = youId || "YOU";
+        console.log(`    ✅ Connecting to YOU (degree 1, no parent found)`);
+      }
+
+      // Last resort for degree > 1: find any node with degree-1
+      if (!parent && deg > 1) {
+        const fallbackParent = data.find((x) => Number(x.degree) === deg - 1);
+        if (fallbackParent && allUids.has(fallbackParent.network_profile_personal_uid)) {
+          parent = fallbackParent.network_profile_personal_uid;
+          console.log(`    ⚠️ Using fallback parent (first degree-1 node): ${parent}`);
+        } else {
+          parent = youId || "YOU";
+          console.log(`    ⚠️ No parent found, connecting to YOU`);
+        }
+      }
 
       if (parent) {
+        console.log(`  ✅ Edge: ${parent} -> ${nodeUid} (degree ${deg})`);
         edges.push({
           from: parent,
-          to: n.network_profile_personal_uid,
-          color: { color: "#cccccc" },
-          width: 0.6,
-          smooth: true,
-        });
-      } else if (deg === 1) {
-        edges.push({
-          from: youId || "YOU",
-          to: n.network_profile_personal_uid,
-          color: { color: "#bbbbbb" },
-          width: 0.8,
-          smooth: true,
-        });
-      } else {
-        const possibleParent = data.find((x) => Number(x.degree) === deg - 1);
-        edges.push({
-          from: possibleParent ? possibleParent.network_profile_personal_uid : youId || "YOU",
-          to: n.network_profile_personal_uid,
-          color: { color: "#dddddd" },
-          width: 0.5,
+          to: nodeUid,
+          color: { color: deg === 1 ? "#bbbbbb" : "#cccccc" },
+          width: deg === 1 ? 0.8 : 0.6,
           smooth: true,
         });
       }
     });
+
+    console.log("🔷 Total edges created:", edges.length);
+    console.log(
+      "🔷 Edges:",
+      JSON.stringify(
+        edges.map((e) => `${e.from} -> ${e.to}`),
+        null,
+        2
+      )
+    );
 
     const payload = { nodes, edges };
 
