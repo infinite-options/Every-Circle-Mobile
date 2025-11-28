@@ -9,6 +9,7 @@ import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BUSINESS_INFO_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { sanitizeText } from "../utils/textSanitizer";
 
 const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
@@ -210,12 +211,12 @@ export default function ReviewDetailScreen({ route, navigation }) {
       if (result && result.personal_info) {
         const personalInfo = result.personal_info;
         const reviewerForMiniCard = {
-          firstName: personalInfo.profile_personal_first_name || "",
-          lastName: personalInfo.profile_personal_last_name || "",
-          email: personalInfo.profile_personal_email || result.user_email || "",
-          phoneNumber: personalInfo.profile_personal_phone_number || "",
-          profileImage: personalInfo.profile_personal_image ? String(personalInfo.profile_personal_image) : "",
-          tagLine: personalInfo.profile_personal_tagline || "",
+          firstName: sanitizeText(personalInfo.profile_personal_first_name),
+          lastName: sanitizeText(personalInfo.profile_personal_last_name),
+          email: sanitizeText(personalInfo.profile_personal_email || result.user_email),
+          phoneNumber: sanitizeText(personalInfo.profile_personal_phone_number),
+          profileImage: personalInfo.profile_personal_image ? sanitizeText(String(personalInfo.profile_personal_image)) : "",
+          tagLine: sanitizeText(personalInfo.profile_personal_tagline),
           emailIsPublic: personalInfo.profile_personal_email_is_public === "1" || personalInfo.profile_personal_email_is_public === 1,
           phoneIsPublic: personalInfo.profile_personal_phone_number_is_public === "1" || personalInfo.profile_personal_phone_number_is_public === 1,
           tagLineIsPublic: personalInfo.profile_personal_tagline_is_public === "1" || personalInfo.profile_personal_tagline_is_public === 1,
@@ -412,11 +413,11 @@ export default function ReviewDetailScreen({ route, navigation }) {
         <View style={styles.card}>
           <MiniCard
             business={{
-              business_name: business.business_name,
-              business_address_line_1: business.business_address_line_1,
-              business_zip_code: business.business_zip_code,
-              business_phone_number: business.business_phone_number,
-              business_website: business.business_website,
+              business_name: sanitizeText(business.business_name),
+              business_address_line_1: sanitizeText(business.business_address_line_1),
+              business_zip_code: sanitizeText(business.business_zip_code),
+              business_phone_number: sanitizeText(business.business_phone_number),
+              business_website: sanitizeText(business.business_website),
               first_image: business.images && business.images.length > 0 ? business.images[0] : null,
               phoneIsPublic: business.phoneIsPublic,
             }}
@@ -430,63 +431,68 @@ export default function ReviewDetailScreen({ route, navigation }) {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Location:</Text>
             <Text style={styles.value}>
-              {business.business_address_line_1 || "N/A"}
-              {business.business_address_line_2 && `, ${business.business_address_line_2}`}
-              {business.business_city && `, ${business.business_city}`}
-              {business.business_state && `, ${business.business_state}`}
-              {business.business_zip_code && `, ${business.business_zip_code}`}
-              {business.business_country && `, ${business.business_country}`}
+              {(() => {
+                const parts = [
+                  sanitizeText(business.business_address_line_1),
+                  sanitizeText(business.business_address_line_2),
+                  sanitizeText(business.business_city),
+                  sanitizeText(business.business_state),
+                  sanitizeText(business.business_zip_code),
+                  sanitizeText(business.business_country),
+                ].filter(part => part && part !== ".");
+                return parts.length > 0 ? parts.join(", ") : "N/A";
+              })()}
             </Text>
           </View>
 
-          {business.phoneIsPublic && business.business_phone_number && (
+          {business.phoneIsPublic && sanitizeText(business.business_phone_number) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Phone:</Text>
-              <Text style={styles.value}>{business.business_phone_number}</Text>
+              <Text style={styles.value}>{sanitizeText(business.business_phone_number)}</Text>
             </View>
           )}
 
-          {business.emailIsPublic && business.business_email && (
+          {business.emailIsPublic && sanitizeText(business.business_email) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Email:</Text>
-              <Text style={styles.value}>{business.business_email}</Text>
+              <Text style={styles.value}>{sanitizeText(business.business_email)}</Text>
             </View>
           )}
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Business Category:</Text>
-            <Text style={styles.value}>{business.business_category || "N/A"}</Text>
+            <Text style={styles.value}>{sanitizeText(business.business_category, "N/A")}</Text>
           </View>
 
-          {business.business_website && (
+          {sanitizeText(business.business_website) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Website:</Text>
-              <Text style={styles.link}>🌐 {business.business_website}</Text>
+              <Text style={styles.link}>🌐 {sanitizeText(business.business_website)}</Text>
             </View>
           )}
         </View>
 
         {/* Business Details Card */}
-        {business.taglineIsPublic && business.tagline && (
+        {business.taglineIsPublic && sanitizeText(business.tagline) && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Tagline</Text>
-            <Text style={styles.bioText}>{business.tagline}</Text>
+            <Text style={styles.bioText}>{sanitizeText(business.tagline)}</Text>
           </View>
         )}
 
         {/* About Section */}
-        {business.shortBioIsPublic && business.business_short_bio && (
+        {business.shortBioIsPublic && sanitizeText(business.business_short_bio) && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>About</Text>
-            <Text style={styles.bioText}>{business.business_short_bio}</Text>
+            <Text style={styles.bioText}>{sanitizeText(business.business_short_bio)}</Text>
           </View>
         )}
 
         {/* Business Hours */}
-        {business.business_hours && (
+        {sanitizeText(business.business_hours) && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Business Hours</Text>
-            <Text style={styles.bioText}>{business.business_hours}</Text>
+            <Text style={styles.bioText}>{sanitizeText(business.business_hours)}</Text>
           </View>
         )}
 
@@ -494,13 +500,13 @@ export default function ReviewDetailScreen({ route, navigation }) {
         {(business.google_rating || business.price_level) && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Rating & Pricing</Text>
-            {business.google_rating && (
+            {sanitizeText(business.google_rating) && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Google Rating:</Text>
-                <Text style={styles.value}>⭐ {business.google_rating}</Text>
+                <Text style={styles.value}>⭐ {sanitizeText(business.google_rating)}</Text>
               </View>
             )}
-            {business.price_level && (
+            {sanitizeText(business.price_level) && (
               <View style={styles.infoRow}>
                 <Text style={styles.label}>Price Level:</Text>
                 <Text style={styles.value}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
@@ -514,11 +520,14 @@ export default function ReviewDetailScreen({ route, navigation }) {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Tags</Text>
             <View style={styles.tagsContainer}>
-              {business.customTags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
+              {business.customTags
+                .map(tag => sanitizeText(tag))
+                .filter(tag => tag)
+                .map((tag, index) => (
+                  <View key={index} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
             </View>
           </View>
         )}
@@ -527,10 +536,10 @@ export default function ReviewDetailScreen({ route, navigation }) {
         {(business.facebook || business.instagram || business.linkedin || business.youtube) && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Social Links</Text>
-            {business.facebook && <Text style={styles.socialLink}>📘 Facebook: {business.facebook}</Text>}
-            {business.instagram && <Text style={styles.socialLink}>📸 Instagram: {business.instagram}</Text>}
-            {business.linkedin && <Text style={styles.socialLink}>🔗 LinkedIn: {business.linkedin}</Text>}
-            {business.youtube && <Text style={styles.socialLink}>▶️ YouTube: {business.youtube}</Text>}
+            {sanitizeText(business.facebook) && <Text style={styles.socialLink}>📘 Facebook: {sanitizeText(business.facebook)}</Text>}
+            {sanitizeText(business.instagram) && <Text style={styles.socialLink}>📸 Instagram: {sanitizeText(business.instagram)}</Text>}
+            {sanitizeText(business.linkedin) && <Text style={styles.socialLink}>🔗 LinkedIn: {sanitizeText(business.linkedin)}</Text>}
+            {sanitizeText(business.youtube) && <Text style={styles.socialLink}>▶️ YouTube: {sanitizeText(business.youtube)}</Text>}
           </View>
         )}
 

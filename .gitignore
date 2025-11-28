@@ -33,6 +33,8 @@ yarn-error.*
 # local env files
 .env*.local
 .env
+.env.bak
+.env*.bak
 *.keystore
 
 # typescript
