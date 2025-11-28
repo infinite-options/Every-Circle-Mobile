@@ -8,6 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT, BUSINESS_INFO_ENDPOINT, CIRCLES_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { sanitizeText } from "../utils/textSanitizer";
 
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
 console.log(`ProfileScreen - Full endpoint: ${ProfileScreenAPI}`);
@@ -281,19 +282,20 @@ const ProfileScreen = ({ route, navigation }) => {
           const originalBusiness = businesses.find((b) => b.profile_business_uid === bus.profile_business_uid);
 
           // Return business object matching BusinessProfileScreen structure for MiniCard
+          // Sanitize all text fields to prevent "Unexpected text node" errors
           return {
-            business_name: rawBusiness.business_name || "",
-            business_address_line_1: rawBusiness.business_address_line_1 || "",
-            business_zip_code: rawBusiness.business_zip_code || "",
-            business_phone_number: rawBusiness.business_phone_number || "",
-            business_email: rawBusiness.business_email_id || "",
-            business_website: rawBusiness.business_website || "",
+            business_name: sanitizeText(rawBusiness.business_name, ""),
+            business_address_line_1: sanitizeText(rawBusiness.business_address_line_1, ""),
+            business_zip_code: sanitizeText(rawBusiness.business_zip_code, ""),
+            business_phone_number: sanitizeText(rawBusiness.business_phone_number, ""),
+            business_email: sanitizeText(rawBusiness.business_email_id, ""),
+            business_website: sanitizeText(rawBusiness.business_website, ""),
             first_image: businessImages && businessImages.length > 0 ? businessImages[0] : null,
             phoneIsPublic:
               rawBusiness.business_phone_number_is_public === "1" || rawBusiness.business_phone_number_is_public === 1 || rawBusiness.phone_is_public === "1" || rawBusiness.phone_is_public === 1,
             emailIsPublic: rawBusiness.business_email_id_is_public === "1" || rawBusiness.business_email_id_is_public === 1 || rawBusiness.email_is_public === "1" || rawBusiness.email_is_public === 1,
-            business_uid: rawBusiness.business_uid || "",
-            role: originalBusiness?.role || "",
+            business_uid: sanitizeText(rawBusiness.business_uid, ""),
+            role: sanitizeText(originalBusiness?.role, ""),
             isApproved: originalBusiness?.isApproved || false,
           };
         } catch (error) {
@@ -678,13 +680,28 @@ const ProfileScreen = ({ route, navigation }) => {
               {user.firstName} {user.lastName}
             </Text>
             <Text style={[styles.profileId, darkMode && styles.darkProfileId]}>Profile ID: {profileUID}</Text>
-            {relationshipType && (
-              <Text style={[styles.relationshipText, darkMode && styles.darkRelationshipText]}>Relationship: {relationshipType.charAt(0).toUpperCase() + relationshipType.slice(1)}</Text>
-            )}
-            {user.tagLine && (isCurrentUserProfile || user.tagLineIsPublic) && <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{user.tagLine}</Text>}
-            {user.shortBio && (isCurrentUserProfile || user.shortBioIsPublic) && <Text style={[styles.bio, darkMode && styles.darkBio]}>{user.shortBio}</Text>}
-            {user.phoneNumber && (isCurrentUserProfile || user.phoneIsPublic) && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.phoneNumber}</Text>}
-            {user.email && (isCurrentUserProfile || user.emailIsPublic) && <Text style={[styles.contact, darkMode && styles.darkContact]}>{user.email}</Text>}
+            {(() => {
+              const relType = relationshipType ? String(relationshipType).trim() : "";
+              return relType && relType !== "." ? (
+                <Text style={[styles.relationshipText, darkMode && styles.darkRelationshipText]}>Relationship: {relType.charAt(0).toUpperCase() + relType.slice(1)}</Text>
+              ) : null;
+            })()}
+            {(() => {
+              const tagLine = user.tagLine && (isCurrentUserProfile || user.tagLineIsPublic) ? sanitizeText(user.tagLine) : "";
+              return tagLine ? <Text style={[styles.tagline, darkMode && styles.darkTagline]}>{tagLine}</Text> : null;
+            })()}
+            {(() => {
+              const shortBio = user.shortBio && (isCurrentUserProfile || user.shortBioIsPublic) ? sanitizeText(user.shortBio) : "";
+              return shortBio ? <Text style={[styles.bio, darkMode && styles.darkBio]}>{shortBio}</Text> : null;
+            })()}
+            {(() => {
+              const phoneNumber = user.phoneNumber && (isCurrentUserProfile || user.phoneIsPublic) ? sanitizeText(user.phoneNumber) : "";
+              return phoneNumber ? <Text style={[styles.contact, darkMode && styles.darkContact]}>{phoneNumber}</Text> : null;
+            })()}
+            {(() => {
+              const email = user.email && (isCurrentUserProfile || user.emailIsPublic) ? sanitizeText(user.email) : "";
+              return email ? <Text style={[styles.contact, darkMode && styles.darkContact]}>{email}</Text> : null;
+            })()}
           </View>
 
           <MiniCard
@@ -704,14 +721,22 @@ const ProfileScreen = ({ route, navigation }) => {
                   .filter((exp) => exp.isPublic)
                   .map((exp, index, arr) => (
                     <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                      {exp.startDate || exp.endDate ? (
-                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>
-                          {(exp.startDate ? exp.startDate : "") + (exp.startDate && exp.endDate ? " - " : "") + (exp.endDate ? exp.endDate : "")}
-                        </Text>
+                      {(() => {
+                        const startDate = exp.startDate ? String(exp.startDate).trim() : "";
+                        const endDate = exp.endDate ? String(exp.endDate).trim() : "";
+                        if (!startDate && !endDate) return null;
+                        const dateText = startDate + (startDate && endDate ? " - " : "") + endDate;
+                        return dateText && dateText !== "." ? <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{dateText}</Text> : null;
+                      })()}
+                      {exp.company && String(exp.company).trim() && String(exp.company).trim() !== "." ? (
+                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{String(exp.company).trim()}</Text>
                       ) : null}
-                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.company || ""}</Text>
-                      <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.title || ""}</Text>
-                      {exp.description && <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description}</Text>}
+                      {exp.title && String(exp.title).trim() && String(exp.title).trim() !== "." ? (
+                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{String(exp.title).trim()}</Text>
+                      ) : null}
+                      {exp.description && String(exp.description).trim() && String(exp.description).trim() !== "." ? (
+                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{String(exp.description).trim()}</Text>
+                      ) : null}
                     </View>
                   ))
               ) : (
@@ -754,8 +779,8 @@ const ProfileScreen = ({ route, navigation }) => {
                   .map((exp, index) => {
                     const expertiseItem = (
                       <View key={index} style={[styles.inputContainer, darkMode && styles.darkInputContainer, index > 0 && { marginTop: 4 }]}>
-                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.name || ""}</Text>
-                        <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{exp.description || ""}</Text>
+                        {sanitizeText(exp.name) ? <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{sanitizeText(exp.name)}</Text> : null}
+                        {sanitizeText(exp.description) ? <Text style={[styles.inputText, darkMode && styles.darkInputText]}>{sanitizeText(exp.description)}</Text> : null}
                         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                           {exp.cost && (
                             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -958,7 +983,7 @@ const ProfileScreen = ({ route, navigation }) => {
                   >
                     <MiniCard business={business} />
                     <View style={styles.roleContainer}>
-                      <Text style={[styles.roleText, darkMode && styles.darkRoleText]}>Role: {business.role || "No Role Selected"}</Text>
+                      <Text style={[styles.roleText, darkMode && styles.darkRoleText]}>Role: {sanitizeText(business.role, "No Role Selected")}</Text>
                     </View>
                   </TouchableOpacity>
                 ))

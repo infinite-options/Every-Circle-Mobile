@@ -43,21 +43,42 @@ const MiniCard = ({ user, business }) => {
         {/* Business Info */}
         <View style={styles.textContainer}>
           {/* Business name is always visible */}
-          <Text style={[styles.name, darkMode && styles.darkName]}>{businessName}</Text>
+          <Text style={[styles.name, darkMode && styles.darkName]}>
+            {businessName && String(businessName).trim() && String(businessName).trim() !== "." 
+              ? String(businessName).trim() 
+              : "Business"}
+          </Text>
 
           {/* Show location */}
-          {location && (
-            <Text style={[styles.location, darkMode && styles.darkText]}>
-              {location}
-              {zipCode && `, ${zipCode}`}
-            </Text>
-          )}
+          {(() => {
+            const loc = String(location || "").trim();
+            const zip = String(zipCode || "").trim();
+            if (!loc || loc === ".") return null;
+            
+            const zipValid = zip && zip !== ".";
+            const locationText = zipValid ? `${loc}, ${zip}` : loc;
+            return (
+              <Text style={[styles.location, darkMode && styles.darkText]}>
+                {locationText}
+              </Text>
+            );
+          })()}
 
           {/* Show phone if public */}
-          {phoneIsPublic && phone && <Text style={[styles.phone, darkMode && styles.darkText]}>{phone}</Text>}
+          {(() => {
+            const phoneValue = phoneIsPublic && phone ? String(phone).trim() : "";
+            return phoneValue && phoneValue !== "." ? (
+              <Text style={[styles.phone, darkMode && styles.darkText]}>{phoneValue}</Text>
+            ) : null;
+          })()}
 
           {/* Show website */}
-          {website && <Text style={[styles.website, darkMode && styles.darkText]}>{website}</Text>}
+          {(() => {
+            const websiteValue = website ? String(website).trim() : "";
+            return websiteValue && websiteValue !== "." ? (
+              <Text style={[styles.website, darkMode && styles.darkText]}>{websiteValue}</Text>
+            ) : null;
+          })()}
         </View>
       </View>
     );
@@ -94,17 +115,23 @@ const MiniCard = ({ user, business }) => {
       <View style={styles.textContainer}>
         {/* Name is always visible */}
         <Text style={[styles.name, darkMode && styles.darkName]}>
-          {firstName} {lastName}
+          {[firstName, lastName].filter(Boolean).join(" ") || "Unknown"}
         </Text>
 
         {/* Show tagline if public */}
-        {tagLineIsPublic && tagLine && <Text style={[styles.tagline, darkMode && styles.darkText]}>{tagLine}</Text>}
+        {tagLineIsPublic && tagLine && String(tagLine).trim() && (
+          <Text style={[styles.tagline, darkMode && styles.darkText]}>{tagLine}</Text>
+        )}
 
         {/* Show email if public */}
-        {emailIsPublic && email && <Text style={[styles.email, darkMode && styles.darkText]}>{email}</Text>}
+        {emailIsPublic && email && String(email).trim() && (
+          <Text style={[styles.email, darkMode && styles.darkText]}>{email}</Text>
+        )}
 
         {/* Show phone if public */}
-        {phoneIsPublic && phone && <Text style={[styles.phone, darkMode && styles.darkText]}>{phone}</Text>}
+        {phoneIsPublic && phone && String(phone).trim() && (
+          <Text style={[styles.phone, darkMode && styles.darkText]}>{phone}</Text>
+        )}
       </View>
     </View>
   );

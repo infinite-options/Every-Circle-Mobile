@@ -1,6 +1,6 @@
 // SearchScreen.js
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList, ActivityIndicator, Alert, Dimensions, Modal, Image } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, FlatList, ActivityIndicator, Alert, Dimensions, Modal, Image, Platform } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import BottomNavBar from "../components/BottomNavBar";
@@ -13,6 +13,28 @@ export default function SearchScreen({ route }) {
   const { darkMode } = useDarkMode();
   const [cartItems, setCartItems] = useState([]);
   const [cartCount, setCartCount] = useState(0);
+
+  // --- stub initial data, so you see the four items by default ---
+  const initialResults = [
+    { id: "1", company: "ABC Plumbing", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
+    { id: "2", company: "Speedy Roto", rating: 3, hasPriceTag: false, hasX: true, hasDollar: false },
+    { id: "3", company: "Fast Rooter", rating: 4, hasPriceTag: true, hasX: false, hasDollar: false },
+    { id: "4", company: "Hector Handyman", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
+  ];
+
+  // Declare all state variables first
+  const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState(initialResults);
+  const [loading, setLoading] = useState(false);
+
+  // Filter states
+  const [distance, setDistance] = useState(null);
+  const [network, setNetwork] = useState(null);
+  const [bounty, setBounty] = useState(null);
+  const [rating, setRating] = useState(null);
+
+  // Search type state: 'businesses', 'expertise', 'seeking'
+  const [searchType, setSearchType] = useState("businesses");
 
   // Restore search state when returning from Profile
   useFocusEffect(
@@ -115,27 +137,6 @@ export default function SearchScreen({ route }) {
     }
   }, [results, loading]);
 
-  // --- stub initial data, so you see the four items by default ---
-  const initialResults = [
-    { id: "1", company: "ABC Plumbing", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
-    { id: "2", company: "Speedy Roto", rating: 3, hasPriceTag: false, hasX: true, hasDollar: false },
-    { id: "3", company: "Fast Rooter", rating: 4, hasPriceTag: true, hasX: false, hasDollar: false },
-    { id: "4", company: "Hector Handyman", rating: 4, hasPriceTag: false, hasX: false, hasDollar: true },
-  ];
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState(initialResults);
-  const [loading, setLoading] = useState(false);
-
-  // Filter states
-  const [distance, setDistance] = useState(null);
-  const [network, setNetwork] = useState(null);
-  const [bounty, setBounty] = useState(null);
-  const [rating, setRating] = useState(null);
-
-  // Search type state: 'businesses', 'expertise', 'seeking'
-  const [searchType, setSearchType] = useState("businesses");
-
   // Modal visibility states
   const [distanceModalVisible, setDistanceModalVisible] = useState(false);
   const [networkModalVisible, setNetworkModalVisible] = useState(false);
@@ -186,34 +187,109 @@ export default function SearchScreen({ route }) {
 
       console.log("🎯 EXACT ENDPOINT BEING CALLED:", apiUrl);
 
-      const res = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      });
+      // Add CORS mode and headers for web requests
+      const fetchOptions =
+        Platform.OS === "web"
+          ? {
+              method: "GET",
+              mode: "cors",
+              credentials: "omit", // Don't send credentials for CORS
+              // Don't include Content-Type for GET requests to avoid preflight
+              headers: {
+                Accept: "application/json",
+              },
+              cache: "no-cache",
+            }
+          : {
+              method: "GET",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+            };
 
-      // console.log("📡 Response status:", res.status);
-      // console.log("📡 Response headers:", res.headers);
-      // console.log("📡 Content-Type:", res.headers.get("content-type"));
+      console.log("📡 Fetch options:", JSON.stringify(fetchOptions, null, 2));
 
-      // Check if response is ok
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+      let res;
+      try {
+        res = await fetch(apiUrl, fetchOptions);
+      } catch (fetchError) {
+        console.error("❌ Fetch error details:", fetchError);
+        console.error("❌ Error name:", fetchError.name);
+        console.error("❌ Error message:", fetchError.message);
+        
+        // Try with no-cors mode as a fallback (limited but might work)
+        if (Platform.OS === "web" && fetchError.message === "Failed to fetch") {
+          console.warn("⚠️ CORS error detected, trying no-cors mode as fallback...");
+          try {
+            const noCorsOptions = {
+              method: "GET",
+              mode: "no-cors", // This bypasses CORS but we can't read response headers
+              credentials: "omit",
+              cache: "no-cache",
+            };
+            res = await fetch(apiUrl, noCorsOptions);
+            console.log("✅ no-cors request succeeded, but response may be opaque");
+            // Note: With no-cors, we can't read response headers or check status properly
+            // The response will be "opaque" - we can only read the body
+          } catch (noCorsError) {
+            console.error("❌ no-cors fallback also failed:", noCorsError);
+            throw new Error(
+              `CORS Error: The search server at ${SEARCH_BASE_URL} is not allowing requests from http://localhost:8081.\n\n` +
+              `To fix this, the server needs to:\n` +
+              `1. Allow requests from http://localhost:8081 (or your production domain)\n` +
+              `2. Include CORS headers: Access-Control-Allow-Origin, Access-Control-Allow-Methods\n\n` +
+              `You can test the endpoint directly in your browser:\n${apiUrl}\n\n` +
+              `Note: The server must respond to OPTIONS preflight requests with proper CORS headers.`
+            );
+          }
+        } else {
+          throw fetchError;
+        }
+      }
+
+      // Check if response is opaque (from no-cors mode)
+      const isOpaque = res.type === "opaque" || res.type === "opaqueredirect";
+      
+      if (isOpaque) {
+        console.warn("⚠️ Response is opaque (from no-cors mode). Status and headers are not accessible.");
+      } else {
+        console.log("📡 Response status:", res.status);
+        console.log("📡 Response ok:", res.ok);
+        console.log("📡 Response headers:", Object.fromEntries(res.headers.entries()));
+      }
+
+      // Check if response is ok (skip check for opaque responses)
+      if (!isOpaque && !res.ok) {
+        const errorText = await res.text();
+        console.error("❌ Response error text:", errorText);
+        throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
       }
 
       // Get raw response text first
       const responseText = await res.text();
-      // console.log("📄 Raw response text (first 500 chars):", responseText.substring(0, 500));
+      console.log("📄 Raw response text length:", responseText.length);
+      console.log("📄 Raw response text (first 500 chars):", responseText.substring(0, 500));
 
       // Check if response looks like JSON
       if (!responseText.trim().startsWith("{") && !responseText.trim().startsWith("[")) {
+        console.error("❌ Response is not JSON. First 200 chars:", responseText.substring(0, 200));
         throw new Error(`API returned non-JSON response: ${responseText.substring(0, 200)}`);
       }
 
       // Parse JSON
-      const json = JSON.parse(responseText);
+      let json;
+      try {
+        json = JSON.parse(responseText);
+        console.log("✅ JSON parsed successfully");
+        console.log("📊 JSON type:", typeof json);
+        console.log("📊 Is array?", Array.isArray(json));
+        console.log("📊 JSON keys:", typeof json === "object" && json !== null ? Object.keys(json) : "N/A");
+      } catch (parseError) {
+        console.error("❌ JSON parse error:", parseError);
+        console.error("❌ Response text that failed to parse:", responseText.substring(0, 500));
+        throw new Error(`Failed to parse JSON response: ${parseError.message}`);
+      }
 
       // console.log("📡 Search API Response:", JSON.stringify(json, null, 2));
       // console.log("📊 Number of results returned:", Array.isArray(json) ? json.length : json.results?.length || json.result?.length || 0);
@@ -306,25 +382,46 @@ export default function SearchScreen({ route }) {
         }));
       } else {
         // For businesses, use the existing mapping
-        list = resultsArray.map((b, i) => ({
-          id: `${b.business_uid || i}`,
-          company: b.business_name || b.company || "Unknown Business",
-          // Use score as rating if rating_star not available, convert to 1-5 scale
-          rating: typeof b.rating_star === "number" ? b.rating_star : typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
-          hasPriceTag: b.has_price_tag || false,
-          hasX: b.has_x || false,
-          hasDollar: b.has_dollar_sign || false,
-          // Add additional fields from the API response
-          business_short_bio: b.business_short_bio || "",
-          business_tag_line: b.business_tag_line || "",
-          tags: b.tags || [],
-          score: b.score || 0,
-          itemType: "businesses",
-        }));
+        list = resultsArray.map((b, i) => {
+          // Sanitize text fields to prevent periods from being rendered as text nodes
+          const sanitizeText = (text) => {
+            if (!text) return "";
+            const str = String(text).trim();
+            // If it's just a period or starts with a period that might cause issues, return empty
+            return str === "." ? "" : str;
+          };
+          
+          return {
+            id: `${b.business_uid || i}`,
+            company: sanitizeText(b.business_name || b.company) || "Unknown Business",
+            // Use score as rating if rating_star not available, convert to 1-5 scale
+            rating: typeof b.rating_star === "number" ? b.rating_star : typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
+            hasPriceTag: b.has_price_tag || false,
+            hasX: b.has_x || false,
+            hasDollar: b.has_dollar_sign || false,
+            // Add additional fields from the API response - sanitize to prevent period issues
+            business_short_bio: sanitizeText(b.business_short_bio),
+            business_tag_line: sanitizeText(b.business_tag_line),
+            tags: b.tags || [],
+            score: b.score || 0,
+            itemType: "businesses",
+          };
+        });
       }
 
       console.log("✅ Processed search results:", list);
       console.log("✅ Number of processed results:", list.length);
+      
+      // Debug: Check for any periods in the data that might cause issues
+      list.forEach((item, idx) => {
+        Object.keys(item).forEach((key) => {
+          const value = item[key];
+          if (typeof value === "string" && value.trim() === ".") {
+            console.warn(`⚠️ Found period in item ${idx}, field ${key}:`, value);
+          }
+        });
+      });
+      
       console.log("✅ Setting results state...");
       setResults(list);
       console.log("✅ Results state updated");
@@ -363,7 +460,29 @@ export default function SearchScreen({ route }) {
     for (const endpoint of alternativeEndpoints) {
       try {
         console.log("🔄 Trying alternative endpoint:", endpoint);
-        const res = await fetch(endpoint);
+        
+        // Add CORS mode for web requests
+        const altFetchOptions =
+          Platform.OS === "web"
+            ? {
+                method: "GET",
+                mode: "cors",
+                credentials: "omit",
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                },
+                cache: "no-cache",
+              }
+            : {
+                method: "GET",
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                },
+              };
+        
+        const res = await fetch(endpoint, altFetchOptions);
         console.log("📡 Alternative endpoint response status:", res.status);
 
         if (res.ok) {
@@ -375,17 +494,25 @@ export default function SearchScreen({ route }) {
             // Handle both possible response structures
             const resultsArray = json.results || json.result || [];
 
+            // Sanitize text fields to prevent periods from being rendered as text nodes
+            const sanitizeText = (text) => {
+              if (!text) return "";
+              const str = String(text).trim();
+              // If it's just a period or starts with a period that might cause issues, return empty
+              return str === "." ? "" : str;
+            };
+            
             const list = resultsArray.map((b, i) => ({
               id: `${b.business_uid || i}`,
-              company: b.business_name || b.company || "Unknown Business",
+              company: sanitizeText(b.business_name || b.company) || "Unknown Business",
               // Use score as rating if rating_star not available, convert to 1-5 scale
               rating: typeof b.rating_star === "number" ? b.rating_star : typeof b.score === "number" ? Math.min(5, Math.max(1, Math.round(b.score * 5))) : 4,
               hasPriceTag: b.has_price_tag || false,
               hasX: b.has_x || false,
               hasDollar: b.has_dollar_sign || false,
-              // Add additional fields from the API response
-              business_short_bio: b.business_short_bio || "",
-              business_tag_line: b.business_tag_line || "",
+              // Add additional fields from the API response - sanitize to prevent period issues
+              business_short_bio: sanitizeText(b.business_short_bio),
+              business_tag_line: sanitizeText(b.business_tag_line),
               tags: b.tags || [],
               score: b.score || 0,
             }));
@@ -515,20 +642,36 @@ export default function SearchScreen({ route }) {
             <View style={styles.wishProfileInfo}>
               {/* Name is always visible */}
               <Text style={[styles.wishProfileName, darkMode && styles.darkWishProfileName]}>
-                {profile.firstName} {profile.lastName}
+                {[profile.firstName, profile.lastName].filter(Boolean).join(" ") || "Unknown"}
               </Text>
               {/* Show email if public */}
-              {profile.emailIsPublic && profile.email && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.email}</Text>}
+              {(() => {
+                const email = profile.emailIsPublic && profile.email ? String(profile.email).trim() : "";
+                return email && email !== "." ? (
+                  <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{email}</Text>
+                ) : null;
+              })()}
               {/* Show phone if public */}
-              {profile.phoneIsPublic && profile.phone && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.phone}</Text>}
+              {(() => {
+                const phone = profile.phoneIsPublic && profile.phone ? String(profile.phone).trim() : "";
+                return phone && phone !== "." ? (
+                  <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{phone}</Text>
+                ) : null;
+              })()}
             </View>
           </View>
         </TouchableOpacity>
 
         {/* Wish Information */}
         <View style={[styles.wishInfoContainer, darkMode && styles.darkWishInfoContainer]}>
-          <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>{wish.title || item.company}</Text>
-          {wish.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{wish.description}</Text>}
+          <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>
+            {wish.title ? String(wish.title).trim() : (item.company ? String(item.company).trim() : "")}
+          </Text>
+          {wish.description && String(wish.description).trim() && String(wish.description).trim() !== "." && (
+            <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>
+              {String(wish.description).trim()}
+            </Text>
+          )}
           {wish.bounty && (
             <View style={styles.wishBountyContainerRight}>
               <Text style={styles.bountyEmojiIcon}>💰</Text>
@@ -585,19 +728,35 @@ export default function SearchScreen({ route }) {
           <View style={styles.wishProfileInfo}>
             {/* Name is always visible */}
             <Text style={[styles.wishProfileName, darkMode && styles.darkWishProfileName]}>
-              {profile.firstName} {profile.lastName}
+              {[profile.firstName, profile.lastName].filter(Boolean).join(" ") || "Unknown"}
             </Text>
             {/* Show email if public */}
-            {profile.emailIsPublic && profile.email && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.email}</Text>}
+            {(() => {
+              const email = profile.emailIsPublic && profile.email ? String(profile.email).trim() : "";
+              return email && email !== "." ? (
+                <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{email}</Text>
+              ) : null;
+            })()}
             {/* Show phone if public */}
-            {profile.phoneIsPublic && profile.phone && <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{profile.phone}</Text>}
+            {(() => {
+              const phone = profile.phoneIsPublic && profile.phone ? String(profile.phone).trim() : "";
+              return phone && phone !== "." ? (
+                <Text style={[styles.wishProfileText, darkMode && styles.darkWishProfileText]}>{phone}</Text>
+              ) : null;
+            })()}
           </View>
         </View>
 
         {/* Expertise Information */}
         <View style={[styles.wishInfoContainer, darkMode && styles.darkWishInfoContainer]}>
-          <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>{expertise.title || item.company}</Text>
-          {expertise.description && <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>{expertise.description}</Text>}
+          <Text style={[styles.wishTitle, darkMode && styles.darkWishTitle]}>
+            {expertise.title ? String(expertise.title).trim() : (item.company ? String(item.company).trim() : "")}
+          </Text>
+          {expertise.description && String(expertise.description).trim() && String(expertise.description).trim() !== "." && (
+            <Text style={[styles.wishDescription, darkMode && styles.darkWishDescription]}>
+              {String(expertise.description).trim()}
+            </Text>
+          )}
           <View style={styles.expertiseDetailsContainer}>
             {expertise.cost && (
               <View style={styles.wishBountyContainer}>
@@ -662,13 +821,29 @@ export default function SearchScreen({ route }) {
         }}
       >
         <View style={styles.resultContent}>
-          <Text style={[styles.companyName, darkMode && styles.darkCompanyName]}>{item.company}</Text>
-          {item.business_tag_line && <Text style={[styles.businessTagLine, darkMode && styles.darkBusinessTagLine]}>{item.business_tag_line}</Text>}
+          <Text style={[styles.companyName, darkMode && styles.darkCompanyName]}>
+            {item.company ? String(item.company).trim() : ""}
+          </Text>
+          {(() => {
+            const tagLine = item.business_tag_line ? String(item.business_tag_line).trim() : "";
+            if (tagLine && tagLine !== "." && tagLine.length > 0) {
+              return (
+                <Text style={[styles.businessTagLine, darkMode && styles.darkBusinessTagLine]}>
+                  {tagLine}
+                </Text>
+              );
+            }
+            return null;
+          })()}
         </View>
         <View style={styles.resultActions}>
           <View style={styles.ratingContainer}>
             <Ionicons name='star' size={16} color='#FFCD3C' />
-            <Text style={[styles.ratingText, darkMode && styles.darkRatingText]}>{typeof item.rating === "number" ? item.rating.toFixed(1) : item.rating}</Text>
+            <Text style={[styles.ratingText, darkMode && styles.darkRatingText]}>
+              {typeof item.rating === "number" 
+                ? item.rating.toFixed(1) 
+                : (item.rating ? String(item.rating) : "N/A")}
+            </Text>
           </View>
 
           <TouchableOpacity

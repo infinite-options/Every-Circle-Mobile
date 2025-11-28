@@ -158,10 +158,39 @@ const NetworkScreen = ({ navigation }) => {
         setStorageData(stores);
         const profileEntry = stores.find(([key]) => key === "profile_uid");
         if (profileEntry) {
-          const uid = profileEntry[1];
-          setProfileUid(uid);
-          // Fetch user profile data for QR code
-          fetchUserProfileForQR(uid);
+          let uid = profileEntry[1];
+          // AsyncStorage.multiGet returns values as strings, but handle edge cases
+          if (uid === null || uid === undefined) {
+            uid = "";
+          } else {
+            // Try to parse if it's a JSON string
+            try {
+              const parsed = JSON.parse(uid);
+              if (typeof parsed === "string") {
+                uid = parsed;
+              } else if (typeof parsed === "object" && parsed !== null) {
+                // Extract UID from object
+                uid = parsed.profile_uid || parsed.uid || parsed.id || parsed.profile_personal_uid || "";
+                console.warn("⚠️ profile_uid was stored as JSON object, extracted:", uid);
+              } else {
+                uid = String(parsed);
+              }
+            } catch (e) {
+              // Not JSON, use as string
+              uid = String(uid).trim();
+            }
+          }
+
+          uid = String(uid || "").trim();
+          console.log("📋 Loaded profile_uid from AsyncStorage:", uid, "Type:", typeof uid);
+
+          if (uid && uid !== "[object Object]") {
+            setProfileUid(uid);
+            // Fetch user profile data for QR code
+            fetchUserProfileForQR(uid);
+          } else {
+            console.warn("⚠️ Invalid profile_uid loaded:", uid);
+          }
         }
       } catch (e) {
         setStorageData([["error", e.message]]);
@@ -179,7 +208,24 @@ const NetworkScreen = ({ navigation }) => {
       // Refetch network data when screen is focused to get updated relationship information
       // This ensures relationship changes are reflected immediately
       const refetchNetworkData = async () => {
-        const currentProfileUid = await AsyncStorage.getItem("profile_uid");
+        let currentProfileUid = await AsyncStorage.getItem("profile_uid");
+        // Ensure currentProfileUid is always a string
+        if (currentProfileUid) {
+          try {
+            // Try to parse if it's JSON, but ensure it's a string
+            const parsed = JSON.parse(currentProfileUid);
+            currentProfileUid = typeof parsed === "string" ? parsed : String(parsed);
+          } catch (e) {
+            // Not JSON, use as string
+            currentProfileUid = String(currentProfileUid).trim();
+          }
+        } else {
+          currentProfileUid = "";
+        }
+        if (currentProfileUid && currentProfileUid !== profileUid) {
+          console.log("🔄 Updating profileUid from AsyncStorage:", currentProfileUid);
+          setProfileUid(currentProfileUid);
+        }
         const currentDegree = (await AsyncStorage.getItem("network_degree")) || "2";
         const hasNetworkData = await AsyncStorage.getItem("network_data");
 
@@ -378,8 +424,73 @@ const NetworkScreen = ({ navigation }) => {
     console.log("🔘 Fetch Network");
     console.log("============================================");
 
-    const uidToUse = overrideProfileUid || profileUid;
-    const degreeToUse = overrideDegree || degree;
+    // Check if the first argument is an event object (from onClick/onPress) and ignore it
+    if (overrideProfileUid && typeof overrideProfileUid === "object" && overrideProfileUid !== null) {
+      // Check if it looks like a React event object
+      if (overrideProfileUid.nativeEvent || overrideProfileUid._reactName || overrideProfileUid.type === "click") {
+        console.warn("⚠️ Event object passed to fetchNetwork, ignoring it");
+        overrideProfileUid = null;
+      }
+    }
+
+    // Always fetch profile_uid directly from AsyncStorage to avoid state corruption issues
+    let uidToUse = overrideProfileUid;
+
+    if (!uidToUse) {
+      try {
+        const directUid = await AsyncStorage.getItem("profile_uid");
+        console.log("🔍 DEBUG - Direct fetch from AsyncStorage:", directUid, "Type:", typeof directUid);
+
+        if (directUid) {
+          // AsyncStorage always returns strings, but check if it's a JSON string
+          try {
+            const parsed = JSON.parse(directUid);
+            // If parsing succeeded, check what we got
+            if (typeof parsed === "string") {
+              uidToUse = parsed;
+            } else if (typeof parsed === "object" && parsed !== null) {
+              // If it's an object, try to extract the UID
+              uidToUse = parsed.profile_uid || parsed.uid || parsed.id || parsed.profile_personal_uid || "";
+              console.warn("⚠️ profile_uid was stored as JSON object, extracted:", uidToUse);
+            } else {
+              uidToUse = String(parsed);
+            }
+          } catch (e) {
+            // Not JSON, use as string
+            uidToUse = String(directUid).trim();
+          }
+        } else {
+          // Fallback to state if AsyncStorage is empty
+          console.warn("⚠️ profile_uid not found in AsyncStorage, using state:", profileUid);
+          uidToUse = profileUid;
+        }
+      } catch (e) {
+        console.error("❌ Error fetching profile_uid from AsyncStorage:", e);
+        // Fallback to state
+        uidToUse = profileUid;
+      }
+    }
+
+    // Final validation and conversion to string
+    if (typeof uidToUse === "object" && uidToUse !== null) {
+      console.error("❌ uidToUse is still an object after processing:", uidToUse);
+      // Last resort: try to extract any string value
+      uidToUse = uidToUse.profile_uid || uidToUse.uid || uidToUse.id || uidToUse.profile_personal_uid || "";
+    }
+
+    uidToUse = String(uidToUse || "").trim();
+
+    // Debug logging
+    console.log("🔍 DEBUG - Final uidToUse:", uidToUse, "Type:", typeof uidToUse);
+    console.log("🔍 DEBUG - State profileUid:", profileUid, "Type:", typeof profileUid);
+
+    // Ensure degreeToUse is always a string
+    let degreeToUse = overrideDegree || degree;
+    degreeToUse = String(degreeToUse || "2").trim();
+
+    console.log("📋 Raw profileUid state:", profileUid, "Type:", typeof profileUid);
+    console.log("📋 Processed uidToUse:", uidToUse, "Type:", typeof uidToUse);
+    console.log("📋 Processed degreeToUse:", degreeToUse, "Type:", typeof degreeToUse);
 
     if (!uidToUse || !degreeToUse) {
       const errorMsg = "Missing profile UID or degree value";
@@ -393,8 +504,8 @@ const NetworkScreen = ({ navigation }) => {
     setLoading(true);
     setError(null);
 
-    // Construct endpoint using base URL
-    const endpoint = `${API_BASE_URL}/api/network/${uidToUse}/${degreeToUse}`;
+    // Construct endpoint using base URL - ensure both values are strings
+    const endpoint = `${API_BASE_URL}/api/network/${String(uidToUse)}/${String(degreeToUse)}`;
 
     console.log("🔗 Endpoint:", endpoint);
     console.log("📋 Profile UID:", uidToUse);
@@ -404,10 +515,52 @@ const NetworkScreen = ({ navigation }) => {
 
     try {
       console.log("📡 Making fetch request...");
-      const response = await fetch(endpoint);
+
+      // Add CORS mode and headers for web requests
+      const fetchOptions =
+        Platform.OS === "web"
+          ? {
+              method: "GET",
+              mode: "cors",
+              credentials: "omit", // Don't send credentials for CORS
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              cache: "no-cache",
+            }
+          : {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+            };
+
+      console.log("📡 Fetch options:", JSON.stringify(fetchOptions, null, 2));
+
+      // Test if endpoint is reachable (web only)
+      if (Platform.OS === "web") {
+        console.log("🌐 Web platform detected - testing endpoint accessibility...");
+        try {
+          // Try a simple fetch first to see if we get a CORS error
+          const testResponse = await fetch(endpoint, { method: "OPTIONS", mode: "cors" }).catch((optErr) => {
+            console.warn("⚠️ OPTIONS preflight test failed (this is normal):", optErr.message);
+            return null;
+          });
+          if (testResponse) {
+            console.log("✅ OPTIONS preflight successful");
+          }
+        } catch (preflightErr) {
+          console.warn("⚠️ Preflight check warning:", preflightErr.message);
+        }
+      }
+
+      const response = await fetch(endpoint, fetchOptions);
 
       console.log("📥 Response status:", response.status);
       console.log("📥 Response ok:", response.ok);
+      console.log("📥 Response headers:", Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -426,7 +579,16 @@ const NetworkScreen = ({ navigation }) => {
             return { ...node, profile_image: "", __mc: {} };
           }
           try {
-            const userRes = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${uid}`);
+            // Add CORS mode for web requests
+            const userFetchOptions =
+              Platform.OS === "web"
+                ? {
+                    mode: "cors",
+                    credentials: "omit",
+                  }
+                : {};
+
+            const userRes = await fetch(`${USER_PROFILE_INFO_ENDPOINT}/${uid}`, userFetchOptions);
             if (!userRes.ok) throw new Error(`Failed to load profile ${uid}`);
             const userData = await userRes.json();
 
@@ -485,7 +647,18 @@ const NetworkScreen = ({ navigation }) => {
       console.error("❌ Network fetch failed:", err);
       console.error("❌ Error message:", err.message);
       console.error("❌ Error stack:", err.stack);
-      setError(`Failed to fetch network data: ${err.message}`);
+      console.error("❌ Error name:", err.name);
+      console.error("❌ Error type:", typeof err);
+      console.error("❌ Full error object:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
+
+      // Provide more helpful error messages
+      let errorMessage = `Failed to fetch network data: ${err.message}`;
+      if (err.message === "Failed to fetch" && Platform.OS === "web") {
+        const endpointTest = `${endpoint}`;
+        errorMessage = `Network request failed. This could be:\n\n1. CORS issue - The API server needs to allow requests from http://localhost:8081\n2. Network connectivity issue\n3. Invalid endpoint URL\n\nEndpoint: ${endpointTest}\n\nTo test in browser console, run:\n  fetch("${endpointTest}")\n    .then(r => r.json())\n    .then(d => console.log("Success:", d))\n    .catch(e => console.error("Error:", e));\n\nIf you see a CORS error in the console, you need to configure CORS on your AWS API Gateway.`;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
       console.log("============================================");
@@ -862,10 +1035,6 @@ const NetworkScreen = ({ navigation }) => {
                 <Ionicons name={showAsyncStorage ? "eye" : "eye-off"} size={20} color={darkMode ? "#ffffff" : "#333"} />
               </TouchableOpacity>
             </View>
-            {(() => {
-              console.log("🎨 Rendering AsyncStorage section, showAsyncStorage =", showAsyncStorage);
-              return null;
-            })()}
             {showAsyncStorage && (
               <>
                 {storageData.length === 0 ? (
@@ -895,7 +1064,7 @@ const NetworkScreen = ({ navigation }) => {
                 keyboardType='numeric'
                 inputMode={Platform.OS === "web" ? "numeric" : undefined}
               />
-              <TouchableOpacity style={styles.fetchButton} onPress={fetchNetwork}>
+              <TouchableOpacity style={styles.fetchButton} onPress={() => fetchNetwork()}>
                 <Text style={styles.fetchButtonText}>Show Connections</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setViewMode(viewMode === "list" ? "graph" : "list")} style={styles.toggleButton}>
