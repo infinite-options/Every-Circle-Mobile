@@ -4,7 +4,19 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
+// Only import GoogleSignin on native platforms (not web)
+let GoogleSignin = null;
+const isWeb = typeof window !== "undefined" && typeof document !== "undefined";
+if (!isWeb) {
+  try {
+    const googleSigninModule = require("@react-native-google-signin/google-signin");
+    GoogleSignin = googleSigninModule.GoogleSignin;
+  } catch (e) {
+    console.warn("GoogleSignin not available:", e.message);
+  }
+}
+
 import BottomNavBar from "../components/BottomNavBar";
 import QRCode from "react-native-qrcode-svg";
 import { useDarkMode } from "../contexts/DarkModeContext";
@@ -46,10 +58,12 @@ export default function SettingsScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            // Sign out from Google
-            const isSignedIn = await GoogleSignin.isSignedIn();
-            if (isSignedIn) {
-              await GoogleSignin.signOut();
+            // Sign out from Google (only on native platforms)
+            if (!isWeb && GoogleSignin) {
+              const isSignedIn = await GoogleSignin.isSignedIn();
+              if (isSignedIn) {
+                await GoogleSignin.signOut();
+              }
             }
 
             // Get all keys to clear Apple authentication data

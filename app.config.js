@@ -66,6 +66,7 @@ module.exports = ({ config: expoConfig }) => ({
 
     web: {
       favicon: "./assets/favicon.png",
+      // bundler: "metro", // Let Expo choose the bundler
     },
 
     scheme: process.env.EXPO_PUBLIC_GOOGLE_URL_SCHEME || "com.googleusercontent.apps.255320444536-fjgkn445u968bhsp7i57fpqquemqbmn5",

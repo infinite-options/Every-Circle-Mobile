@@ -2,7 +2,19 @@
 
 import React, { useState } from "react";
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from "react-native";
-import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
+
+// Only import GoogleSigninButton on native platforms (not web)
+let GoogleSigninButton = null;
+const isWeb = typeof window !== "undefined" && typeof document !== "undefined";
+if (!isWeb) {
+  try {
+    const googleSigninModule = require("@react-native-google-signin/google-signin");
+    GoogleSigninButton = googleSigninModule.GoogleSigninButton;
+  } catch (e) {
+    console.warn("GoogleSigninButton not available:", e.message);
+  }
+}
+
 import AppleSignIn from "../AppleSignIn";
 import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -249,22 +261,31 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
       </View>
 
       <View style={styles.socialContainer}>
-        <GoogleSigninButton
-          style={styles.googleButton}
-          size={GoogleSigninButton.Size.Wide}
-          color={GoogleSigninButton.Color.Dark}
-          onPress={async () => {
-            if (!signingIn) {
-              setSigningIn(true);
-              try {
-                await onGoogleSignIn();
-              } finally {
-                setSigningIn(false);
+        {GoogleSigninButton && !isWeb ? (
+          <GoogleSigninButton
+            style={styles.googleButton}
+            size={GoogleSigninButton.Size.Wide}
+            color={GoogleSigninButton.Color.Dark}
+            onPress={async () => {
+              if (!signingIn) {
+                setSigningIn(true);
+                try {
+                  await onGoogleSignIn();
+                } finally {
+                  setSigningIn(false);
+                }
               }
-            }
-          }}
-          disabled={signingIn}
-        />
+            }}
+            disabled={signingIn}
+          />
+        ) : (
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={() => Alert.alert("Not Available", "Google Sign-In is not available on web. Please use email/password login.")}
+          >
+            <Text style={styles.googleButtonText}>Sign in with Google (Not available on web)</Text>
+          </TouchableOpacity>
+        )}
         {Platform.OS === "ios" && (
           <AppleSignIn
             onSignIn={async (...args) => {
@@ -358,6 +379,7 @@ const styles = StyleSheet.create({
   dividerText: { marginHorizontal: 10, color: "#666" },
   socialContainer: { alignItems: "center", marginBottom: 30 },
   googleButton: { width: 192, height: 48, marginBottom: 15 },
+  googleButtonText: { color: "#fff", textAlign: "center", padding: 12, backgroundColor: "#4285F4", borderRadius: 4 },
   footer: { alignItems: "center" },
   footerText: { fontSize: 16, color: "#666" },
   signUpText: { color: "#FF9500", fontWeight: "bold" },

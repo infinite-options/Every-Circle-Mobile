@@ -5,7 +5,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import { useDarkMode } from "../contexts/DarkModeContext";
-import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
+
+// Only import Stripe on native platforms (not web)
+let StripeProvider = null;
+let useStripe = null;
+const isWeb = typeof window !== "undefined" && typeof document !== "undefined";
+if (!isWeb) {
+  try {
+    const stripeModule = require("@stripe/stripe-react-native");
+    StripeProvider = stripeModule.StripeProvider;
+    useStripe = stripeModule.useStripe;
+  } catch (e) {
+    console.warn("Stripe not available:", e.message);
+  }
+}
+
 import { REACT_APP_STRIPE_PUBLIC_KEY } from "@env";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CREATE_PAYMENT_INTENT_ENDPOINT, TRANSACTIONS_ENDPOINT } from "../apiConfig";
@@ -15,7 +29,18 @@ const STRIPE_PUBLISHABLE_KEY = REACT_APP_STRIPE_PUBLIC_KEY;
 const ExpertiseDetailScreenContent = ({ route, navigation }) => {
   const { expertiseData, profileData, profile_uid, searchState, returnTo, profileState } = route.params;
   const { darkMode } = useDarkMode();
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  
+  // Only use Stripe hook if available (not on web)
+  let initPaymentSheet, presentPaymentSheet;
+  if (useStripe && !isWeb) {
+    const stripeHook = useStripe();
+    initPaymentSheet = stripeHook.initPaymentSheet;
+    presentPaymentSheet = stripeHook.presentPaymentSheet;
+  } else {
+    // Fallback functions for web
+    initPaymentSheet = () => Promise.resolve({ error: null });
+    presentPaymentSheet = () => Promise.resolve({ error: { message: "Stripe not available on web" } });
+  }
   const [loading, setLoading] = useState(false);
   const [stripeInitialized, setStripeInitialized] = useState(false);
   const [currentClientSecret, setCurrentClientSecret] = useState(null);
@@ -401,11 +426,14 @@ const ExpertiseDetailScreenContent = ({ route, navigation }) => {
 };
 
 export default function ExpertiseDetailScreen({ route, navigation }) {
-  return (
-    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-      <ExpertiseDetailScreenContent route={route} navigation={navigation} />
-    </StripeProvider>
-  );
+  const content = <ExpertiseDetailScreenContent route={route} navigation={navigation} />;
+  
+  // Only wrap with StripeProvider on native platforms
+  if (StripeProvider && !isWeb && STRIPE_PUBLISHABLE_KEY) {
+    return <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>{content}</StripeProvider>;
+  }
+  
+  return content;
 }
 
 const styles = StyleSheet.create({

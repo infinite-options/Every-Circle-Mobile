@@ -5,7 +5,21 @@ import { Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
+
+// Only import Stripe on native platforms (not web)
+let StripeProvider = null;
+let useStripe = null;
+const isWeb = typeof window !== "undefined" && typeof document !== "undefined";
+if (!isWeb) {
+  try {
+    const stripeModule = require("@stripe/stripe-react-native");
+    StripeProvider = stripeModule.StripeProvider;
+    useStripe = stripeModule.useStripe;
+  } catch (e) {
+    console.warn("Stripe not available:", e.message);
+  }
+}
+
 import { REACT_APP_STRIPE_PUBLIC_KEY } from "@env";
 import { TRANSACTIONS_ENDPOINT, USER_PROFILE_INFO_ENDPOINT, STRIPE_KEY_ENDPOINT, CREATE_PAYMENT_INTENT_ENDPOINT } from "../apiConfig";
 
@@ -16,7 +30,18 @@ console.log("STRIPE_PUBLISHABLE_KEY:", STRIPE_PUBLISHABLE_KEY);
 const ShoppingCartScreen = ({ route, navigation }) => {
   const { cartItems: initialCartItems, onRemoveItem, businessName, business_uid, recommender_profile_id } = route.params;
   const [cartItems, setCartItems] = useState(initialCartItems);
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  
+  // Only use Stripe hook if available (not on web)
+  let initPaymentSheet, presentPaymentSheet;
+  if (useStripe && !isWeb) {
+    const stripeHook = useStripe();
+    initPaymentSheet = stripeHook.initPaymentSheet;
+    presentPaymentSheet = stripeHook.presentPaymentSheet;
+  } else {
+    // Fallback functions for web
+    initPaymentSheet = () => Promise.resolve({ error: null });
+    presentPaymentSheet = () => Promise.resolve({ error: { message: "Stripe not available on web" } });
+  }
   const [loading, setLoading] = useState(false);
   const [stripeInitialized, setStripeInitialized] = useState(false);
   const [currentClientSecret, setCurrentClientSecret] = useState(null);
@@ -441,9 +466,8 @@ const ShoppingCartScreen = ({ route, navigation }) => {
     }
   };
 
-  return (
-    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
-      <View style={styles.container}>
+  const content = (
+    <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -542,8 +566,14 @@ const ShoppingCartScreen = ({ route, navigation }) => {
         <BottomNavBar navigation={navigation} />
         </SafeAreaView>
       </View>
-    </StripeProvider>
   );
+
+  // Only wrap with StripeProvider on native platforms
+  if (StripeProvider && !isWeb && STRIPE_PUBLISHABLE_KEY) {
+    return <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>{content}</StripeProvider>;
+  }
+  
+  return content;
 };
 
 const styles = StyleSheet.create({

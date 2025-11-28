@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Platform, Modal } from "react-native";
-import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
+
+// Only import GoogleSigninButton on native platforms (not web)
+let GoogleSigninButton = null;
+const isWeb = typeof window !== "undefined" && typeof document !== "undefined";
+if (!isWeb) {
+  try {
+    const googleSigninModule = require("@react-native-google-signin/google-signin");
+    GoogleSigninButton = googleSigninModule.GoogleSigninButton;
+  } catch (e) {
+    console.warn("GoogleSigninButton not available:", e.message);
+  }
+}
+
 import AppleSignIn from "../AppleSignIn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from '@expo/vector-icons';
@@ -277,7 +289,16 @@ export default function SignUpScreen({ onGoogleSignUp, onAppleSignUp, onError, n
           </View>
 
           <View style={styles.socialContainer}>
-            <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignUp} />
+            {GoogleSigninButton && !isWeb ? (
+              <GoogleSigninButton style={styles.googleButton} size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Dark} onPress={onGoogleSignUp} />
+            ) : (
+              <TouchableOpacity
+                style={styles.googleButton}
+                onPress={() => Alert.alert("Not Available", "Google Sign-In is not available on web. Please use email/password sign up.")}
+              >
+                <Text style={styles.googleButtonText}>Sign up with Google (Not available on web)</Text>
+              </TouchableOpacity>
+            )}
             {Platform.OS === "ios" && <AppleSignIn onSignIn={onAppleSignUp} onError={onError} />}
           </View>
         </>
@@ -403,6 +424,13 @@ const styles = StyleSheet.create({
     width: 192,
     height: 48,
     marginBottom: 15,
+  },
+  googleButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    padding: 12,
+    backgroundColor: "#4285F4",
+    borderRadius: 4,
   },
   footer: {
     alignItems: "center",

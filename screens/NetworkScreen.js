@@ -1,6 +1,6 @@
-// NetworkScreen.js
+// NetworkScreen.js - Web-compatible version
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, TextInput, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -8,47 +8,28 @@ import { useDarkMode } from "../contexts/DarkModeContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import MiniCard from "../components/MiniCard";
-import QRCode from "react-native-qrcode-svg";
+import WebTextInput from "../components/WebTextInput";
 
-// Lazy load WebView to avoid initialization issues
-let WebView = null;
-let webViewError = null;
-let webViewChecked = false;
+// Web-compatible QR code - react-native-qrcode-svg works on both web and native
+let QRCodeComponent = null;
+try {
+  QRCodeComponent = require("react-native-qrcode-svg").default;
+} catch (e) {
+  console.warn("QRCode not available:", e.message);
+}
 
-const loadWebView = () => {
-  // If we've already checked and failed, don't try again
-  if (webViewError) {
-    return null;
-  }
-
-  // If we've already loaded it successfully, return it
-  if (WebView) {
-    return WebView;
-  }
-
-  // If we haven't checked yet, try to load it
-  if (!webViewChecked) {
-    webViewChecked = true;
-    try {
-      // Try to require the module - this will fail if native module isn't linked
-      const webviewModule = require("react-native-webview");
-      if (webviewModule && webviewModule.WebView) {
-        WebView = webviewModule.WebView;
-        return WebView;
-      } else {
-        throw new Error("WebView component not found in react-native-webview module");
-      }
-    } catch (e) {
-      // Catch any error (including TurboModuleRegistry errors)
-      const errorMessage = e.message || String(e);
-      console.warn("WebView not available:", errorMessage);
-      webViewError = new Error("WebView native module not linked. Please rebuild the app: npx expo prebuild --clean && npx expo run:android");
-      return null;
+// WebView handling - use iframe on web, WebView on native
+let WebViewComponent = null;
+if (Platform.OS !== "web") {
+  try {
+    const webviewModule = require("react-native-webview");
+    if (webviewModule && webviewModule.WebView) {
+      WebViewComponent = webviewModule.WebView;
     }
+  } catch (e) {
+    console.warn("WebView not available on native platform");
   }
-
-  return WebView;
-};
+}
 
 const NetworkScreen = ({ navigation }) => {
   const { darkMode } = useDarkMode();
@@ -60,11 +41,12 @@ const NetworkScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState("list");
-  const [WebViewComponent, setWebViewComponent] = useState(null);
   const [userProfileData, setUserProfileData] = useState(null);
   const [qrCodeData, setQrCodeData] = useState("");
   const [showAsyncStorage, setShowAsyncStorage] = useState(true);
   const [relationshipFilter, setRelationshipFilter] = useState("All"); // All, Colleagues, Friends, Family
+  const [graphHtml, setGraphHtml] = useState(""); // For web iframe
+  const iframeContainerRef = React.useRef(null); // Ref for web iframe container
 
   // Load persisted Network screen settings
   const loadNetworkSettings = async () => {
@@ -304,26 +286,48 @@ const NetworkScreen = ({ navigation }) => {
     return String(value).replace(/\\/g, "\\\\").replace(/,/g, "\\,").replace(/;/g, "\\;").replace(/\n/g, "\\n");
   };
 
-  // Lazy load WebView when graph mode is selected
+  // Update graph HTML when network data or view mode changes (for web)
   useEffect(() => {
-    if (viewMode === "graph" && !WebViewComponent && !webViewError) {
-      // Use setTimeout to ensure React context is ready
-      const timer = setTimeout(() => {
-        try {
-          const WebView = loadWebView();
-          if (WebView) {
-            setWebViewComponent(() => WebView);
-          } else if (webViewError) {
-            // Error already set in loadWebView, component will show error message
-            console.log("WebView not available, showing error message");
-          }
-        } catch (error) {
-          console.error("Error loading WebView component:", error);
-        }
-      }, 100);
-      return () => clearTimeout(timer);
+    if (Platform.OS === "web" && viewMode === "graph" && networkData.length > 0 && profileUid) {
+      const html = generateVisHTML(networkData, profileUid || "YOU");
+      setGraphHtml(html);
     }
-  }, [viewMode, WebViewComponent]);
+  }, [viewMode, networkData, profileUid]);
+
+  // Create/update iframe element for web
+  useEffect(() => {
+    if (Platform.OS === "web" && viewMode === "graph" && graphHtml && iframeContainerRef.current && typeof document !== "undefined") {
+      const container = iframeContainerRef.current;
+      // Get the actual DOM element (in React Native Web, ref.current is the DOM element)
+      const domElement = container;
+      if (domElement && domElement.nodeName) {
+        // Clear existing iframe
+        while (domElement.firstChild) {
+          domElement.removeChild(domElement.firstChild);
+        }
+        // Create new iframe
+        const iframe = document.createElement("iframe");
+        iframe.setAttribute("srcDoc", graphHtml);
+        iframe.setAttribute("title", "Network Graph");
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        domElement.appendChild(iframe);
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (Platform.OS === "web" && iframeContainerRef.current && typeof document !== "undefined") {
+        const domElement = iframeContainerRef.current;
+        if (domElement && domElement.nodeName) {
+          while (domElement.firstChild) {
+            domElement.removeChild(domElement.firstChild);
+          }
+        }
+      }
+    };
+  }, [graphHtml, viewMode]);
 
   const groupByDegree = (data) => {
     const grouped = {};
@@ -700,6 +704,16 @@ const NetworkScreen = ({ navigation }) => {
 
     const payload = { nodes, edges };
 
+    // For web, we need to handle message passing differently
+    const messageHandler =
+      Platform.OS === "web"
+        ? `window.addEventListener('message', function(event) {
+          if (event.data && event.data.type === 'nodeClick') {
+            window.parent.postMessage({ type: 'nodeClick', uid: event.data.uid }, '*');
+          }
+        });`
+        : "";
+
     return `
 <!DOCTYPE html>
 <html>
@@ -761,8 +775,12 @@ const NetworkScreen = ({ navigation }) => {
       network.on('click', function(params) {
         if (params && params.nodes && params.nodes.length > 0) {
           const id = params.nodes[0];
-          if (id && window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+          ${
+            Platform.OS === "web"
+              ? `window.parent.postMessage({ type: 'nodeClick', uid: String(id) }, '*');`
+              : `if (id && window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
             window.ReactNativeWebView.postMessage(String(id));
+          }`
           }
         }
       });
@@ -776,6 +794,29 @@ const NetworkScreen = ({ navigation }) => {
 </html>
 `;
   };
+
+  // Handle iframe message for web
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const handleMessage = (event) => {
+        // In production, you should validate event.origin for security
+        if (event.data && event.data.type === "nodeClick") {
+          const uid = event.data.uid;
+          if (uid && uid !== (profileUid || "YOU")) {
+            navigation.navigate("Profile", {
+              profile_uid: uid,
+              returnTo: "Network",
+            });
+          }
+        }
+      };
+
+      window.addEventListener("message", handleMessage);
+      return () => {
+        window.removeEventListener("message", handleMessage);
+      };
+    }
+  }, [navigation, profileUid]);
 
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
@@ -792,12 +833,12 @@ const NetworkScreen = ({ navigation }) => {
           showsVerticalScrollIndicator
         >
           {/* QR Code Section */}
-          {qrCodeData && userProfileData && (
+          {qrCodeData && userProfileData && QRCodeComponent && (
             <View style={[styles.qrCodeContainer, darkMode && styles.darkQrCodeContainer]}>
               <Text style={[styles.qrCodeTitle, darkMode && styles.darkQrCodeTitle]}>My Contact QR Code</Text>
               <Text style={[styles.qrCodeSubtitle, darkMode && styles.darkQrCodeSubtitle]}>Let others scan this to share your public contact information</Text>
               <View style={[styles.qrCodeWrapper, darkMode && styles.darkQrCodeWrapper]}>
-                <QRCode value={qrCodeData} size={200} color={darkMode ? "#ffffff" : "#000000"} backgroundColor={darkMode ? "#1a1a1a" : "#ffffff"} />
+                <QRCodeComponent value={qrCodeData} size={200} color={darkMode ? "#ffffff" : "#000000"} backgroundColor={darkMode ? "#1a1a1a" : "#ffffff"} />
               </View>
 
               {/* Display MiniCard showing what information will be transferred */}
@@ -846,7 +887,14 @@ const NetworkScreen = ({ navigation }) => {
 
             <View style={styles.networkControlsRow}>
               <Text style={[styles.networkControlLabel, darkMode && styles.darkNetworkControlLabel]}>Levels to Display:</Text>
-              <TextInput style={[styles.networkInput, darkMode && styles.darkNetworkInput]} value={degree} onChangeText={setDegree} placeholder='1' keyboardType='numeric' />
+              <WebTextInput
+                style={[styles.networkInput, darkMode && styles.darkNetworkInput]}
+                value={degree}
+                onChangeText={setDegree}
+                placeholder='1'
+                keyboardType='numeric'
+                inputMode={Platform.OS === "web" ? "numeric" : undefined}
+              />
               <TouchableOpacity style={styles.fetchButton} onPress={fetchNetwork}>
                 <Text style={styles.fetchButtonText}>Show Connections</Text>
               </TouchableOpacity>
@@ -867,7 +915,24 @@ const NetworkScreen = ({ navigation }) => {
                   borderWidth: 0,
                 }}
               >
-                {WebViewComponent ? (
+                {Platform.OS === "web" ? (
+                  // Web: Use iframe via ref
+                  graphHtml ? (
+                    <View
+                      ref={iframeContainerRef}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                      }}
+                    />
+                  ) : (
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                      <ActivityIndicator size='large' color='#AF52DE' />
+                      <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading graph view...</Text>
+                    </View>
+                  )
+                ) : WebViewComponent ? (
+                  // Native: Use WebView
                   <WebViewComponent
                     originWhitelist={["*"]}
                     source={{ html: generateVisHTML(networkData, profileUid || "YOU") }}
@@ -886,7 +951,7 @@ const NetworkScreen = ({ navigation }) => {
                     allowsInlineMediaPlayback
                     androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
                   />
-                ) : webViewError ? (
+                ) : (
                   <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
                     <Text style={[styles.errorText, darkMode && styles.darkErrorText, { textAlign: "center", marginBottom: 10 }]}>WebView is not available. The native module needs to be linked.</Text>
                     <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5 }]}>
@@ -895,11 +960,6 @@ const NetworkScreen = ({ navigation }) => {
                       npx expo run:android
                     </Text>
                     <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5, fontSize: 10 }]}>(or run:ios for iOS)</Text>
-                  </View>
-                ) : (
-                  <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <ActivityIndicator size='large' color='#AF52DE' />
-                    <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading graph view...</Text>
                   </View>
                 )}
               </View>
@@ -1063,6 +1123,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     backgroundColor: "#fff",
     height: 36, // Match Fetch button height (8px padding top + 8px padding bottom + ~20px text height)
+    ...(Platform.OS === "web" &&
+      {
+        // Web-specific styles are handled in WebTextInput component
+      }),
   },
   darkNetworkInput: {
     backgroundColor: "#444",

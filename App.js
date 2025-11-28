@@ -1,6 +1,6 @@
 import "./polyfills";
 import React, { useEffect, useState, useCallback } from "react";
-import { LogBox } from "react-native";
+import { LogBox, Platform } from "react-native";
 
 import { StyleSheet, Text, View, Alert, ActivityIndicator, TouchableOpacity, Image } from "react-native";
 
@@ -10,7 +10,22 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
+
+// Only import GoogleSignin on native platforms (not web)
+let GoogleSignin = null;
+let statusCodes = null;
+// Check if we're on web by checking for window object (works at module load time)
+const isWeb = typeof window !== "undefined" && typeof document !== "undefined";
+if (!isWeb) {
+  try {
+    const googleSigninModule = require("@react-native-google-signin/google-signin");
+    GoogleSignin = googleSigninModule.GoogleSignin;
+    statusCodes = googleSigninModule.statusCodes;
+  } catch (e) {
+    console.warn("GoogleSignin not available:", e.message);
+  }
+}
+
 import config from "./config";
 import { GOOGLE_SIGNUP_ENDPOINT, GOOGLE_SIGNIN_ENDPOINT, APPLE_SIGNIN_ENDPOINT, API_BASE_URL } from "./apiConfig";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
@@ -61,6 +76,9 @@ export default function App() {
 
   useEffect(() => {
     console.log("------- Program Starting in App.js -------");
+    console.log("App.js - Platform:", Platform.OS);
+    console.log("App.js - isWeb:", isWeb);
+    
     const initialize = async () => {
       try {
         // Check user first
@@ -69,27 +87,50 @@ export default function App() {
         console.log("App.js - User UID:", uid);
         if (uid) setInitialRoute("Profile");
 
-        // Configure Google Sign-In
-        console.log("App.js - Configuring Google Sign-In...");
-        await GoogleSignin.configure({
-          iosClientId: config.googleClientIds.ios,
-          androidClientId: config.googleClientIds.android,
-          webClientId: config.googleClientIds.web,
-          offlineAccess: true,
-        });
-        console.log("App.js - Google Sign-In configured successfully");
+        // Configure Google Sign-In (only on native platforms)
+        if (!isWeb && GoogleSignin) {
+          console.log("App.js - Configuring Google Sign-In...");
+          await GoogleSignin.configure({
+            iosClientId: config.googleClientIds.ios,
+            androidClientId: config.googleClientIds.android,
+            webClientId: config.googleClientIds.web,
+            offlineAccess: true,
+          });
+          console.log("App.js - Google Sign-In configured successfully");
+        } else {
+          console.log("App.js - Skipping Google Sign-In configuration on web");
+        }
       } catch (err) {
-        console.error("App.js - Google Sign-In Initialization error:", err);
+        console.error("App.js - Initialization error:", err);
+        setError(err.message || "Initialization failed");
       } finally {
+        console.log("App.js - Initialization complete, setting loading to false");
         setLoading(false);
       }
     };
 
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn("App.js - Loading timeout, forcing load complete");
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     initialize();
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const signInHandler = useCallback(async (navigation) => {
     console.log("App.js - Google Sign In Pressed - signInHandler - Starting");
+    
+    // Google Sign-In is not available on web
+    if (isWeb || !GoogleSignin) {
+      Alert.alert("Not Available", "Google Sign-In is not available on web. Please use email/password login.");
+      return;
+    }
+    
     try {
       // First check if user is already signed in
       const isSignedIn = await GoogleSignin.isSignedIn();
@@ -223,14 +264,16 @@ export default function App() {
       }
     } catch (err) {
       console.error("App.js - Google Sign In error:", err);
-      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
-        // User cancelled the login flow
-        return;
-      }
-      if (err.code === statusCodes.IN_PROGRESS) {
-        // Sign in is in progress already
-        Alert.alert("Sign In In Progress", "Please wait for the current sign in process to complete.");
-        return;
+      if (statusCodes) {
+        if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+          // User cancelled the login flow
+          return;
+        }
+        if (err.code === statusCodes.IN_PROGRESS) {
+          // Sign in is in progress already
+          Alert.alert("Sign In In Progress", "Please wait for the current sign in process to complete.");
+          return;
+        }
       }
       Alert.alert("Sign In Failed", "Please try again.");
     }
@@ -238,6 +281,13 @@ export default function App() {
 
   const signUpHandler = useCallback(async (navigation) => {
     console.log("App.js - signUpHandler - Google Button Pressed");
+    
+    // Google Sign-In is not available on web
+    if (isWeb || !GoogleSignin) {
+      Alert.alert("Not Available", "Google Sign-In is not available on web. Please use email/password sign up.");
+      return;
+    }
+    
     try {
       // Clear AsyncStorage before starting sign up to avoid stale data
       await AsyncStorage.clear();
@@ -367,14 +417,16 @@ export default function App() {
       }
     } catch (err) {
       console.error("App.js - Google Sign Up error:", err);
-      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("App.js - User cancelled the sign-in flow");
-        return;
-      }
-      if (err.code === statusCodes.IN_PROGRESS) {
-        console.log("App.js - Sign in already in progress");
-        Alert.alert("Sign In In Progress", "Please wait for the current sign in process to complete.", [{ text: "OK" }]);
-        return;
+      if (statusCodes) {
+        if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+          console.log("App.js - User cancelled the sign-in flow");
+          return;
+        }
+        if (err.code === statusCodes.IN_PROGRESS) {
+          console.log("App.js - Sign in already in progress");
+          Alert.alert("Sign In In Progress", "Please wait for the current sign in process to complete.", [{ text: "OK" }]);
+          return;
+        }
       }
       Alert.alert("Sign Up Failed", "Unable to create account. Please try again.", [{ text: "OK" }]);
     }
@@ -489,6 +541,21 @@ export default function App() {
       <SafeAreaProvider>
         <View style={styles.centeredContainer}>
           <ActivityIndicator size='large' color='#0000ff' />
+          <Text style={{ marginTop: 10 }}>Loading...</Text>
+        </View>
+      </SafeAreaProvider>
+    );
+  }
+
+  if (error) {
+    console.error("App.js - Showing error screen:", error);
+    return (
+      <SafeAreaProvider>
+        <View style={styles.centeredContainer}>
+          <Text style={{ color: 'red', marginBottom: 10 }}>Error: {error}</Text>
+          <TouchableOpacity onPress={() => setError(null)}>
+            <Text>Dismiss</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaProvider>
     );
@@ -532,9 +599,18 @@ export default function App() {
   };
 
   console.log("App.js - Rendering main App component with initialRoute:", initialRoute);
+  
+  // Add error boundary wrapper
+  if (error) {
+    console.error("App.js - Error state:", error);
+  }
+  
   return (
     <DarkModeProvider>
-      <NavigationContainer>
+      <NavigationContainer
+        onReady={() => console.log("App.js - NavigationContainer ready")}
+        onStateChange={() => console.log("App.js - Navigation state changed")}
+      >
         <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
           <Stack.Screen name='Home' component={HomeScreen} />
           <Stack.Screen
