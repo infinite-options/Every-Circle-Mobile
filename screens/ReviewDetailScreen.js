@@ -9,7 +9,7 @@ import BottomNavBar from "../components/BottomNavBar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BUSINESS_INFO_ENDPOINT, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import { useDarkMode } from "../contexts/DarkModeContext";
-import { sanitizeText } from "../utils/textSanitizer";
+import { sanitizeText, isSafeForConditional } from "../utils/textSanitizer";
 
 const BusinessProfileApi = BUSINESS_INFO_ENDPOINT;
 const ProfileScreenAPI = USER_PROFILE_INFO_ENDPOINT;
@@ -348,81 +348,125 @@ export default function ReviewDetailScreen({ route, navigation }) {
     );
   }
 
+  // Debug: Log render start
+  if (__DEV__) {
+    console.log("🔵 ReviewDetailScreen - RENDER START");
+    console.log("🔵 ReviewDetailScreen - business:", business ? "exists" : "null");
+    console.log("🔵 ReviewDetailScreen - reviewer_profile_id:", reviewer_profile_id);
+    console.log("🔵 ReviewDetailScreen - reviewerData:", reviewerData ? "exists" : "null");
+  }
+
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       {/* Header with Back Button - Matching Profile Screen style */}
-      <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => {
-              console.log("🔙 ReviewDetailScreen - Going back to previous screen");
-              navigation.goBack();
-            }}
-          >
-          <Ionicons name='arrow-back' size={24} color='#fff' />
-        </TouchableOpacity>
-          <Text style={[styles.header, darkMode && styles.darkHeader, styles.headerWithBack]}>Review Details</Text>
-        </View>
-      </View>
+      {(() => {
+        if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering Header");
+        return (
+          <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
+            <View style={styles.headerContent}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  console.log("🔙 ReviewDetailScreen - Going back to previous screen");
+                  navigation.goBack();
+                }}
+              >
+                <Ionicons name='arrow-back' size={24} color='#fff' />
+              </TouchableOpacity>
+              <Text style={[styles.header, darkMode && styles.darkHeader, styles.headerWithBack]}>Review Details</Text>
+            </View>
+          </View>
+        );
+      })()}
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Reviewer Information Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Reviewer Information</Text>
-          {reviewer_profile_id === "Charity" ? (
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering Reviewer Information Card");
+          return (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Reviewer Information</Text>
+              {(() => {
+                if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking reviewer type:", reviewer_profile_id);
+                if (reviewer_profile_id === "Charity") {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering Charity reviewer");
+                  return (
             // Special case for Charity
             <View style={styles.reviewerInfo}>
               <View style={styles.reviewerAvatar}>
                 <Text style={styles.reviewerInitial}>C</Text>
               </View>
-              <View style={styles.reviewerDetails}>
-                <Text style={styles.reviewerName}>Charity</Text>
-                <Text style={styles.reviewerLabel}>Charity Organization</Text>
-              </View>
-            </View>
-          ) : loadingReviewer ? (
-            <ActivityIndicator size='small' color='#9C45F7' style={{ marginVertical: 10 }} />
-          ) : reviewerData ? (
-            <TouchableOpacity
-              onPress={() => {
-                if (reviewer_profile_id && reviewer_profile_id !== "Charity") {
-                  navigation.navigate("Profile", { profile_uid: reviewer_profile_id });
+                    <View style={styles.reviewerDetails}>
+                      <Text style={styles.reviewerName}>Charity</Text>
+                      <Text style={styles.reviewerLabel}>Charity Organization</Text>
+                    </View>
+                  </View>
+                  );
+                } else if (loadingReviewer) {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Loading reviewer data");
+                  return <ActivityIndicator size='small' color='#9C45F7' style={{ marginVertical: 10 }} />;
+                } else if (reviewerData) {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering reviewer MiniCard, data:", reviewerData);
+                  return (
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (reviewer_profile_id && reviewer_profile_id !== "Charity") {
+                          navigation.navigate("Profile", { profile_uid: reviewer_profile_id });
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <MiniCard user={reviewerData} />
+                    </TouchableOpacity>
+                  );
+                } else {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering fallback reviewer");
+                  const initial = reviewer_profile_id ? reviewer_profile_id.charAt(0).toUpperCase() : "U";
+                  const profileIdText = reviewer_profile_id ? String(reviewer_profile_id) : "Unknown";
+                  return (
+                    <View style={styles.reviewerInfo}>
+                      <View style={styles.reviewerAvatar}>
+                        <Text style={styles.reviewerInitial}>{initial}</Text>
+                      </View>
+                      <View style={styles.reviewerDetails}>
+                        <Text style={styles.reviewerName}>User {profileIdText}</Text>
+                        <Text style={styles.reviewerLabel}>Profile ID: {profileIdText}</Text>
+                      </View>
+                    </View>
+                  );
                 }
-              }}
-              activeOpacity={0.7}
-            >
-              <MiniCard user={reviewerData} />
-            </TouchableOpacity>
-          ) : (
-            // Fallback if reviewer data not found
-            <View style={styles.reviewerInfo}>
-              <View style={styles.reviewerAvatar}>
-                <Text style={styles.reviewerInitial}>{reviewer_profile_id ? reviewer_profile_id.charAt(0).toUpperCase() : "U"}</Text>
-              </View>
-              <View style={styles.reviewerDetails}>
-                <Text style={styles.reviewerName}>User {reviewer_profile_id}</Text>
-                <Text style={styles.reviewerLabel}>Profile ID: {reviewer_profile_id}</Text>
-              </View>
+              })()}
             </View>
-          )}
-        </View>
+          );
+        })()}
 
         {/* Business Card (MiniCard at top) */}
-        <View style={styles.card}>
-          <MiniCard
-            business={{
-              business_name: sanitizeText(business.business_name),
-              business_address_line_1: sanitizeText(business.business_address_line_1),
-              business_zip_code: sanitizeText(business.business_zip_code),
-              business_phone_number: sanitizeText(business.business_phone_number),
-              business_website: sanitizeText(business.business_website),
-              first_image: business.images && business.images.length > 0 ? business.images[0] : null,
-              phoneIsPublic: business.phoneIsPublic,
-            }}
-          />
-        </View>
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering Business MiniCard");
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Business data for MiniCard:", {
+            business_name: business.business_name,
+            business_address_line_1: business.business_address_line_1,
+            business_zip_code: business.business_zip_code,
+            business_phone_number: business.business_phone_number,
+            business_website: business.business_website,
+          });
+          return (
+            <View style={styles.card}>
+              <MiniCard
+                business={{
+                  business_name: sanitizeText(business.business_name),
+                  business_address_line_1: sanitizeText(business.business_address_line_1),
+                  business_zip_code: sanitizeText(business.business_zip_code),
+                  business_phone_number: sanitizeText(business.business_phone_number),
+                  business_website: sanitizeText(business.business_website),
+                  first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+                  phoneIsPublic: business.phoneIsPublic,
+                }}
+              />
+            </View>
+          );
+        })()}
 
         {/* Contact Information Card */}
         <View style={styles.card}>
@@ -445,14 +489,14 @@ export default function ReviewDetailScreen({ route, navigation }) {
             </Text>
           </View>
 
-          {business.phoneIsPublic && sanitizeText(business.business_phone_number) && (
+          {business.phoneIsPublic && isSafeForConditional(business.business_phone_number) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Phone:</Text>
               <Text style={styles.value}>{sanitizeText(business.business_phone_number)}</Text>
             </View>
           )}
 
-          {business.emailIsPublic && sanitizeText(business.business_email) && (
+          {business.emailIsPublic && isSafeForConditional(business.business_email) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Email:</Text>
               <Text style={styles.value}>{sanitizeText(business.business_email)}</Text>
@@ -464,7 +508,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
             <Text style={styles.value}>{sanitizeText(business.business_category, "N/A")}</Text>
           </View>
 
-          {sanitizeText(business.business_website) && (
+          {isSafeForConditional(business.business_website) && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Website:</Text>
               <Text style={styles.link}>🌐 {sanitizeText(business.business_website)}</Text>
@@ -473,99 +517,187 @@ export default function ReviewDetailScreen({ route, navigation }) {
         </View>
 
         {/* Business Details Card */}
-        {business.taglineIsPublic && sanitizeText(business.tagline) && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Tagline</Text>
-            <Text style={styles.bioText}>{sanitizeText(business.tagline)}</Text>
-          </View>
-        )}
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking tagline");
+          if (business.taglineIsPublic && isSafeForConditional(business.tagline)) {
+            if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering tagline");
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Tagline</Text>
+                <Text style={styles.bioText}>{sanitizeText(business.tagline)}</Text>
+              </View>
+            );
+          }
+          return null;
+        })()}
 
         {/* About Section */}
-        {business.shortBioIsPublic && sanitizeText(business.business_short_bio) && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>About</Text>
-            <Text style={styles.bioText}>{sanitizeText(business.business_short_bio)}</Text>
-          </View>
-        )}
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking short bio");
+          if (business.shortBioIsPublic && isSafeForConditional(business.business_short_bio)) {
+            if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering short bio");
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>About</Text>
+                <Text style={styles.bioText}>{sanitizeText(business.business_short_bio)}</Text>
+              </View>
+            );
+          }
+          return null;
+        })()}
 
         {/* Business Hours */}
-        {sanitizeText(business.business_hours) && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Business Hours</Text>
-            <Text style={styles.bioText}>{sanitizeText(business.business_hours)}</Text>
-          </View>
-        )}
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking business hours");
+          if (isSafeForConditional(business.business_hours)) {
+            if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering business hours");
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Business Hours</Text>
+                <Text style={styles.bioText}>{sanitizeText(business.business_hours)}</Text>
+              </View>
+            );
+          }
+          return null;
+        })()}
 
         {/* Rating and Price Level */}
-        {(business.google_rating || business.price_level) && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Rating & Pricing</Text>
-            {sanitizeText(business.google_rating) && (
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Google Rating:</Text>
-                <Text style={styles.value}>⭐ {sanitizeText(business.google_rating)}</Text>
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking rating section");
+          if (business.google_rating || business.price_level) {
+            if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering rating section");
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Rating & Pricing</Text>
+                {isSafeForConditional(business.google_rating) && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.label}>Google Rating:</Text>
+                    <Text style={styles.value}>⭐ {sanitizeText(business.google_rating)}</Text>
+                  </View>
+                )}
+                {isSafeForConditional(business.price_level) && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.label}>Price Level:</Text>
+                    <Text style={styles.value}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
+                  </View>
+                )}
               </View>
-            )}
-            {sanitizeText(business.price_level) && (
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Price Level:</Text>
-                <Text style={styles.value}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
-              </View>
-            )}
-          </View>
-        )}
+            );
+          }
+          return null;
+        })()}
 
         {/* Custom Tags */}
-        {business.customTags && business.customTags.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Tags</Text>
-            <View style={styles.tagsContainer}>
-              {business.customTags
-                .map(tag => sanitizeText(tag))
-                .filter(tag => tag)
-                .map((tag, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-            </View>
-          </View>
-        )}
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking custom tags");
+          if (business.customTags && business.customTags.length > 0) {
+            if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering custom tags, count:", business.customTags.length);
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Tags</Text>
+                <View style={styles.tagsContainer}>
+                  {business.customTags
+                    .map((tag, idx) => {
+                      const sanitized = sanitizeText(tag);
+                      if (__DEV__) console.log(`🔵 ReviewDetailScreen - Tag ${idx}:`, { original: tag, sanitized });
+                      return sanitized;
+                    })
+                    .filter(tag => tag && tag !== "." && tag.trim() !== "" && isSafeForConditional(tag))
+                    .map((tag, index) => {
+                      if (__DEV__) console.log(`🔵 ReviewDetailScreen - Rendering tag ${index}:`, tag);
+                      return (
+                        <View key={index} style={styles.tag}>
+                          <Text style={styles.tagText}>{tag}</Text>
+                        </View>
+                      );
+                    })}
+                </View>
+              </View>
+            );
+          }
+          return null;
+        })()}
 
         {/* Social Links Card */}
-        {(business.facebook || business.instagram || business.linkedin || business.youtube) && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Social Links</Text>
-            {sanitizeText(business.facebook) && <Text style={styles.socialLink}>📘 Facebook: {sanitizeText(business.facebook)}</Text>}
-            {sanitizeText(business.instagram) && <Text style={styles.socialLink}>📸 Instagram: {sanitizeText(business.instagram)}</Text>}
-            {sanitizeText(business.linkedin) && <Text style={styles.socialLink}>🔗 LinkedIn: {sanitizeText(business.linkedin)}</Text>}
-            {sanitizeText(business.youtube) && <Text style={styles.socialLink}>▶️ YouTube: {sanitizeText(business.youtube)}</Text>}
-          </View>
-        )}
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking social links");
+          const hasSocialLinks = business.facebook || business.instagram || business.linkedin || business.youtube;
+          if (hasSocialLinks) {
+            if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering social links");
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Social Links</Text>
+                {(() => {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking Facebook:", business.facebook);
+                  if (isSafeForConditional(business.facebook)) {
+                    if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering Facebook");
+                    return <Text style={styles.socialLink}>📘 Facebook: {sanitizeText(business.facebook)}</Text>;
+                  }
+                  return null;
+                })()}
+                {(() => {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking Instagram:", business.instagram);
+                  if (isSafeForConditional(business.instagram)) {
+                    if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering Instagram");
+                    return <Text style={styles.socialLink}>📸 Instagram: {sanitizeText(business.instagram)}</Text>;
+                  }
+                  return null;
+                })()}
+                {(() => {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking LinkedIn:", business.linkedin);
+                  if (isSafeForConditional(business.linkedin)) {
+                    if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering LinkedIn");
+                    return <Text style={styles.socialLink}>🔗 LinkedIn: {sanitizeText(business.linkedin)}</Text>;
+                  }
+                  return null;
+                })()}
+                {(() => {
+                  if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking YouTube:", business.youtube);
+                  if (isSafeForConditional(business.youtube)) {
+                    if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering YouTube");
+                    return <Text style={styles.socialLink}>▶️ YouTube: {sanitizeText(business.youtube)}</Text>;
+                  }
+                  return null;
+                })()}
+              </View>
+            );
+          }
+          return null;
+        })()}
 
         {/* Business Images Card - Only show if there are images */}
-        {Array.isArray(business.images) && business.images.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Business Images</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-              {business.images.map((uri, index) => (
-                <View key={index} style={styles.imageContainer}>
-                  <Image
-                    source={{ uri: uri }}
-                    style={styles.image}
-                    onError={(error) => {
-                      console.log(`Business image ${index} failed to load:`, error.nativeEvent.error);
-                      console.log(`Problematic URI:`, uri);
-                    }}
-                    onLoad={() => console.log(`Business image ${index} loaded successfully`)}
-                    defaultSource={require("../assets/profile.png")}
-                    resizeMode='cover'
-                  />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
+        {(() => {
+          if (__DEV__) console.log("🔵 ReviewDetailScreen - Checking business images");
+          if (Array.isArray(business.images) && business.images.length > 0) {
+            if (__DEV__) console.log("🔵 ReviewDetailScreen - Rendering business images, count:", business.images.length);
+            return (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Business Images</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+                  {business.images.map((uri, index) => {
+                    if (__DEV__) console.log(`🔵 ReviewDetailScreen - Rendering image ${index}:`, uri);
+                    return (
+                      <View key={index} style={styles.imageContainer}>
+                        <Image
+                          source={{ uri: uri }}
+                          style={styles.image}
+                          onError={(error) => {
+                            console.log(`Business image ${index} failed to load:`, error.nativeEvent.error);
+                            console.log(`Problematic URI:`, uri);
+                          }}
+                          onLoad={() => console.log(`Business image ${index} loaded successfully`)}
+                          defaultSource={require("../assets/profile.png")}
+                          resizeMode='cover'
+                        />
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            );
+          }
+          return null;
+        })()}
 
         {/* Business Services Section */}
         {Array.isArray(business.business_services) && business.business_services.length > 0 && (

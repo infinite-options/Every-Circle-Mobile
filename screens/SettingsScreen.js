@@ -48,6 +48,8 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     console.log("SettingsScreen.js - Logout Button pressed ==> handleLogout called");
+    console.log("SettingsScreen.js - Platform:", isWeb ? "Web" : "Native");
+    
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
@@ -58,12 +60,20 @@ export default function SettingsScreen() {
         style: "destructive",
         onPress: async () => {
           try {
+            console.log("SettingsScreen.js - User confirmed logout");
+            
             // Sign out from Google (only on native platforms)
             if (!isWeb && GoogleSignin) {
+              console.log("SettingsScreen.js - Attempting Google Sign Out");
               const isSignedIn = await GoogleSignin.isSignedIn();
               if (isSignedIn) {
                 await GoogleSignin.signOut();
+                console.log("SettingsScreen.js - Google Sign Out successful");
+              } else {
+                console.log("SettingsScreen.js - User not signed in to Google");
               }
+            } else if (isWeb) {
+              console.log("SettingsScreen.js - Web platform: Skipping Google Sign Out");
             }
 
             // Get all keys to clear Apple authentication data
@@ -104,19 +114,73 @@ export default function SettingsScreen() {
             ];
 
             console.log("SettingsScreen.js - Clearing AsyncStorage keys:", keysToRemove);
+            console.log("SettingsScreen.js - Total keys to remove:", keysToRemove.length);
             await AsyncStorage.multiRemove(keysToRemove);
             console.log("SettingsScreen.js - AsyncStorage cleared successfully");
 
             // Reset dark mode to light mode when logging out
             toggleDarkMode(false);
+            console.log("SettingsScreen.js - Dark mode reset to light");
 
-            // Navigate to Home screen
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Home" }],
-            });
+            // Navigate to Home screen - use replace on web for better reliability
+            console.log("SettingsScreen.js - Navigating to Home screen");
+            console.log("SettingsScreen.js - Platform:", isWeb ? "Web" : "Native");
+            
+            // On web, use replace() which is more reliable than reset()
+            // On native, use reset() to clear the navigation stack
+            if (isWeb) {
+              console.log("SettingsScreen.js - Web platform: Using navigation.replace()");
+              try {
+                // On web, replace is more reliable
+                if (typeof navigation.replace === "function") {
+                  navigation.replace("Home");
+                  console.log("SettingsScreen.js - navigation.replace('Home') called successfully");
+                } else {
+                  // Fallback to navigate if replace is not available
+                  console.log("SettingsScreen.js - replace() not available, using navigate()");
+                  navigation.navigate("Home");
+                  console.log("SettingsScreen.js - navigation.navigate('Home') called successfully");
+                }
+              } catch (navError) {
+                console.error("SettingsScreen.js - Navigation error on web:", navError);
+                // Last resort: try navigate
+                try {
+                  navigation.navigate("Home");
+                } catch (fallbackError) {
+                  console.error("SettingsScreen.js - All navigation methods failed:", fallbackError);
+                  // On web, we can use window.location as absolute last resort
+                  if (typeof window !== "undefined") {
+                    console.log("SettingsScreen.js - Using window.location as last resort");
+                    window.location.reload();
+                  }
+                }
+              }
+            } else {
+              console.log("SettingsScreen.js - Native platform: Using navigation.reset()");
+              try {
+                // On native, reset clears the stack properly
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Home" }],
+                });
+                console.log("SettingsScreen.js - navigation.reset() called successfully");
+              } catch (navError) {
+                console.error("SettingsScreen.js - Navigation error on native:", navError);
+                // Fallback to replace
+                try {
+                  navigation.replace("Home");
+                  console.log("SettingsScreen.js - Fallback navigation.replace() succeeded");
+                } catch (fallbackError) {
+                  console.error("SettingsScreen.js - All navigation methods failed:", fallbackError);
+                  Alert.alert("Navigation Error", "Logged out successfully, but navigation failed. Please restart the app.");
+                }
+              }
+            }
+            
+            console.log("SettingsScreen.js - Logout completed successfully");
           } catch (error) {
-            console.error("Logout error:", error);
+            console.error("SettingsScreen.js - Logout error:", error);
+            console.error("SettingsScreen.js - Error details:", error.message, error.stack);
             Alert.alert("Error", "Failed to logout. Please try again.");
           }
         },
