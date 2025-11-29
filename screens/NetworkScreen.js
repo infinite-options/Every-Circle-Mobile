@@ -254,6 +254,18 @@ const NetworkScreen = ({ navigation }) => {
       if (!response.ok) return;
       const apiUser = await response.json();
 
+      // Fetch user_uid (the 110 number) from AsyncStorage
+      let userUid = null;
+      try {
+        userUid = await AsyncStorage.getItem("user_uid");
+        if (userUid) {
+          userUid = String(userUid).trim();
+          console.log("NetworkScreen - Fetched user_uid for QR code:", userUid);
+        }
+      } catch (e) {
+        console.warn("NetworkScreen - Could not fetch user_uid from AsyncStorage:", e);
+      }
+
       // Extract public miniCard information
       const p = apiUser?.personal_info || {};
       const tagLineIsPublic = p.profile_personal_tag_line_is_public === 1 || p.profile_personal_tagline_is_public === 1;
@@ -264,6 +276,7 @@ const NetworkScreen = ({ navigation }) => {
       // Sanitize all text fields when creating publicData
       const publicData = {
         profile_uid: profileUID,
+        user_uid: userUid || "", // Add user_uid (the 110 number)
         firstName: sanitizeText(p.profile_personal_first_name),
         lastName: sanitizeText(p.profile_personal_last_name),
         tagLine: tagLineIsPublic ? sanitizeText(p.profile_personal_tag_line || p.profile_personal_tagline) : "",
@@ -317,6 +330,11 @@ const NetworkScreen = ({ navigation }) => {
     // Profile UID as a note
     if (data.profile_uid) {
       lines.push(`NOTE:Profile ID: ${data.profile_uid}`);
+    }
+
+    // User UID (the 110 number) as a note - important for identifying the user
+    if (data.user_uid) {
+      lines.push(`NOTE:User ID: ${data.user_uid}`);
     }
 
     // Profile Image URL (if available)

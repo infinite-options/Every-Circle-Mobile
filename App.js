@@ -123,12 +123,233 @@ export default function App() {
     return () => clearTimeout(timeout);
   }, []);
 
+  // Web Google Sign-In handler using Google Identity Services
+  const handleWebGoogleSignIn = useCallback(async (navigation) => {
+    console.log("App.js - handleWebGoogleSignIn - Starting");
+    
+    return new Promise((resolve, reject) => {
+      // Load Google Identity Services script if not already loaded
+      if (typeof window === "undefined") {
+        reject(new Error("Window object not available"));
+        return;
+      }
+
+      if (!window.google || !window.google.accounts) {
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          console.log("App.js - Google Identity Services script loaded");
+          initializeWebGoogleSignIn(navigation, resolve, reject);
+        };
+        script.onerror = (error) => {
+          console.error("App.js - Failed to load Google Identity Services:", error);
+          reject(new Error("Failed to load Google Sign-In library"));
+        };
+        document.head.appendChild(script);
+      } else {
+        initializeWebGoogleSignIn(navigation, resolve, reject);
+      }
+    });
+  }, []);
+
+  const initializeWebGoogleSignIn = (navigation, resolve, reject) => {
+    try {
+      const webClientId = config.googleClientIds.web;
+      console.log("App.js - Initializing Google Sign-In with client ID:", webClientId?.substring(0, 20) + "...");
+
+      if (!webClientId) {
+        const error = new Error("Web Client ID not configured");
+        console.error("App.js - Error:", error);
+        Alert.alert("Configuration Error", "Google Sign-In is not properly configured for web.");
+        reject(error);
+        return;
+      }
+
+      // Use OAuth 2.0 flow with popup
+      const handleCredentialResponse = async (response) => {
+        try {
+          console.log("App.js - Google Sign-In callback received");
+          
+          // Decode the credential (JWT token)
+          const credential = response.credential;
+          console.log("App.js - Credential received (first 50 chars):", credential?.substring(0, 50));
+
+          // Decode JWT to get user info (payload is base64url encoded)
+          const parts = credential.split(".");
+          if (parts.length !== 3) {
+            throw new Error("Invalid credential format");
+          }
+
+          // Decode the payload (second part)
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+          console.log("App.js - Decoded payload:", {
+            email: payload.email,
+            name: payload.name,
+            picture: payload.picture,
+          });
+
+          const userEmail = payload.email;
+          const userInfo = {
+            user: {
+              email: userEmail,
+              name: payload.name,
+              givenName: payload.given_name,
+              familyName: payload.family_name,
+              photo: payload.picture,
+              id: payload.sub,
+            },
+            idToken: credential,
+          };
+
+          console.log("App.js - User info extracted:", userInfo);
+
+          // Call the backend API to sign in
+          const apiResponse = await fetch(`${GOOGLE_SIGNIN_ENDPOINT}/${userEmail}`);
+          const result = await apiResponse.json();
+          console.log("App.js - Google Sign In result:", result);
+
+          if (result.message === "Correct Email" && result.result?.[0]) {
+            const user_uid = result.result[0];
+            console.log("App.js - User UID (from IO Login API):", user_uid);
+            await AsyncStorage.setItem("user_uid", user_uid);
+
+            const baseURI = API_BASE_URL;
+            const endpointPath = `/api/v1/userprofileinfo/${user_uid}`;
+            const endpoint = baseURI + endpointPath;
+            console.log(`App.js - Full endpoint: ${endpoint}`);
+
+            const profileResponse = await fetch(endpoint);
+            const fullUser = await profileResponse.json();
+
+            console.log("App.js - Endpoint Response:", JSON.stringify(fullUser, null, 2));
+
+            if (fullUser.message === "Profile not found for this user") {
+              Alert.alert("User Not Found", "This account is not registered. Would you like to sign up?", [
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                },
+                {
+                  text: "Sign Up",
+                  onPress: () => {
+                    navigation.navigate("UserInfo", {
+                      googleUserInfo: {
+                        email: userInfo.user.email,
+                        firstName: userInfo.user.givenName,
+                        lastName: userInfo.user.familyName,
+                        profilePicture: userInfo.user.photo,
+                        googleId: userInfo.user.id,
+                        accessToken: userInfo.idToken,
+                      },
+                    });
+                  },
+                },
+              ]);
+              resolve();
+              return;
+            }
+
+            // Store additional user data in AsyncStorage
+            if (fullUser.personal_info?.profile_personal_uid) {
+              await AsyncStorage.setItem("profile_uid", fullUser.personal_info.profile_personal_uid);
+              console.log("App.js - Stored profile_uid in AsyncStorage:", fullUser.personal_info.profile_personal_uid);
+            }
+            if (userInfo.user.email) {
+              await AsyncStorage.setItem("user_email_id", userInfo.user.email);
+              console.log("App.js - Stored user_email_id in AsyncStorage:", userInfo.user.email);
+            }
+
+            // Navigate to Profile
+            navigation.navigate("Profile", {
+              user: {
+                ...fullUser,
+                user_email: userInfo.user.email,
+              },
+              profile_uid: fullUser.personal_info?.profile_personal_uid || "",
+            });
+            resolve();
+          } else {
+            Alert.alert("User Not Found", "This account is not registered. Would you like to sign up?", [
+              {
+                text: "Cancel",
+                style: "cancel",
+              },
+              {
+                text: "Sign Up",
+                onPress: () => {
+                  navigation.navigate("UserInfo", {
+                    googleUserInfo: {
+                      email: userInfo.user.email,
+                      firstName: userInfo.user.givenName,
+                      lastName: userInfo.user.familyName,
+                      profilePicture: userInfo.user.photo,
+                      googleId: userInfo.user.id,
+                      accessToken: userInfo.idToken,
+                    },
+                  });
+                },
+              },
+            ]);
+            resolve();
+          }
+        } catch (error) {
+          console.error("App.js - Error processing Google Sign-In:", error);
+          Alert.alert("Sign In Failed", error.message || "Please try again.");
+          reject(error);
+        }
+      };
+
+      // Initialize Google Identity Services
+      window.google.accounts.id.initialize({
+        client_id: webClientId,
+        callback: handleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+
+      // Trigger the Google Sign-In prompt (One Tap or popup)
+      console.log("App.js - Triggering Google Sign-In");
+      window.google.accounts.id.prompt((notification) => {
+        console.log("App.js - Prompt notification:", notification);
+        if (notification.isNotDisplayed()) {
+          const reason = notification.getNotDisplayedReason();
+          console.log("App.js - Prompt not displayed, reason:", reason);
+          // If One Tap doesn't work, we can show a fallback message
+          // The user can still use the button which will trigger the flow
+        } else if (notification.isSkippedMoment()) {
+          console.log("App.js - Prompt skipped, reason:", notification.getSkippedReason());
+        } else if (notification.isDismissedMoment()) {
+          console.log("App.js - Prompt dismissed, reason:", notification.getDismissedReason());
+        }
+      });
+    } catch (error) {
+      console.error("App.js - Error initializing Google Sign-In:", error);
+      Alert.alert("Error", "Failed to initialize Google Sign-In. Please try again.");
+      reject(error);
+    }
+  };
+
   const signInHandler = useCallback(async (navigation) => {
     console.log("App.js - Google Sign In Pressed - signInHandler - Starting");
+    console.log("App.js - Platform:", isWeb ? "Web" : "Native");
     
-    // Google Sign-In is not available on web
-    if (isWeb || !GoogleSignin) {
-      Alert.alert("Not Available", "Google Sign-In is not available on web. Please use email/password login.");
+    // Handle web Google Sign-In differently
+    if (isWeb) {
+      console.log("App.js - Web platform: Using Google Identity Services");
+      try {
+        await handleWebGoogleSignIn(navigation);
+      } catch (error) {
+        console.error("App.js - Web Google Sign-In error:", error);
+        Alert.alert("Sign In Failed", "Please try again.");
+      }
+      return;
+    }
+    
+    // Native Google Sign-In
+    if (!GoogleSignin) {
+      Alert.alert("Not Available", "Google Sign-In is not available. Please use email/password login.");
       return;
     }
     

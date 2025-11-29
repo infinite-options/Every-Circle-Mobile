@@ -281,9 +281,19 @@ export default function LoginScreen({ navigation, onGoogleSignIn, onAppleSignIn,
         ) : (
           <TouchableOpacity
             style={styles.googleButton}
-            onPress={() => Alert.alert("Not Available", "Google Sign-In is not available on web. Please use email/password login.")}
+            onPress={async () => {
+              if (!signingIn) {
+                setSigningIn(true);
+                try {
+                  await onGoogleSignIn();
+                } finally {
+                  setSigningIn(false);
+                }
+              }
+            }}
+            disabled={signingIn}
           >
-            <Text style={styles.googleButtonText}>Sign in with Google (Not available on web)</Text>
+            <Text style={styles.googleButtonText}>Sign in with Google</Text>
           </TouchableOpacity>
         )}
         {Platform.OS === "ios" && (
