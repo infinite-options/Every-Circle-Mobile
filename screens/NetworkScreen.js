@@ -9,6 +9,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { API_BASE_URL, USER_PROFILE_INFO_ENDPOINT } from "../apiConfig";
 import MiniCard from "../components/MiniCard";
 import WebTextInput from "../components/WebTextInput";
+import { sanitizeText, isSafeForConditional } from "../utils/textSanitizer";
 
 // Web-compatible QR code - react-native-qrcode-svg works on both web and native
 let QRCodeComponent = null;
@@ -260,14 +261,15 @@ const NetworkScreen = ({ navigation }) => {
       const phoneIsPublic = p.profile_personal_phone_number_is_public === 1;
       const imageIsPublic = p.profile_personal_image_is_public === 1;
 
+      // Sanitize all text fields when creating publicData
       const publicData = {
         profile_uid: profileUID,
-        firstName: p.profile_personal_first_name || "",
-        lastName: p.profile_personal_last_name || "",
-        tagLine: tagLineIsPublic ? p.profile_personal_tag_line || p.profile_personal_tagline || "" : "",
-        email: emailIsPublic ? apiUser?.user_email || "" : "",
-        phoneNumber: phoneIsPublic ? p.profile_personal_phone_number || "" : "",
-        profileImage: imageIsPublic ? (p.profile_personal_image ? String(p.profile_personal_image) : "") : "",
+        firstName: sanitizeText(p.profile_personal_first_name),
+        lastName: sanitizeText(p.profile_personal_last_name),
+        tagLine: tagLineIsPublic ? sanitizeText(p.profile_personal_tag_line || p.profile_personal_tagline) : "",
+        email: emailIsPublic ? sanitizeText(apiUser?.user_email) : "",
+        phoneNumber: phoneIsPublic ? sanitizeText(p.profile_personal_phone_number) : "",
+        profileImage: imageIsPublic ? sanitizeText(p.profile_personal_image ? String(p.profile_personal_image) : "") : "",
         // Include visibility flags for MiniCard
         tagLineIsPublic,
         emailIsPublic,
@@ -388,12 +390,12 @@ const NetworkScreen = ({ navigation }) => {
   const pluckMiniCardFields = (apiUser) => {
     const p = apiUser?.personal_info || {};
     return {
-      firstName: p.profile_personal_first_name || "",
-      lastName: p.profile_personal_last_name || "",
-      tagLine: p.profile_personal_tag_line || p.profile_personal_tagline || "",
-      email: apiUser?.user_email || "",
-      phoneNumber: p.profile_personal_phone_number || "",
-      profileImage: p.profile_personal_image ? String(p.profile_personal_image) : "",
+      firstName: sanitizeText(p.profile_personal_first_name),
+      lastName: sanitizeText(p.profile_personal_last_name),
+      tagLine: sanitizeText(p.profile_personal_tag_line || p.profile_personal_tagline),
+      email: sanitizeText(apiUser?.user_email),
+      phoneNumber: sanitizeText(p.profile_personal_phone_number),
+      profileImage: sanitizeText(p.profile_personal_image ? String(p.profile_personal_image) : ""),
     };
   };
 
@@ -595,33 +597,41 @@ const NetworkScreen = ({ navigation }) => {
             const { firstName, lastName, tagLine, email, phoneNumber, profileImage } = pluckMiniCardFields(userData);
             const p = userData?.personal_info || {};
 
+            // Sanitize all text fields when creating __mc
+            const sanitizedFirstName = sanitizeText(firstName);
+            const sanitizedLastName = sanitizeText(lastName);
+            const sanitizedTagLine = sanitizeText(tagLine);
+            const sanitizedEmail = sanitizeText(email);
+            const sanitizedPhoneNumber = sanitizeText(phoneNumber);
+            const sanitizedProfileImage = sanitizeText(profileImage);
+
             return {
               ...node,
-              profile_image: profileImage || "",
+              profile_image: sanitizedProfileImage,
               __mc: {
-                firstName: firstName || "",
-                lastName: lastName || "",
-                tagLine: tagLine || "",
-                email: email || "",
-                phoneNumber: phoneNumber || "",
-                profileImage: profileImage || "",
+                firstName: sanitizedFirstName,
+                lastName: sanitizedLastName,
+                tagLine: sanitizedTagLine,
+                email: sanitizedEmail,
+                phoneNumber: sanitizedPhoneNumber,
+                profileImage: sanitizedProfileImage,
                 emailIsPublic: p.profile_personal_email_is_public === 1,
                 phoneIsPublic: p.profile_personal_phone_number_is_public === 1,
                 tagLineIsPublic: p.profile_personal_tag_line_is_public === 1 || p.profile_personal_tagline_is_public === 1,
                 imageIsPublic: p.profile_personal_image_is_public === 1,
                 personal_info: {
-                  profile_personal_first_name: firstName || "",
-                  profile_personal_last_name: lastName || "",
-                  profile_personal_tagline: tagLine || "",
-                  profile_personal_tag_line: tagLine || "",
-                  profile_personal_phone_number: phoneNumber || "",
-                  profile_personal_image: profileImage || "",
+                  profile_personal_first_name: sanitizedFirstName,
+                  profile_personal_last_name: sanitizedLastName,
+                  profile_personal_tagline: sanitizedTagLine,
+                  profile_personal_tag_line: sanitizedTagLine,
+                  profile_personal_phone_number: sanitizedPhoneNumber,
+                  profile_personal_image: sanitizedProfileImage,
                   profile_personal_email_is_public: p.profile_personal_email_is_public || 0,
                   profile_personal_phone_number_is_public: p.profile_personal_phone_number_is_public || 0,
                   profile_personal_tag_line_is_public: p.profile_personal_tag_line_is_public || p.profile_personal_tagline_is_public || 0,
                   profile_personal_image_is_public: p.profile_personal_image_is_public || 0,
                 },
-                user_email: email || "",
+                user_email: sanitizedEmail,
               },
             };
           } catch (err) {
@@ -991,12 +1001,26 @@ const NetworkScreen = ({ navigation }) => {
     }
   }, [navigation, profileUid]);
 
+  // Debug: Log render start
+  if (__DEV__) {
+    console.log("🔵 NetworkScreen - RENDER START");
+    console.log("🔵 NetworkScreen - profileUid:", profileUid, "type:", typeof profileUid);
+    console.log("🔵 NetworkScreen - storageData length:", storageData.length);
+    console.log("🔵 NetworkScreen - networkData length:", networkData.length);
+    console.log("🔵 NetworkScreen - groupedNetwork keys:", Object.keys(groupedNetwork));
+  }
+
   return (
     <View style={[styles.pageContainer, darkMode && styles.darkPageContainer]}>
       {/* Header */}
-      <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
-        <Text style={[styles.header, darkMode && styles.darkHeader]}>Connect</Text>
-      </View>
+      {(() => {
+        if (__DEV__) console.log("🔵 NetworkScreen - Rendering Header");
+        return (
+          <View style={[styles.headerBg, darkMode && styles.darkHeaderBg]}>
+            <Text style={[styles.header, darkMode && styles.darkHeader]}>Connect</Text>
+          </View>
+        );
+      })()}
 
       <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
         <ScrollView
@@ -1006,224 +1030,317 @@ const NetworkScreen = ({ navigation }) => {
           showsVerticalScrollIndicator
         >
           {/* QR Code Section */}
-          {qrCodeData && userProfileData && QRCodeComponent && (
-            <View style={[styles.qrCodeContainer, darkMode && styles.darkQrCodeContainer]}>
-              <Text style={[styles.qrCodeTitle, darkMode && styles.darkQrCodeTitle]}>My Contact QR Code</Text>
-              <Text style={[styles.qrCodeSubtitle, darkMode && styles.darkQrCodeSubtitle]}>Let others scan this to share your public contact information</Text>
-              <View style={[styles.qrCodeWrapper, darkMode && styles.darkQrCodeWrapper]}>
-                <QRCodeComponent value={qrCodeData} size={200} color={darkMode ? "#ffffff" : "#000000"} backgroundColor={darkMode ? "#1a1a1a" : "#ffffff"} />
-              </View>
-
-              {/* Display MiniCard showing what information will be transferred */}
-              <View style={styles.qrCodeMiniCardContainer}>
-                <MiniCard user={userProfileData} />
-              </View>
-            </View>
-          )}
-
-          <View>
-            <View style={styles.sectionTitleRow}>
-              <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>AsyncStorage Contents:</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  const newValue = !showAsyncStorage;
-                  console.log("👁️ Toggling AsyncStorage visibility from", showAsyncStorage, "to", newValue);
-                  setShowAsyncStorage(newValue);
-                }}
-                style={styles.eyeIconButton}
-              >
-                <Ionicons name={showAsyncStorage ? "eye" : "eye-off"} size={20} color={darkMode ? "#ffffff" : "#333"} />
-              </TouchableOpacity>
-            </View>
-            {showAsyncStorage && (
-              <>
-                {storageData.length === 0 ? (
-                  <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No data in AsyncStorage.</Text>
-                ) : (
-                  storageData.map(([key, value]) => (
-                    <View key={key} style={{ marginBottom: 8 }}>
-                      <Text style={[styles.keyText, darkMode && styles.darkKeyText]}>{key}:</Text>
-                      <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{value}</Text>
-                    </View>
-                  ))
-                )}
-              </>
-            )}
-          </View>
-
-          <View style={{ marginTop: 20 }}>
-            <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>My Network{profileUid ? ` (${profileUid})` : ""}</Text>
-
-            <View style={styles.networkControlsRow}>
-              <Text style={[styles.networkControlLabel, darkMode && styles.darkNetworkControlLabel]}>Levels to Display:</Text>
-              <WebTextInput
-                style={[styles.networkInput, darkMode && styles.darkNetworkInput]}
-                value={degree}
-                onChangeText={setDegree}
-                placeholder='1'
-                keyboardType='numeric'
-                inputMode={Platform.OS === "web" ? "numeric" : undefined}
-              />
-              <TouchableOpacity style={styles.fetchButton} onPress={() => fetchNetwork()}>
-                <Text style={styles.fetchButtonText}>Show Connections</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setViewMode(viewMode === "list" ? "graph" : "list")} style={styles.toggleButton}>
-                <Text style={styles.toggleButtonText}>{viewMode === "list" ? "View as Graph" : "View as List"}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {loading && <ActivityIndicator size='large' color='#AF52DE' />}
-            {error && <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>{error}</Text>}
-
-            {viewMode === "graph" && networkData.length > 0 && (
-              <View
-                style={{
-                  height: 400,
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  borderWidth: 0,
-                }}
-              >
-                {Platform.OS === "web" ? (
-                  // Web: Use iframe via ref
-                  graphHtml ? (
-                    <View
-                      ref={iframeContainerRef}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                      }}
-                    />
-                  ) : (
-                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                      <ActivityIndicator size='large' color='#AF52DE' />
-                      <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading graph view...</Text>
-                    </View>
-                  )
-                ) : WebViewComponent ? (
-                  // Native: Use WebView
-                  <WebViewComponent
-                    originWhitelist={["*"]}
-                    source={{ html: generateVisHTML(networkData, profileUid || "YOU") }}
-                    onMessage={(event) => {
-                      const uid = event?.nativeEvent?.data;
-                      if (uid && uid !== (profileUid || "YOU")) {
-                        navigation.navigate("Profile", {
-                          profile_uid: uid,
-                          returnTo: "Network",
-                        });
-                      }
-                    }}
-                    javaScriptEnabled
-                    domStorageEnabled
-                    automaticallyAdjustContentInsets
-                    allowsInlineMediaPlayback
-                    androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
-                  />
-                ) : (
-                  <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-                    <Text style={[styles.errorText, darkMode && styles.darkErrorText, { textAlign: "center", marginBottom: 10 }]}>WebView is not available. The native module needs to be linked.</Text>
-                    <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5 }]}>
-                      To fix: Run {"\n"}
-                      npx expo prebuild --clean{"\n"}
-                      npx expo run:android
-                    </Text>
-                    <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5, fontSize: 10 }]}>(or run:ios for iOS)</Text>
+          {(() => {
+            if (__DEV__) console.log("🔵 NetworkScreen - Rendering QR Code Section");
+            if (qrCodeData && userProfileData && QRCodeComponent) {
+              if (__DEV__) console.log("🔵 NetworkScreen - QR Code data exists, rendering QR section");
+              return (
+                <View style={[styles.qrCodeContainer, darkMode && styles.darkQrCodeContainer]}>
+                  <Text style={[styles.qrCodeTitle, darkMode && styles.darkQrCodeTitle]}>My Contact QR Code</Text>
+                  <Text style={[styles.qrCodeSubtitle, darkMode && styles.darkQrCodeSubtitle]}>Let others scan this to share your public contact information</Text>
+                  <View style={[styles.qrCodeWrapper, darkMode && styles.darkQrCodeWrapper]}>
+                    <QRCodeComponent value={qrCodeData} size={200} color={darkMode ? "#ffffff" : "#000000"} backgroundColor={darkMode ? "#1a1a1a" : "#ffffff"} />
                   </View>
-                )}
-              </View>
-            )}
 
-            {viewMode === "list" && Object.keys(groupedNetwork).length > 0 && (
-              <View style={{ marginTop: 10 }}>
-                {/* Filter Buttons */}
-                <View style={styles.filterContainer}>
+                  {/* Display MiniCard showing what information will be transferred */}
+                  {(() => {
+                    if (__DEV__) console.log("🔵 NetworkScreen - Rendering QR MiniCard, userProfileData:", userProfileData);
+                    if (userProfileData) {
+                      return (
+                        <View style={styles.qrCodeMiniCardContainer}>
+                          <MiniCard user={userProfileData} />
+                        </View>
+                      );
+                    }
+                    return null;
+                  })()}
+                </View>
+              );
+            }
+            if (__DEV__) console.log("🔵 NetworkScreen - QR Code section not rendered (missing data)");
+            return null;
+          })()}
+
+          {(() => {
+            if (__DEV__) console.log("🔵 NetworkScreen - Rendering AsyncStorage Section");
+            return (
+              <View>
+                <View style={styles.sectionTitleRow}>
+                  <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>AsyncStorage Contents:</Text>
                   <TouchableOpacity
-                    style={[
-                      styles.filterButton,
-                      relationshipFilter !== "All" && styles.filterButtonActive,
-                      darkMode && styles.darkFilterButton,
-                      relationshipFilter !== "All" && darkMode && styles.darkFilterButtonActive,
-                    ]}
                     onPress={() => {
-                      const filters = ["All", "Colleagues", "Friends", "Family"];
-                      const currentIndex = filters.indexOf(relationshipFilter);
-                      const nextIndex = (currentIndex + 1) % filters.length;
-                      setRelationshipFilter(filters[nextIndex]);
+                      const newValue = !showAsyncStorage;
+                      console.log("👁️ Toggling AsyncStorage visibility from", showAsyncStorage, "to", newValue);
+                      setShowAsyncStorage(newValue);
                     }}
+                    style={styles.eyeIconButton}
                   >
-                    <Text
-                      style={[
-                        styles.filterButtonText,
-                        relationshipFilter !== "All" && styles.filterButtonTextActive,
-                        darkMode && styles.darkFilterButtonText,
-                        relationshipFilter !== "All" && darkMode && styles.darkFilterButtonTextActive,
-                      ]}
-                    >
-                      {relationshipFilter === "All" ? "Relationship" : relationshipFilter}
-                    </Text>
+                    <Ionicons name={showAsyncStorage ? "eye" : "eye-off"} size={20} color={darkMode ? "#ffffff" : "#333"} />
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
-                    <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>Date</Text>
+                </View>
+                {(() => {
+                  if (__DEV__) console.log("🔵 NetworkScreen - showAsyncStorage:", showAsyncStorage);
+                  if (showAsyncStorage) {
+                    if (__DEV__) console.log("🔵 NetworkScreen - Rendering AsyncStorage data, length:", storageData.length);
+                    return (
+                      <>
+                        {storageData.length === 0 ? (
+                          <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No data in AsyncStorage.</Text>
+                        ) : (
+                          storageData
+                            .map(([key, value], idx) => {
+                              if (__DEV__) console.log(`🔵 NetworkScreen - Processing AsyncStorage item ${idx}:`, { key, value, keyType: typeof key, valueType: typeof value });
+                              const sanitizedKey = sanitizeText(key, "Unknown");
+                              const sanitizedValue = sanitizeText(value, "N/A");
+                              if (__DEV__) console.log(`🔵 NetworkScreen - After sanitization ${idx}:`, { sanitizedKey, sanitizedValue });
+                              if (!isSafeForConditional(sanitizedKey) && !isSafeForConditional(sanitizedValue)) {
+                                if (__DEV__) console.log(`🔵 NetworkScreen - Skipping item ${idx} (unsafe)`);
+                                return null;
+                              }
+                              return (
+                                <View key={key} style={{ marginBottom: 8 }}>
+                                  {isSafeForConditional(sanitizedKey) && <Text style={[styles.keyText, darkMode && styles.darkKeyText]}>{sanitizedKey}:</Text>}
+                                  {isSafeForConditional(sanitizedValue) && <Text style={[styles.valueText, darkMode && styles.darkValueText]}>{sanitizedValue}</Text>}
+                                </View>
+                              );
+                            })
+                            .filter(Boolean)
+                        )}
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
+              </View>
+            );
+          })()}
+
+          {(() => {
+            if (__DEV__) console.log("🔵 NetworkScreen - Rendering Network Section");
+            if (__DEV__) console.log("🔵 NetworkScreen - profileUid for title:", profileUid, "type:", typeof profileUid);
+            const titleSuffix = profileUid ? ` (${profileUid})` : "";
+            if (__DEV__) console.log("🔵 NetworkScreen - titleSuffix:", titleSuffix);
+            return (
+              <View style={{ marginTop: 20 }}>
+                <Text style={[styles.sectionTitle, darkMode && styles.darkSectionTitle]}>My Network{titleSuffix}</Text>
+
+                <View style={styles.networkControlsRow}>
+                  <Text style={[styles.networkControlLabel, darkMode && styles.darkNetworkControlLabel]}>Levels to Display:</Text>
+                  <WebTextInput
+                    style={[styles.networkInput, darkMode && styles.darkNetworkInput]}
+                    value={degree}
+                    onChangeText={setDegree}
+                    placeholder='1'
+                    keyboardType='numeric'
+                    inputMode={Platform.OS === "web" ? "numeric" : undefined}
+                  />
+                  <TouchableOpacity style={styles.fetchButton} onPress={() => fetchNetwork()}>
+                    <Text style={styles.fetchButtonText}>Show Connections</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
-                    <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>Location</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
-                    <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>Event</Text>
+                  <TouchableOpacity onPress={() => setViewMode(viewMode === "list" ? "graph" : "list")} style={styles.toggleButton}>
+                    <Text style={styles.toggleButtonText}>{viewMode === "list" ? "View as Graph" : "View as List"}</Text>
                   </TouchableOpacity>
                 </View>
 
-                {Object.keys(groupedNetwork)
-                  .map((d) => Number(d))
-                  .sort((a, b) => a - b)
-                  .map((deg) => {
-                    // Filter the list based on relationship type
-                    let list = groupedNetwork[deg];
-                    if (relationshipFilter !== "All") {
-                      list = list.filter((node) => {
-                        const relationship = node.circle_relationship;
-                        if (relationshipFilter === "Colleagues") {
-                          return relationship === "colleague";
-                        } else if (relationshipFilter === "Friends") {
-                          return relationship === "friend";
-                        } else if (relationshipFilter === "Family") {
-                          return relationship === "family";
-                        }
-                        return true;
-                      });
-                    }
+                {loading && <ActivityIndicator size='large' color='#AF52DE' />}
+                {error && <Text style={[styles.errorText, darkMode && styles.darkErrorText]}>{error}</Text>}
 
-                    if (list.length === 0) {
-                      return null; // Don't render degree section if no items after filtering
-                    }
+                {viewMode === "graph" && networkData.length > 0 && (
+                  <View
+                    style={{
+                      height: 400,
+                      borderRadius: 10,
+                      overflow: "hidden",
+                      borderWidth: 0,
+                    }}
+                  >
+                    {Platform.OS === "web" ? (
+                      // Web: Use iframe via ref
+                      graphHtml ? (
+                        <View
+                          ref={iframeContainerRef}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                          }}
+                        />
+                      ) : (
+                        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                          <ActivityIndicator size='large' color='#AF52DE' />
+                          <Text style={[styles.loadingText, darkMode && styles.darkLoadingText]}>Loading graph view...</Text>
+                        </View>
+                      )
+                    ) : WebViewComponent ? (
+                      // Native: Use WebView
+                      <WebViewComponent
+                        originWhitelist={["*"]}
+                        source={{ html: generateVisHTML(networkData, profileUid || "YOU") }}
+                        onMessage={(event) => {
+                          const uid = event?.nativeEvent?.data;
+                          if (uid && uid !== (profileUid || "YOU")) {
+                            navigation.navigate("Profile", {
+                              profile_uid: uid,
+                              returnTo: "Network",
+                            });
+                          }
+                        }}
+                        javaScriptEnabled
+                        domStorageEnabled
+                        automaticallyAdjustContentInsets
+                        allowsInlineMediaPlayback
+                        androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
+                      />
+                    ) : (
+                      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+                        <Text style={[styles.errorText, darkMode && styles.darkErrorText, { textAlign: "center", marginBottom: 10 }]}>
+                          WebView is not available. The native module needs to be linked.
+                        </Text>
+                        <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5 }]}>
+                          To fix: Run {"\n"}
+                          npx expo prebuild --clean{"\n"}
+                          npx expo run:android
+                        </Text>
+                        <Text style={[styles.helperText, darkMode && styles.darkHelperText, { textAlign: "center", marginTop: 5, fontSize: 10 }]}>(or run:ios for iOS)</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
 
+                {(() => {
+                  if (__DEV__) console.log("🔵 NetworkScreen - Checking list view mode");
+                  if (viewMode === "list" && Object.keys(groupedNetwork).length > 0) {
+                    if (__DEV__) console.log("🔵 NetworkScreen - Rendering list view, groupedNetwork keys:", Object.keys(groupedNetwork));
                     return (
-                      <View key={deg} style={{ marginBottom: 20 }}>
-                        <Text style={[styles.degreeHeader, darkMode && styles.darkDegreeHeader]}>{degreeLabel(Number(deg))}</Text>
+                      <View style={{ marginTop: 10 }}>
+                        {/* Filter Buttons */}
+                        {(() => {
+                          if (__DEV__) console.log("🔵 NetworkScreen - Rendering filter buttons");
+                          return (
+                            <View style={styles.filterContainer}>
+                              <TouchableOpacity
+                                style={[
+                                  styles.filterButton,
+                                  relationshipFilter !== "All" && styles.filterButtonActive,
+                                  darkMode && styles.darkFilterButton,
+                                  relationshipFilter !== "All" && darkMode && styles.darkFilterButtonActive,
+                                ]}
+                                onPress={() => {
+                                  const filters = ["All", "Colleagues", "Friends", "Family"];
+                                  const currentIndex = filters.indexOf(relationshipFilter);
+                                  const nextIndex = (currentIndex + 1) % filters.length;
+                                  setRelationshipFilter(filters[nextIndex]);
+                                }}
+                              >
+                                <Text
+                                  style={[
+                                    styles.filterButtonText,
+                                    relationshipFilter !== "All" && styles.filterButtonTextActive,
+                                    darkMode && styles.darkFilterButtonText,
+                                    relationshipFilter !== "All" && darkMode && styles.darkFilterButtonTextActive,
+                                  ]}
+                                >
+                                  {relationshipFilter === "All" ? "Relationship" : relationshipFilter}
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
+                                <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>
+                                  Date
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
+                                <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>
+                                  Location
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity style={[styles.filterButton, styles.filterButtonDisabled, darkMode && styles.darkFilterButton, darkMode && styles.darkFilterButtonDisabled]} disabled>
+                                <Text style={[styles.filterButtonText, styles.filterButtonTextDisabled, darkMode && styles.darkFilterButtonText, darkMode && styles.darkFilterButtonTextDisabled]}>
+                                  Event
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          );
+                        })()}
 
-                        {list.map((node, index) => (
-                          <TouchableOpacity
-                            key={`${deg}-${index}`}
-                            onPress={() =>
-                              navigation.navigate("Profile", {
-                                profile_uid: node.network_profile_personal_uid,
-                                returnTo: "Network",
-                              })
-                            }
-                            style={{ marginVertical: 6 }}
-                          >
-                            <MiniCard user={node.__mc} />
-                          </TouchableOpacity>
-                        ))}
+                        {(() => {
+                          if (__DEV__) console.log("🔵 NetworkScreen - Rendering network list items");
+                          return Object.keys(groupedNetwork)
+                            .map((d) => Number(d))
+                            .sort((a, b) => a - b)
+                            .map((deg) => {
+                              if (__DEV__) console.log(`🔵 NetworkScreen - Processing degree ${deg}`);
+                              // Filter the list based on relationship type
+                              let list = groupedNetwork[deg];
+                              if (relationshipFilter !== "All") {
+                                list = list.filter((node) => {
+                                  const relationship = node.circle_relationship;
+                                  if (relationshipFilter === "Colleagues") {
+                                    return relationship === "colleague";
+                                  } else if (relationshipFilter === "Friends") {
+                                    return relationship === "friend";
+                                  } else if (relationshipFilter === "Family") {
+                                    return relationship === "family";
+                                  }
+                                  return true;
+                                });
+                              }
+
+                              if (list.length === 0) {
+                                if (__DEV__) console.log(`🔵 NetworkScreen - Degree ${deg} has no items after filtering`);
+                                return null; // Don't render degree section if no items after filtering
+                              }
+
+                              if (__DEV__) console.log(`🔵 NetworkScreen - Rendering degree ${deg} with ${list.length} items`);
+                              return (
+                                <View key={deg} style={{ marginBottom: 20 }}>
+                                  {(() => {
+                                    const label = degreeLabel(Number(deg));
+                                    if (__DEV__) console.log(`🔵 NetworkScreen - Degree ${deg} label:`, label);
+                                    return <Text style={[styles.degreeHeader, darkMode && styles.darkDegreeHeader]}>{label}</Text>;
+                                  })()}
+
+                                  {list.map((node, index) => {
+                                    if (__DEV__) console.log(`🔵 NetworkScreen - Rendering node ${deg}-${index}, __mc:`, node.__mc);
+                                    // Data is already sanitized when __mc is created, but double-check
+                                    if (!node.__mc) {
+                                      if (__DEV__) console.log(`🔵 NetworkScreen - Node ${deg}-${index} has no __mc, skipping`);
+                                      return null;
+                                    }
+                                    if (__DEV__) console.log(`🔵 NetworkScreen - Rendering MiniCard for node ${deg}-${index}`);
+                                    return (
+                                      <TouchableOpacity
+                                        key={`${deg}-${index}`}
+                                        onPress={() =>
+                                          navigation.navigate("Profile", {
+                                            profile_uid: node.network_profile_personal_uid,
+                                            returnTo: "Network",
+                                          })
+                                        }
+                                        style={{ marginVertical: 6 }}
+                                      >
+                                        <MiniCard user={node.__mc} />
+                                      </TouchableOpacity>
+                                    );
+                                  })}
+                                </View>
+                              );
+                            });
+                        })()}
                       </View>
                     );
-                  })}
-              </View>
-            )}
+                  }
+                  return null;
+                })()}
 
-            {!loading && !error && Object.keys(groupedNetwork).length === 0 && <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No network connections found.</Text>}
-          </View>
+                {(() => {
+                  if (__DEV__) console.log("🔵 NetworkScreen - Rendering 'No connections' message");
+                  if (!loading && !error && Object.keys(groupedNetwork).length === 0) {
+                    return <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No network connections found.</Text>;
+                  }
+                  return null;
+                })()}
+              </View>
+            );
+          })()}
         </ScrollView>
 
         <BottomNavBar navigation={navigation} />

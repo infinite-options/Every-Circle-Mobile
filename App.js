@@ -29,6 +29,7 @@ if (!isWeb) {
 import config from "./config";
 import { GOOGLE_SIGNUP_ENDPOINT, GOOGLE_SIGNIN_ENDPOINT, APPLE_SIGNIN_ENDPOINT, API_BASE_URL } from "./apiConfig";
 import { DarkModeProvider } from "./contexts/DarkModeContext";
+import TextNodeErrorBoundary from "./components/TextNodeErrorBoundary";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import HowItWorksScreen from "./screens/HowItWorksScreen";
@@ -606,11 +607,12 @@ export default function App() {
   }
   
   return (
-    <DarkModeProvider>
-      <NavigationContainer
-        onReady={() => console.log("App.js - NavigationContainer ready")}
-        onStateChange={() => console.log("App.js - Navigation state changed")}
-      >
+    <TextNodeErrorBoundary>
+      <DarkModeProvider>
+        <NavigationContainer
+          onReady={() => console.log("App.js - NavigationContainer ready")}
+          onStateChange={() => console.log("App.js - Navigation state changed")}
+        >
         <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
           <Stack.Screen name='Home' component={HomeScreen} />
           <Stack.Screen
@@ -650,9 +652,10 @@ export default function App() {
           <Stack.Screen name='ExpertiseDetail' component={ExpertiseDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name='WishDetail' component={WishDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name='WishResponses' component={WishResponsesScreen} options={{ headerShown: false }} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </DarkModeProvider>
+          </Stack.Navigator>
+        </NavigationContainer>
+      </DarkModeProvider>
+    </TextNodeErrorBoundary>
   );
 }
 

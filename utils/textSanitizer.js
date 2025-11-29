@@ -14,18 +14,49 @@
  * @returns {string} - Sanitized string value
  */
 export const sanitizeText = (value, fallback = "") => {
+  // Handle null/undefined
   if (value === null || value === undefined) {
     return fallback;
   }
   
-  const str = String(value).trim();
+  // Convert to string and trim
+  let str = String(value).trim();
   
-  // If it's just a period or empty, return fallback
-  if (str === "." || str === "" || str === "null" || str === "undefined") {
+  // If empty after trim, return fallback
+  if (str === "") {
+    return fallback;
+  }
+  
+  // Check for problematic values
+  if (str === "." || 
+      str === "null" || 
+      str === "undefined" ||
+      str === "NaN" ||
+      str.match(/^[\s.,;:!?\-_=+]*$/)) {
+    return fallback;
+  }
+  
+  // Additional safety: if the string is ONLY punctuation/whitespace, return fallback
+  // This catches cases like ".," or ", ." etc.
+  const cleaned = str.replace(/[\s.,;:!?\-_=+]/g, "");
+  if (cleaned === "") {
     return fallback;
   }
   
   return str;
+};
+
+/**
+ * Checks if a value is safe to use in a conditional (won't render as text node)
+ * Returns true only if the value is truthy AND not an empty string
+ */
+export const isSafeForConditional = (value) => {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  
+  const str = String(value).trim();
+  return str !== "" && str !== "." && str !== "null" && str !== "undefined";
 };
 
 /**
