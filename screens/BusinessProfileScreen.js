@@ -1,6 +1,6 @@
 // BusinessProfileScreen.js
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity, Alert, Modal, Platform } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, TouchableOpacity, Alert, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import MiniCard from "../components/MiniCard";
@@ -558,445 +558,443 @@ export default function BusinessProfileScreen({ route, navigation }) {
 
       <SafeAreaView style={[styles.safeArea, darkMode && styles.darkSafeArea]}>
         <ScrollView style={[styles.scrollContainer, darkMode && styles.darkScrollContainer]} contentContainerStyle={styles.content}>
-          <View style={Platform.OS === "web" ? styles.webContentWrapper : undefined}>
-            {/* Edit Button - Only show if user owns the business */}
-            {isOwner && (
-              <View style={styles.editButtonContainer}>
-                <TouchableOpacity
-                  style={[styles.editButton, darkMode && styles.darkEditButton]}
-                  onPress={() =>
-                    navigation.navigate("EditBusinessProfile", {
-                      business: business,
-                      business_uid: business_uid,
-                      business_users: businessUsers,
-                    })
-                  }
-                >
-                  <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
-                </TouchableOpacity>
-              </View>
-            )}
+          {/* Edit Button - Only show if user owns the business */}
+          {isOwner && (
+            <View style={styles.editButtonContainer}>
+              <TouchableOpacity
+                style={[styles.editButton, darkMode && styles.darkEditButton]}
+                onPress={() =>
+                  navigation.navigate("EditBusinessProfile", {
+                    business: business,
+                    business_uid: business_uid,
+                    business_users: businessUsers,
+                  })
+                }
+              >
+                <Image source={require("../assets/Edit.png")} style={[styles.editIcon, darkMode && styles.darkEditIcon]} />
+              </TouchableOpacity>
+            </View>
+          )}
 
-            {/* Business Card (MiniCard at top) */}
-            <View style={[styles.card, darkMode && styles.darkCard]}>
-              <MiniCard
-                business={{
-                  business_name: sanitizeText(business.business_name),
-                  business_address_line_1: sanitizeText(business.business_address_line_1),
-                  business_zip_code: sanitizeText(business.business_zip_code),
-                  business_phone_number: sanitizeText(business.business_phone_number),
-                  business_email: sanitizeText(business.business_email_id),
-                  business_website: sanitizeText(business.business_website),
-                  first_image: business.images && business.images.length > 0 ? business.images[0] : null,
-                  phoneIsPublic: business.phoneIsPublic,
-                  emailIsPublic: business.emailIsPublic,
-                }}
-              />
+          {/* Business Card (MiniCard at top) */}
+          <View style={[styles.card, darkMode && styles.darkCard]}>
+            <MiniCard
+              business={{
+                business_name: sanitizeText(business.business_name),
+                business_address_line_1: sanitizeText(business.business_address_line_1),
+                business_zip_code: sanitizeText(business.business_zip_code),
+                business_phone_number: sanitizeText(business.business_phone_number),
+                business_email: sanitizeText(business.business_email_id),
+                business_website: sanitizeText(business.business_website),
+                first_image: business.images && business.images.length > 0 ? business.images[0] : null,
+                phoneIsPublic: business.phoneIsPublic,
+                emailIsPublic: business.emailIsPublic,
+              }}
+            />
+          </View>
+
+          {/* Contact Information Card */}
+          <View style={[styles.card, darkMode && styles.darkCard]}>
+            <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Contact Information</Text>
+
+            <View style={styles.infoRow}>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Location:</Text>
+              <Text style={[styles.value, darkMode && styles.darkValue]}>
+                {(() => {
+                  const parts = [
+                    sanitizeText(business.business_address_line_1),
+                    sanitizeText(business.business_address_line_2),
+                    sanitizeText(business.business_city),
+                    sanitizeText(business.business_state),
+                    sanitizeText(business.business_zip_code),
+                    sanitizeText(business.business_country),
+                  ].filter((part) => part && part !== ".");
+                  return parts.length > 0 ? parts.join(", ") : "N/A";
+                })()}
+              </Text>
             </View>
 
-            {/* Contact Information Card */}
+            {business.phoneIsPublic && isSafeForConditional(business.business_phone_number) && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.label, darkMode && styles.darkLabel]}>Phone:</Text>
+                <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_phone_number)}</Text>
+              </View>
+            )}
+
+            {business.emailIsPublic && isSafeForConditional(business.business_email_id) && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.label, darkMode && styles.darkLabel]}>Email:</Text>
+                <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_email_id)}</Text>
+              </View>
+            )}
+
+            <View style={styles.infoRow}>
+              <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Category:</Text>
+              <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_category, "N/A")}</Text>
+            </View>
+
+            {isSafeForConditional(business.business_website) && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.label, darkMode && styles.darkLabel]}>Website:</Text>
+                <Text style={[styles.link, darkMode && styles.darkLink]}>🌐 {sanitizeText(business.business_website)}</Text>
+              </View>
+            )}
+
+            {isSafeForConditional(business.business_role || business.role || business.bu_role) && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Role:</Text>
+                <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_role || business.role || business.bu_role)}</Text>
+              </View>
+            )}
+
+            {isSafeForConditional(business.ein_number) && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.label, darkMode && styles.darkLabel]}>EIN Number:</Text>
+                <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.ein_number)}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Business Details Card */}
+          {business.taglineIsPublic && isSafeForConditional(business.tagline) && (
             <View style={[styles.card, darkMode && styles.darkCard]}>
-              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Contact Information</Text>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Tagline</Text>
+              <Text style={[styles.bioText, darkMode && styles.darkBioText]}>{sanitizeText(business.tagline)}</Text>
+            </View>
+          )}
 
-              <View style={styles.infoRow}>
-                <Text style={[styles.label, darkMode && styles.darkLabel]}>Location:</Text>
-                <Text style={[styles.value, darkMode && styles.darkValue]}>
-                  {(() => {
-                    const parts = [
-                      sanitizeText(business.business_address_line_1),
-                      sanitizeText(business.business_address_line_2),
-                      sanitizeText(business.business_city),
-                      sanitizeText(business.business_state),
-                      sanitizeText(business.business_zip_code),
-                      sanitizeText(business.business_country),
-                    ].filter((part) => part && part !== ".");
-                    return parts.length > 0 ? parts.join(", ") : "N/A";
-                  })()}
-                </Text>
-              </View>
+          {/* About Section */}
+          {business.shortBioIsPublic && isSafeForConditional(business.business_short_bio) && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>About</Text>
+              <Text style={[styles.bioText, darkMode && styles.darkBioText]}>{sanitizeText(business.business_short_bio)}</Text>
+            </View>
+          )}
 
-              {business.phoneIsPublic && isSafeForConditional(business.business_phone_number) && (
+          {/* Business Hours */}
+          {isSafeForConditional(business.business_hours) && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Hours</Text>
+              <Text style={[styles.bioText, darkMode && styles.darkBioText]}>{sanitizeText(business.business_hours)}</Text>
+            </View>
+          )}
+
+          {/* Rating and Price Level */}
+          {(business.google_rating || business.price_level) && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Rating & Pricing</Text>
+              {isSafeForConditional(business.google_rating) && (
                 <View style={styles.infoRow}>
-                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Phone:</Text>
-                  <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_phone_number)}</Text>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Google Rating:</Text>
+                  <Text style={[styles.value, darkMode && styles.darkValue]}>⭐ {sanitizeText(business.google_rating)}</Text>
                 </View>
               )}
-
-              {business.emailIsPublic && isSafeForConditional(business.business_email_id) && (
+              {business.price_level && (
                 <View style={styles.infoRow}>
-                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Email:</Text>
-                  <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_email_id)}</Text>
-                </View>
-              )}
-
-              <View style={styles.infoRow}>
-                <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Category:</Text>
-                <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_category, "N/A")}</Text>
-              </View>
-
-              {isSafeForConditional(business.business_website) && (
-                <View style={styles.infoRow}>
-                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Website:</Text>
-                  <Text style={[styles.link, darkMode && styles.darkLink]}>🌐 {sanitizeText(business.business_website)}</Text>
-                </View>
-              )}
-
-              {isSafeForConditional(business.business_role || business.role || business.bu_role) && (
-                <View style={styles.infoRow}>
-                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Business Role:</Text>
-                  <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.business_role || business.role || business.bu_role)}</Text>
-                </View>
-              )}
-
-              {isSafeForConditional(business.ein_number) && (
-                <View style={styles.infoRow}>
-                  <Text style={[styles.label, darkMode && styles.darkLabel]}>EIN Number:</Text>
-                  <Text style={[styles.value, darkMode && styles.darkValue]}>{sanitizeText(business.ein_number)}</Text>
+                  <Text style={[styles.label, darkMode && styles.darkLabel]}>Price Level:</Text>
+                  <Text style={[styles.value, darkMode && styles.darkValue]}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
                 </View>
               )}
             </View>
+          )}
 
-            {/* Business Details Card */}
-            {business.taglineIsPublic && isSafeForConditional(business.tagline) && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Tagline</Text>
-                <Text style={[styles.bioText, darkMode && styles.darkBioText]}>{sanitizeText(business.tagline)}</Text>
+          {/* Custom Tags - Only visible to owners/editors */}
+          {isOwner && business.customTags && business.customTags.length > 0 && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Tags</Text>
+              <View style={styles.tagsContainer}>
+                {business.customTags
+                  .map((tag) => sanitizeText(tag))
+                  .filter((tag) => tag && tag !== "." && tag.trim() !== "" && !tag.match(/^[\s.,;:!?\-_=+]*$/))
+                  .map((tag, index) => {
+                    // Final safety check before rendering
+                    if (!tag || tag === "." || tag.trim() === "") return null;
+                    return (
+                      <View key={index} style={[styles.tag, darkMode && styles.darkTag]}>
+                        <Text style={[styles.tagText, darkMode && styles.darkTagText]}>{tag}</Text>
+                      </View>
+                    );
+                  })
+                  .filter(Boolean)}
               </View>
-            )}
+            </View>
+          )}
 
-            {/* About Section */}
-            {business.shortBioIsPublic && isSafeForConditional(business.business_short_bio) && (
+          {/* Social Links Card */}
+          {(() => {
+            const hasSocialLinks = business.facebook || business.instagram || business.linkedin || business.youtube;
+            if (!hasSocialLinks) return null;
+
+            return (
               <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>About</Text>
-                <Text style={[styles.bioText, darkMode && styles.darkBioText]}>{sanitizeText(business.business_short_bio)}</Text>
+                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Social Links</Text>
+                {isSafeForConditional(business.facebook) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>📘 Facebook: {sanitizeText(business.facebook)}</Text>}
+                {isSafeForConditional(business.instagram) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>📸 Instagram: {sanitizeText(business.instagram)}</Text>}
+                {isSafeForConditional(business.linkedin) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>🔗 LinkedIn: {sanitizeText(business.linkedin)}</Text>}
+                {isSafeForConditional(business.youtube) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>▶️ YouTube: {sanitizeText(business.youtube)}</Text>}
               </View>
-            )}
+            );
+          })()}
 
-            {/* Business Hours */}
-            {isSafeForConditional(business.business_hours) && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Hours</Text>
-                <Text style={[styles.bioText, darkMode && styles.darkBioText]}>{sanitizeText(business.business_hours)}</Text>
-              </View>
-            )}
-
-            {/* Rating and Price Level */}
-            {(business.google_rating || business.price_level) && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Rating & Pricing</Text>
-                {isSafeForConditional(business.google_rating) && (
-                  <View style={styles.infoRow}>
-                    <Text style={[styles.label, darkMode && styles.darkLabel]}>Google Rating:</Text>
-                    <Text style={[styles.value, darkMode && styles.darkValue]}>⭐ {sanitizeText(business.google_rating)}</Text>
+          {/* Business Images Card - Only show if there are images */}
+          {Array.isArray(business.images) && business.images.length > 0 && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Images</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+                {business.images.map((uri, index) => (
+                  <View key={index} style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: uri }}
+                      style={styles.image}
+                      onError={(error) => {
+                        console.log(`Business image ${index} failed to load:`, error.nativeEvent.error);
+                        console.log(`Problematic URI:`, uri);
+                      }}
+                      onLoad={() => console.log(`Business image ${index} loaded successfully`)}
+                      defaultSource={require("../assets/profile.png")}
+                      resizeMode='cover'
+                    />
                   </View>
-                )}
-                {business.price_level && (
-                  <View style={styles.infoRow}>
-                    <Text style={[styles.label, darkMode && styles.darkLabel]}>Price Level:</Text>
-                    <Text style={[styles.value, darkMode && styles.darkValue]}>{"$".repeat(parseInt(business.price_level) || 1)}</Text>
-                  </View>
-                )}
-              </View>
-            )}
+                ))}
+              </ScrollView>
+              {business.images.length === 0 && <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No compatible images available</Text>}
+            </View>
+          )}
 
-            {/* Custom Tags - Only visible to owners/editors */}
-            {isOwner && business.customTags && business.customTags.length > 0 && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Tags</Text>
-                <View style={styles.tagsContainer}>
-                  {business.customTags
-                    .map((tag) => sanitizeText(tag))
-                    .filter((tag) => tag && tag !== "." && tag.trim() !== "" && !tag.match(/^[\s.,;:!?\-_=+]*$/))
-                    .map((tag, index) => {
-                      // Final safety check before rendering
-                      if (!tag || tag === "." || tag.trim() === "") return null;
-                      return (
-                        <View key={index} style={[styles.tag, darkMode && styles.darkTag]}>
-                          <Text style={[styles.tagText, darkMode && styles.darkTagText]}>{tag}</Text>
-                        </View>
-                      );
-                    })
-                    .filter(Boolean)}
-                </View>
-              </View>
-            )}
+          {/* Business Editors/Owners Section - Only visible to owners/editors */}
+          {isOwner && businessUsers.length > 0 && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Editors & Owners</Text>
+              {businessUsers.map((businessUser, index) => {
+                // Debug logging for each business user
+                if (__DEV__) {
+                  console.log(`🔍 BusinessProfileScreen - Processing businessUser ${index}:`, {
+                    first_name: businessUser.first_name,
+                    last_name: businessUser.last_name,
+                    user_email: businessUser.user_email,
+                    business_role: businessUser.business_role,
+                    profile_photo: businessUser.profile_photo,
+                    raw: businessUser,
+                  });
+                }
 
-            {/* Social Links Card */}
-            {(() => {
-              const hasSocialLinks = business.facebook || business.instagram || business.linkedin || business.youtube;
-              if (!hasSocialLinks) return null;
+                // Format user data for MiniCard component - sanitize everything
+                const firstName = sanitizeText(businessUser.first_name);
+                const lastName = sanitizeText(businessUser.last_name);
+                const email = sanitizeText(businessUser.user_email);
+                const profileImage = sanitizeText(businessUser.profile_photo);
+                const role = sanitizeText(businessUser.business_role, "N/A");
 
-              return (
-                <View style={[styles.card, darkMode && styles.darkCard]}>
-                  <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Social Links</Text>
-                  {isSafeForConditional(business.facebook) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>📘 Facebook: {sanitizeText(business.facebook)}</Text>}
-                  {isSafeForConditional(business.instagram) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>📸 Instagram: {sanitizeText(business.instagram)}</Text>}
-                  {isSafeForConditional(business.linkedin) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>🔗 LinkedIn: {sanitizeText(business.linkedin)}</Text>}
-                  {isSafeForConditional(business.youtube) && <Text style={[styles.socialLink, darkMode && styles.darkSocialLink]}>▶️ YouTube: {sanitizeText(business.youtube)}</Text>}
-                </View>
-              );
-            })()}
-
-            {/* Business Images Card - Only show if there are images */}
-            {Array.isArray(business.images) && business.images.length > 0 && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Images</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-                  {business.images.map((uri, index) => (
-                    <View key={index} style={styles.imageContainer}>
-                      <Image
-                        source={{ uri: uri }}
-                        style={styles.image}
-                        onError={(error) => {
-                          console.log(`Business image ${index} failed to load:`, error.nativeEvent.error);
-                          console.log(`Problematic URI:`, uri);
-                        }}
-                        onLoad={() => console.log(`Business image ${index} loaded successfully`)}
-                        defaultSource={require("../assets/profile.png")}
-                        resizeMode='cover'
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-                {business.images.length === 0 && <Text style={[styles.noDataText, darkMode && styles.darkNoDataText]}>No compatible images available</Text>}
-              </View>
-            )}
-
-            {/* Business Editors/Owners Section - Only visible to owners/editors */}
-            {isOwner && businessUsers.length > 0 && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Business Editors & Owners</Text>
-                {businessUsers.map((businessUser, index) => {
-                  // Debug logging for each business user
-                  if (__DEV__) {
-                    console.log(`🔍 BusinessProfileScreen - Processing businessUser ${index}:`, {
-                      first_name: businessUser.first_name,
-                      last_name: businessUser.last_name,
-                      user_email: businessUser.user_email,
-                      business_role: businessUser.business_role,
-                      profile_photo: businessUser.profile_photo,
-                      raw: businessUser,
-                    });
-                  }
-
-                  // Format user data for MiniCard component - sanitize everything
-                  const firstName = sanitizeText(businessUser.first_name);
-                  const lastName = sanitizeText(businessUser.last_name);
-                  const email = sanitizeText(businessUser.user_email);
-                  const profileImage = sanitizeText(businessUser.profile_photo);
-                  const role = sanitizeText(businessUser.business_role, "N/A");
-
-                  // Debug after sanitization
-                  if (__DEV__) {
-                    console.log(`🔍 BusinessProfileScreen - After sanitization ${index}:`, {
-                      firstName,
-                      lastName,
-                      email,
-                      profileImage,
-                      role,
-                    });
-                  }
-
-                  const userForMiniCard = {
+                // Debug after sanitization
+                if (__DEV__) {
+                  console.log(`🔍 BusinessProfileScreen - After sanitization ${index}:`, {
                     firstName,
                     lastName,
                     email,
                     profileImage,
-                    // Note: We don't have visibility flags from business_users, so we'll show email/phone if they exist
-                    emailIsPublic: true, // Assume public since we're showing to owners/editors
-                    phoneIsPublic: false, // No phone in business_users data
-                    phoneNumber: "", // No phone in business_users data
-                  };
+                    role,
+                  });
+                }
 
-                  return (
-                    <View key={businessUser.business_user_id || index} style={[styles.businessUserCard, darkMode && styles.darkBusinessUserCard]}>
-                      <MiniCard user={userForMiniCard} />
-                      {(() => {
-                        // Extra defensive check for role rendering
-                        const roleText = role && role !== "." && role.trim() !== "" ? role : "N/A";
-                        if (__DEV__ && (role === "." || role === "")) {
-                          console.warn(`⚠️ BusinessProfileScreen - Invalid role detected for user ${index}:`, businessUser.business_role, "-> sanitized to:", role);
-                        }
-                        return <Text style={[styles.businessUserRole, darkMode && styles.darkBusinessUserRole]}>Role: {roleText}</Text>;
-                      })()}
-                    </View>
-                  );
-                })}
-              </View>
-            )}
+                const userForMiniCard = {
+                  firstName,
+                  lastName,
+                  email,
+                  profileImage,
+                  // Note: We don't have visibility flags from business_users, so we'll show email/phone if they exist
+                  emailIsPublic: true, // Assume public since we're showing to owners/editors
+                  phoneIsPublic: false, // No phone in business_users data
+                  phoneNumber: "", // No phone in business_users data
+                };
 
-            {/* Review Business Button or User Review */}
-            {!isOwner &&
-              (userReview ? (
-                <View style={[styles.userReviewContainer, darkMode && styles.darkUserReviewContainer]}>
-                  <Text style={[styles.userReviewTitle, darkMode && styles.darkUserReviewTitle]}>Your Review</Text>
-                  <View style={styles.userReviewRow}>
-                    <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Rating:</Text>
-                    <View style={styles.userReviewRatingContainer}>
-                      {renderStars(userReview.rating_star)}
-                      <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue, { marginLeft: 8 }]}>{userReview.rating_star} / 5</Text>
-                    </View>
+                return (
+                  <View key={businessUser.business_user_id || index} style={[styles.businessUserCard, darkMode && styles.darkBusinessUserCard]}>
+                    <MiniCard user={userForMiniCard} />
+                    {(() => {
+                      // Extra defensive check for role rendering
+                      const roleText = role && role !== "." && role.trim() !== "" ? role : "N/A";
+                      if (__DEV__ && (role === "." || role === "")) {
+                        console.warn(`⚠️ BusinessProfileScreen - Invalid role detected for user ${index}:`, businessUser.business_role, "-> sanitized to:", role);
+                      }
+                      return <Text style={[styles.businessUserRole, darkMode && styles.darkBusinessUserRole]}>Role: {roleText}</Text>;
+                    })()}
                   </View>
-                  <View style={styles.userReviewRow}>
-                    <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Comments:</Text>
-                    <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_description}</Text>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Review Business Button or User Review */}
+          {!isOwner &&
+            (userReview ? (
+              <View style={[styles.userReviewContainer, darkMode && styles.darkUserReviewContainer]}>
+                <Text style={[styles.userReviewTitle, darkMode && styles.darkUserReviewTitle]}>Your Review</Text>
+                <View style={styles.userReviewRow}>
+                  <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Rating:</Text>
+                  <View style={styles.userReviewRatingContainer}>
+                    {renderStars(userReview.rating_star)}
+                    <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue, { marginLeft: 8 }]}>{userReview.rating_star} / 5</Text>
                   </View>
-                  <View style={styles.userReviewRow}>
-                    <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Date:</Text>
-                    <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_receipt_date}</Text>
-                  </View>
-                  {userReview.rating_uid && (
-                    <View style={styles.userReviewRow}>
-                      <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Transaction ID:</Text>
-                      <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_uid}</Text>
-                    </View>
-                  )}
-                  <TouchableOpacity
-                    style={[styles.editReviewButton, darkMode && styles.darkEditReviewButton]}
-                    onPress={() =>
-                      navigation.navigate("ReviewBusiness", {
-                        business_uid: business_uid,
-                        business_name: business.business_name,
-                        reviewData: userReview,
-                        isEdit: true,
-                      })
-                    }
-                  >
-                    <Text style={styles.editReviewButtonText}>Edit Review</Text>
-                  </TouchableOpacity>
                 </View>
-              ) : (
+                <View style={styles.userReviewRow}>
+                  <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Comments:</Text>
+                  <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_description}</Text>
+                </View>
+                <View style={styles.userReviewRow}>
+                  <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Date:</Text>
+                  <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_receipt_date}</Text>
+                </View>
+                {userReview.rating_uid && (
+                  <View style={styles.userReviewRow}>
+                    <Text style={[styles.userReviewLabel, darkMode && styles.darkUserReviewLabel]}>Transaction ID:</Text>
+                    <Text style={[styles.userReviewValue, darkMode && styles.darkUserReviewValue]}>{userReview.rating_uid}</Text>
+                  </View>
+                )}
                 <TouchableOpacity
-                  style={[styles.reviewButton, darkMode && styles.darkReviewButton]}
+                  style={[styles.editReviewButton, darkMode && styles.darkEditReviewButton]}
                   onPress={() =>
                     navigation.navigate("ReviewBusiness", {
                       business_uid: business_uid,
                       business_name: business.business_name,
+                      reviewData: userReview,
+                      isEdit: true,
                     })
                   }
                 >
-                  <Text style={styles.reviewButtonText}>Review Business</Text>
+                  <Text style={styles.editReviewButtonText}>Edit Review</Text>
                 </TouchableOpacity>
-              ))}
-
-            {/* All Reviews Section */}
-            {allReviews.length > 0 && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Reviews ({allReviews.length})</Text>
-                {allReviews.map((review, index) => (
-                  <TouchableOpacity
-                    key={review.rating_uid || index}
-                    style={[styles.reviewCard, darkMode && styles.darkReviewCard]}
-                    onPress={() =>
-                      navigation.navigate("ReviewDetail", {
-                        business_uid: business_uid,
-                        business_name: business.business_name,
-                        reviewer_profile_id: review.rating_profile_id,
-                        business_data: business, // Pass the entire business object
-                      })
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.reviewCardHeader}>
-                      <View style={styles.reviewProfileInfo}>
-                        {reviewerProfiles[review.rating_profile_id]?.profileImage ? (
-                          <Image
-                            source={{ uri: reviewerProfiles[review.rating_profile_id].profileImage }}
-                            style={[styles.reviewProfileAvatar, darkMode && styles.darkReviewProfileAvatar]}
-                            defaultSource={require("../assets/profile.png")}
-                          />
-                        ) : (
-                          <View style={[styles.reviewProfileAvatar, darkMode && styles.darkReviewProfileAvatar]}>
-                            <Text style={[styles.reviewProfileInitial, darkMode && styles.darkReviewProfileInitial]}>
-                              {(() => {
-                                const profile = reviewerProfiles[review.rating_profile_id];
-                                if (profile) {
-                                  const firstChar = (profile.firstName?.charAt(0) || profile.lastName?.charAt(0) || "").toUpperCase();
-                                  if (firstChar && firstChar !== ".") {
-                                    return firstChar;
-                                  }
-                                }
-                                const fallback = (review.rating_profile_id?.charAt(0) || "U").toUpperCase();
-                                return fallback !== "." ? fallback : "U";
-                              })()}
-                            </Text>
-                          </View>
-                        )}
-                        <View style={styles.reviewProfileDetails}>
-                          <Text style={[styles.reviewProfileName, darkMode && styles.darkReviewProfileName]}>
-                            {(() => {
-                              const profile = reviewerProfiles[review.rating_profile_id];
-                              if (profile) {
-                                const name = [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim();
-                                if (name && name !== ".") {
-                                  return name;
-                                }
-                              }
-                              return `User ${review.rating_profile_id || "Unknown"}`;
-                            })()}
-                          </Text>
-                          <Text style={[styles.reviewDate, darkMode && styles.darkReviewDate]}>{review.rating_receipt_date}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.reviewRatingContainer}>
-                        {renderStars(review.rating_star)}
-                        <Text style={[styles.reviewRatingText, darkMode && styles.darkReviewRatingText]}>{review.rating_star}/5</Text>
-                      </View>
-                    </View>
-
-                    {review.rating_description && (
-                      <View style={styles.reviewContent}>
-                        <Text style={[styles.reviewDescription, darkMode && styles.darkReviewDescription]}>{review.rating_description}</Text>
-                      </View>
-                    )}
-
-                    <View style={styles.reviewFooter}>
-                      <View style={styles.reviewMetadata}>
-                        <Text style={[styles.reviewMetadataText, darkMode && styles.darkReviewMetadataText]}>Transaction ID: {review.rating_uid}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
               </View>
-            )}
+            ) : (
+              <TouchableOpacity
+                style={[styles.reviewButton, darkMode && styles.darkReviewButton]}
+                onPress={() =>
+                  navigation.navigate("ReviewBusiness", {
+                    business_uid: business_uid,
+                    business_name: business.business_name,
+                  })
+                }
+              >
+                <Text style={styles.reviewButtonText}>Review Business</Text>
+              </TouchableOpacity>
+            ))}
 
-            {/* Business Services Section - Only show if no reviews */}
-            {Array.isArray(business.business_services) && business.business_services.length > 0 && allReviews.length === 0 && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
-                <View style={styles.servicesHeader}>
-                  <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Products & Services</Text>
-                  {!isOwner && cartItems.length > 0 && (
-                    <TouchableOpacity style={[styles.cartButton, darkMode && styles.darkCartButton]} onPress={handleViewCart}>
-                      <Ionicons name='cart' size={24} color={darkMode ? "#fff" : "#9C45F7"} />
-                      <Text style={[styles.cartCount, darkMode && styles.darkCartCount]}>{cartItems.length}</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                {business.business_services.map((service, idx) => (
-                  <ProductCard key={idx} service={service} showEditButton={isOwner} onPress={() => handleProductPress(service)} />
-                ))}
-              </View>
-            )}
-
-            {/* Shopping Cart Button - Only show if there are reviews */}
-            {!isOwner && allReviews.length > 0 && (
-              <View style={[styles.card, darkMode && styles.darkCard]}>
+          {/* All Reviews Section */}
+          {allReviews.length > 0 && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Reviews ({allReviews.length})</Text>
+              {allReviews.map((review, index) => (
                 <TouchableOpacity
-                  style={[styles.shoppingCartButton, darkMode && styles.darkShoppingCartButton]}
+                  key={review.rating_uid || index}
+                  style={[styles.reviewCard, darkMode && styles.darkReviewCard]}
                   onPress={() =>
                     navigation.navigate("ReviewDetail", {
                       business_uid: business_uid,
                       business_name: business.business_name,
-                      reviewer_profile_id: "Charity",
+                      reviewer_profile_id: review.rating_profile_id,
+                      business_data: business, // Pass the entire business object
                     })
                   }
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name='cart' size={24} color={darkMode ? "#fff" : "#9C45F7"} />
-                  <Text style={[styles.shoppingCartButtonText, darkMode && styles.darkShoppingCartButtonText]}>Shopping Cart</Text>
+                  <View style={styles.reviewCardHeader}>
+                    <View style={styles.reviewProfileInfo}>
+                      {reviewerProfiles[review.rating_profile_id]?.profileImage ? (
+                        <Image
+                          source={{ uri: reviewerProfiles[review.rating_profile_id].profileImage }}
+                          style={[styles.reviewProfileAvatar, darkMode && styles.darkReviewProfileAvatar]}
+                          defaultSource={require("../assets/profile.png")}
+                        />
+                      ) : (
+                        <View style={[styles.reviewProfileAvatar, darkMode && styles.darkReviewProfileAvatar]}>
+                          <Text style={[styles.reviewProfileInitial, darkMode && styles.darkReviewProfileInitial]}>
+                            {(() => {
+                              const profile = reviewerProfiles[review.rating_profile_id];
+                              if (profile) {
+                                const firstChar = (profile.firstName?.charAt(0) || profile.lastName?.charAt(0) || "").toUpperCase();
+                                if (firstChar && firstChar !== ".") {
+                                  return firstChar;
+                                }
+                              }
+                              const fallback = (review.rating_profile_id?.charAt(0) || "U").toUpperCase();
+                              return fallback !== "." ? fallback : "U";
+                            })()}
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.reviewProfileDetails}>
+                        <Text style={[styles.reviewProfileName, darkMode && styles.darkReviewProfileName]}>
+                          {(() => {
+                            const profile = reviewerProfiles[review.rating_profile_id];
+                            if (profile) {
+                              const name = [profile.firstName, profile.lastName].filter(Boolean).join(" ").trim();
+                              if (name && name !== ".") {
+                                return name;
+                              }
+                            }
+                            return `User ${review.rating_profile_id || "Unknown"}`;
+                          })()}
+                        </Text>
+                        <Text style={[styles.reviewDate, darkMode && styles.darkReviewDate]}>{review.rating_receipt_date}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.reviewRatingContainer}>
+                      {renderStars(review.rating_star)}
+                      <Text style={[styles.reviewRatingText, darkMode && styles.darkReviewRatingText]}>{review.rating_star}/5</Text>
+                    </View>
+                  </View>
+
+                  {review.rating_description && (
+                    <View style={styles.reviewContent}>
+                      <Text style={[styles.reviewDescription, darkMode && styles.darkReviewDescription]}>{review.rating_description}</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.reviewFooter}>
+                    <View style={styles.reviewMetadata}>
+                      <Text style={[styles.reviewMetadataText, darkMode && styles.darkReviewMetadataText]}>Transaction ID: {review.rating_uid}</Text>
+                    </View>
+                  </View>
                 </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Business Services Section - Only show if no reviews */}
+          {Array.isArray(business.business_services) && business.business_services.length > 0 && allReviews.length === 0 && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <View style={styles.servicesHeader}>
+                <Text style={[styles.cardTitle, darkMode && styles.darkCardTitle]}>Products & Services</Text>
+                {!isOwner && cartItems.length > 0 && (
+                  <TouchableOpacity style={[styles.cartButton, darkMode && styles.darkCartButton]} onPress={handleViewCart}>
+                    <Ionicons name='cart' size={24} color={darkMode ? "#fff" : "#9C45F7"} />
+                    <Text style={[styles.cartCount, darkMode && styles.darkCartCount]}>{cartItems.length}</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-            )}
-          </View>
+              {business.business_services.map((service, idx) => (
+                <ProductCard key={idx} service={service} showEditButton={isOwner} onPress={() => handleProductPress(service)} />
+              ))}
+            </View>
+          )}
+
+          {/* Shopping Cart Button - Only show if there are reviews */}
+          {!isOwner && allReviews.length > 0 && (
+            <View style={[styles.card, darkMode && styles.darkCard]}>
+              <TouchableOpacity
+                style={[styles.shoppingCartButton, darkMode && styles.darkShoppingCartButton]}
+                onPress={() =>
+                  navigation.navigate("ReviewDetail", {
+                    business_uid: business_uid,
+                    business_name: business.business_name,
+                    reviewer_profile_id: "Charity",
+                  })
+                }
+              >
+                <Ionicons name='cart' size={24} color={darkMode ? "#fff" : "#9C45F7"} />
+                <Text style={[styles.shoppingCartButtonText, darkMode && styles.darkShoppingCartButtonText]}>Shopping Cart</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
 
         <BottomNavBar navigation={navigation} />
@@ -1047,16 +1045,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#fff",
-    ...(Platform.OS === "web" && {
-      alignItems: "center",
-    }),
   },
   scrollContainer: {
     flex: 1,
-    ...(Platform.OS === "web" && {
-      width: "100%",
-      maxWidth: 800,
-    }),
   },
   headerBg: {
     backgroundColor: "#AF52DE",
@@ -1078,11 +1069,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 100,
-  },
-  webContentWrapper: {
-    maxWidth: 800,
-    width: "100%",
-    alignSelf: "center",
   },
   centered: {
     flex: 1,

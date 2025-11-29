@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 100,
-    width: width,
+    width: "100%",
   },
   navContainer: {
     flexDirection: "row",
@@ -98,6 +98,7 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     backgroundColor: "#fff",
     paddingTop: 6,
+    width: "100%",
   },
   navButton: {
     flex: 1,
